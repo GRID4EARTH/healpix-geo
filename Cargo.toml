@@ -10,7 +10,7 @@ version = "0.1.3"
 authors = ["Justus Magin <keewis@posteo.de>"]
 edition = "2024"
 license = "Apache-2.0"
-repository = "https://github.com/EOPF-DGGS/healpix-geo"
+repository = "https://github.com/GRID4EARTH/healpix-geo"
 categories = ["science::geo"]
 
 [workspace.dependencies]

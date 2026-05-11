@@ -80,7 +80,7 @@ Pre-compiled wheels are available for the following platforms :
 1. **Clone the depository** :
 
 ```bash
-git clone https://github.com/EOPF-DGGS/healpix-geo.git
+git clone https://github.com/GRID4EARTH/healpix-geo.git
 cd healpix-geo
 ```
 

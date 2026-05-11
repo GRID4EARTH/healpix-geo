@@ -125,6 +125,6 @@ html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 html_theme_options = {
-    "github_url": "https://github.com/EOPF-DGGS/healpix-geo",
+    "github_url": "https://github.com/GRID4EARTH/healpix-geo",
     "icon_links_label": "Quick Links",
 }
