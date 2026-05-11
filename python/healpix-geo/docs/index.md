@@ -58,7 +58,7 @@ pip install ./target/wheels/healpix-geo-<version>-cp313-cp313-<wheel-version>.wh
 Traditional map projections introduce distortion: a cell at the equator covers a very different area than one near the poles.
 DGGS (Discrete Global Grid Systems) such as HEALPix solve this by design — every cell at a given depth covers _exactly_ the same surface area.
 
-```{figure} https://raw.githubusercontent.com/EOPF-DGGS/BIDS25_demo/refs/heads/main/images/latlon_dggs.png
+```{figure} latlon_dggs.png
 :alt: Classes of map projections vs DGGS
 :width: 680px
 :align: center
