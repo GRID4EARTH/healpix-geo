@@ -23,7 +23,7 @@ concurrency:
 jobs:
   detect-ci-trigger:
     name: detect ci trigger
-    if: github.repository == 'EOPF-DGGS/healpix-geo'
+    if: github.repository == 'GRID4EARTH/healpix-geo'
     runs-on: ubuntu-slim
     outputs:
       triggered: ${{ steps.detect-trigger.outputs.trigger-found }}

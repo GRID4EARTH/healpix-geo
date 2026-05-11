@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   cache-pixi-lock:
+    if: github.repository == 'GRID4EARTH/healpix-geo'
     runs-on: ubuntu-slim
     outputs:
       cache-key: ${{ steps.pixi-lock.outputs.cache-key }}
