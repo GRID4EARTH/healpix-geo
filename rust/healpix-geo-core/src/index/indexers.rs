@@ -133,4 +133,21 @@ mod tests {
         assert_eq!(actual.stop, 4);
         assert_eq!(actual.step, 1);
     }
+
+    #[test]
+    fn array_create() {
+        let data: Vec<isize> = vec![4, -1, -2, 7];
+        let actual = Array::create(data.clone());
+
+        assert_eq!(actual.data, data);
+    }
+
+    #[test]
+    fn array_normalize() {
+        let data: Vec<isize> = vec![4, -2, -3, 5];
+        let arr = Array::create(data);
+
+        let actual = arr.normalize(10);
+        assert_eq!(actual.data, vec![4, 8, 7, 5]);
+    }
 }
