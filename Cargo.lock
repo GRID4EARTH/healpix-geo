@@ -480,6 +480,7 @@ dependencies = [
  "cdshealpix 0.9.1 (git+https://github.com/cds-astro/cds-healpix-rust.git?rev=0c76809be71e248ed137b9d68f10746d0418d413)",
  "geodesy",
  "itertools",
+ "moc",
  "rayon",
 ]
 

@@ -6,8 +6,8 @@ pub trait ReferenceBody {
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64;
 }
 
+#[derive(Clone, Debug)]
 pub struct ReferenceSphere {
-    #[allow(dead_code)]
     ellipsoid: GeodesyEllipsoid,
 }
 
@@ -27,6 +27,13 @@ impl ReferenceBody for ReferenceSphere {
     }
 }
 
+impl PartialEq for ReferenceSphere {
+    fn eq(&self, other: &Self) -> bool {
+        self.ellipsoid == other.ellipsoid
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct ReferenceEllipsoid {
     ellipsoid: GeodesyEllipsoid,
     coefficients: FourierCoefficients,
@@ -55,6 +62,13 @@ impl ReferenceBody for ReferenceEllipsoid {
     }
 }
 
+impl PartialEq for ReferenceEllipsoid {
+    fn eq(&self, other: &Self) -> bool {
+        self.ellipsoid == other.ellipsoid
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Ellipsoid {
     Ellipsoid(ReferenceEllipsoid),
     Sphere(ReferenceSphere),
