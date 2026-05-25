@@ -22,12 +22,12 @@ repos:
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.13
+    rev: v0.15.14
     hooks:
       - id: ruff
         args: ["--fix", "--show-fixes"]
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.5.0
+    rev: 26.5.1
     hooks:
       - id: black-jupyter
   - repo: https://github.com/keewis/blackdoc
@@ -44,7 +44,7 @@ repos:
           - "--extra-keys=metadata.kernelspec"
           - "metadata.language_info.version"
   - repo: https://github.com/adhtruong/mirrors-typos
-    rev: v1.46.2
+    rev: v1.46.3
     hooks:
       - id: typos
         exclude: ".*\\.ipynb$"
