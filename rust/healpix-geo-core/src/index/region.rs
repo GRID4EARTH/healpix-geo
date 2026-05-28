@@ -108,7 +108,7 @@ impl Indexing for CellRegion {
         let (subset, positional_indexer): (RangeMOC<u64, Hpx<u64>>, PositionalIndexer) =
             match indexer {
                 LabelIndexer::Slice(slice) => {
-                    let concrete_slice = slice.normalize(self.cells_at_depth() as u64);
+                    let concrete_slice = slice.normalize(self.cells_at_depth());
 
                     let (subset, positional_slice) = self.moc.label_slice(concrete_slice);
 
@@ -152,7 +152,7 @@ impl Indexing for CellRegion {
 
                 self.moc.position_slice(&concrete_slice)
             }
-            PositionalIndexer::Array(array) => self.moc.position_index(&array),
+            PositionalIndexer::Array(array) => self.moc.position_index(array),
         };
 
         CellRegion {

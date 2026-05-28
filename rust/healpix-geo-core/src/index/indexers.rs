@@ -102,10 +102,11 @@ impl<T> Array<T> {
 }
 
 impl Array<isize> {
-    pub fn normalize(self, size: usize) -> Array<usize> {
+    pub fn normalize(&self, size: usize) -> Array<usize> {
         Array::<usize>::create(
             self.data
-                .into_iter()
+                .iter()
+                .copied()
                 .map(|v| if v < 0 { v + size as isize } else { v } as usize)
                 .collect(),
         )

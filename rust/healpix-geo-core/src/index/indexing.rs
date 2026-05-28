@@ -117,7 +117,7 @@ impl PositionIndexing for RangeMOC<u64, Hpx<u64>> {
             .data
             .iter()
             .map(|&index| {
-                let position = index as usize;
+                let position = index;
                 if index >= size {
                     panic!("{index} is out of bounds");
                 } else {
@@ -126,10 +126,8 @@ impl PositionIndexing for RangeMOC<u64, Hpx<u64>> {
                         .position(|x| position >= x.0 && position < x.1)
                         .unwrap_or(slice_offsets.len() - 1);
                     let slice_start = slice_starts[slice_index] >> shift;
-                    let selected =
-                        slice_start + (index as u64 - (slice_offsets[slice_index].0 as u64));
 
-                    selected
+                    slice_start + (index as u64 - (slice_offsets[slice_index].0 as u64))
                 }
             })
             .collect::<Vec<u64>>();
@@ -177,9 +175,9 @@ impl LabelIndexing for RangeMOC<u64, Hpx<u64>> {
 
                 if (slice.start < range_end) && (slice.stop >= range_start) {
                     let pos_slice = ConcreteSlice {
-                        start: slice.start.saturating_sub(range_start) as usize + offset as usize,
+                        start: slice.start.saturating_sub(range_start) as usize + offset,
                         stop: (slice.stop + 1).min(range_end).saturating_sub(range_start) as usize
-                            + offset as usize,
+                            + offset,
                         step: slice.step as usize,
                     };
 
