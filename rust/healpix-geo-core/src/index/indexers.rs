@@ -1,10 +1,12 @@
 /// Slice object with the semantics of python's slice object
+#[derive(Debug, PartialEq)]
 pub(crate) struct Slice {
     pub start: Option<isize>,
     pub stop: Option<isize>,
     pub step: isize,
 }
 
+#[derive(Debug, PartialEq)]
 pub(crate) struct ConcreteSlice {
     pub start: usize,
     pub stop: isize,
@@ -40,10 +42,12 @@ impl Slice {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub(crate) struct Array {
     data: Vec<isize>,
 }
 
+#[derive(Debug, PartialEq)]
 pub(crate) struct ConcreteArray {
     data: Vec<usize>,
 }
@@ -149,5 +153,18 @@ mod tests {
 
         let actual = arr.normalize(10);
         assert_eq!(actual.data, vec![4, 8, 7, 5]);
+    }
+
+    #[test]
+    fn enum_instances() {
+        let slice = Slice {
+            start: None,
+            stop: None,
+            step: 1,
+        };
+        let array = Array::create(vec![1, 2]);
+
+        let _slice_enum = Indexers::Slice(slice);
+        let _array_enum = Indexers::Array(array);
     }
 }
