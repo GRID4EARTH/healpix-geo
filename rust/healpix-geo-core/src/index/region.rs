@@ -35,6 +35,22 @@ impl CellRegion {
             ellipsoid,
         }
     }
+
+    pub fn nbytes(&self) -> usize {
+        self.moc.len() * 2 * u64::BITS as usize / 8
+    }
+
+    pub fn size(&self) -> usize {
+        self.moc.n_depth_max_cells() as usize
+    }
+
+    pub fn depth(&self) -> u8 {
+        self.moc.depth_max()
+    }
+
+    pub fn cell_ids(&self) -> Vec<u64> {
+        self.moc.flatten_to_fixed_depth_cells().collect()
+    }
 }
 
 impl SetOperations for CellRegion {
@@ -99,7 +115,7 @@ mod test {
     }
 
     #[test]
-    fn full_domain() {
+    fn test_full_domain() {
         let depth: u8 = 6;
         let ellipsoid = named_ellipsoid("WGS84");
 
@@ -111,7 +127,7 @@ mod test {
     }
 
     #[test]
-    fn create_empty() {
+    fn test_create_empty() {
         let depth: u8 = 5;
         let ellipsoid = named_ellipsoid("WGS84");
 
@@ -122,7 +138,7 @@ mod test {
     }
 
     #[test]
-    fn from_cell_ids() {
+    fn test_from_cell_ids() {
         let depth: u8 = 3;
         let cell_ids: Vec<u64> = vec![2, 3, 4, 5, 23, 24, 25, 79, 80, 102, 103, 106];
         let ellipsoid = named_ellipsoid("WGS84");
@@ -142,7 +158,23 @@ mod test {
     }
 
     #[test]
-    fn set_union() {
+    fn test_size() {
+        let depth: u8 = 7;
+        let region = CellRegion::full_domain(depth, named_ellipsoid("WGS84"));
+
+        assert_eq!(region.size(), 12 * 4_usize.pow(depth as u32));
+    }
+
+    #[test]
+    fn test_nbytes() {
+        let depth: u8 = 7;
+        let region = CellRegion::full_domain(depth, named_ellipsoid("WGS84"));
+
+        assert_eq!(region.nbytes(), 16);
+    }
+
+    #[test]
+    fn test_set_union() {
         let ellipsoid = named_ellipsoid("WGS84");
 
         let first = CellRegion::from_cell_ids(
@@ -163,7 +195,7 @@ mod test {
     }
 
     #[test]
-    fn set_intersection() {
+    fn test_set_intersection() {
         let ellipsoid = named_ellipsoid("WGS84");
 
         let first = CellRegion::from_cell_ids(
@@ -180,7 +212,7 @@ mod test {
     }
 
     #[test]
-    fn set_difference() {
+    fn test_set_difference() {
         let ellipsoid = named_ellipsoid("WGS84");
 
         let first = CellRegion::from_cell_ids(
@@ -197,7 +229,7 @@ mod test {
     }
 
     #[test]
-    fn set_symmetric_difference() {
+    fn test_set_symmetric_difference() {
         let ellipsoid = named_ellipsoid("WGS84");
 
         let first = CellRegion::from_cell_ids(
