@@ -1,3 +1,4 @@
+use super::set::SetOperations;
 use crate::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid};
 use moc::{moc::range::RangeMOC, qty::Hpx};
 
@@ -5,13 +6,6 @@ use moc::{moc::range::RangeMOC, qty::Hpx};
 pub(crate) struct CellRegion {
     moc: RangeMOC<u64, Hpx<u64>>,
     ellipsoid: Ellipsoid,
-}
-
-pub(crate) trait SetOperations {
-    fn union(&self, other: &Self) -> Self;
-    fn intersection(&self, other: &Self) -> Self;
-    fn difference(&self, other: &Self) -> Self;
-    fn symmetric_difference(&self, other: &Self) -> Self;
 }
 
 impl CellRegion {
