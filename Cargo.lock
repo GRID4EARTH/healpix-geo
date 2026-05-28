@@ -481,6 +481,7 @@ dependencies = [
  "geodesy",
  "itertools",
  "moc",
+ "num-traits",
  "rayon",
 ]
 

@@ -1,36 +1,39 @@
+use num_traits::{FromPrimitive, PrimInt};
+
 /// Slice object with the semantics of python's slice object
-#[derive(Debug, PartialEq)]
-pub(crate) struct Slice {
-    pub start: Option<isize>,
-    pub stop: Option<isize>,
-    pub step: isize,
+#[derive(Debug, Clone, PartialEq)]
+struct Slice<T: PrimInt> {
+    pub start: Option<T>,
+    pub stop: Option<T>,
+    pub step: T,
 }
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct ConcreteSlice {
-    pub start: usize,
-    pub stop: isize,
-    pub step: isize,
+struct ConcreteSlice<T: PrimInt> {
+    pub start: T,
+    pub stop: T,
+    pub step: T,
 }
 
-impl Slice {
-    pub fn create(start: Option<isize>, stop: Option<isize>, step: Option<isize>) -> Self {
-        Slice {
+impl<T: PrimInt + FromPrimitive> Slice<T> {
+    pub fn create(start: Option<T>, stop: Option<T>, step: Option<T>) -> Self {
+        Self {
             start,
             stop,
-            step: step.unwrap_or(1),
+            step: step.unwrap_or(FromPrimitive::from_usize(1).unwrap()),
         }
     }
+}
 
-    pub fn normalize(&self, size: usize) -> ConcreteSlice {
+impl Slice<isize> {
+    pub fn normalize(&self, size: usize) -> ConcreteSlice<isize> {
         let step = self.step;
         let size_ = size as isize;
 
-        let start = self.start.map_or_else(
+        let start: isize = self.start.map_or_else(
             || if step < 0 { size_ - 1 } else { 0 },
             |v| if v < 0 { size_ + v } else { v },
-        ) as usize;
-        let stop = self
+        );
+        let stop: isize = self
             .stop
             .map_or_else(
                 || if step < 0 { -1 } else { size_ },
@@ -42,23 +45,20 @@ impl Slice {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct Array {
-    data: Vec<isize>,
+#[derive(Debug, PartialEq, Clone)]
+pub(crate) struct Array<T> {
+    pub data: Vec<T>,
 }
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct ConcreteArray {
-    data: Vec<usize>,
-}
-
-impl Array {
-    pub fn create(values: Vec<isize>) -> Self {
+impl<T> Array<T> {
+    pub fn create(values: Vec<T>) -> Self {
         Self { data: values }
     }
+}
 
-    pub fn normalize(self, size: usize) -> ConcreteArray {
-        ConcreteArray::create(
+impl Array<isize> {
+    pub fn normalize(self, size: usize) -> Array<usize> {
+        Array::<usize>::create(
             self.data
                 .into_iter()
                 .map(|v| if v < 0 { v + size as isize } else { v } as usize)
@@ -67,15 +67,14 @@ impl Array {
     }
 }
 
-impl ConcreteArray {
-    pub fn create(values: Vec<usize>) -> Self {
-        Self { data: values }
-    }
+pub(crate) enum PositionalIndexer {
+    Slice(Slice<isize>),
+    Array(Array<isize>),
 }
 
-pub(crate) enum Indexers {
-    Slice(Slice),
-    Array(Array),
+pub(crate) enum LabelIndexer {
+    Slice(Slice<usize>),
+    Array(Array<usize>),
 }
 
 #[cfg(test)]
@@ -83,7 +82,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn slice_create() {
+    fn test_slice_create() {
         let slice = Slice::create(None, Some(5), None);
 
         assert_eq!(slice.start, None);
@@ -92,7 +91,7 @@ mod tests {
     }
 
     #[test]
-    fn slice_normalize_positive_full() {
+    fn test_slice_normalize_positive_full() {
         let slice = Slice {
             start: None,
             stop: None,
@@ -106,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn slice_normalize_negative_full() {
+    fn test_slice_normalize_negative_full() {
         let slice = Slice {
             start: None,
             stop: None,
@@ -120,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn slice_normalize_positive_limit() {
+    fn test_slice_normalize_positive_limit() {
         let slice = Slice {
             start: None,
             stop: Some(5),
@@ -139,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn array_create() {
+    fn test_array_create() {
         let data: Vec<isize> = vec![4, -1, -2, 7];
         let actual = Array::create(data.clone());
 
@@ -147,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn array_normalize() {
+    fn test_array_normalize() {
         let data: Vec<isize> = vec![4, -2, -3, 5];
         let arr = Array::create(data);
 
@@ -156,15 +155,20 @@ mod tests {
     }
 
     #[test]
-    fn enum_instances() {
-        let slice = Slice {
-            start: None,
-            stop: None,
-            step: 1,
-        };
+    fn test_positional_indexer() {
+        let slice = Slice::<isize>::create(None, None, Some(1));
         let array = Array::create(vec![1, 2]);
 
-        let _slice_enum = Indexers::Slice(slice);
-        let _array_enum = Indexers::Array(array);
+        let slice_enum = PositionalIndexer::Slice(slice.clone());
+        match slice_enum {
+            PositionalIndexer::Slice(s) => assert_eq!(slice, s),
+            _ => unreachable!(),
+        }
+
+        let array_enum = PositionalIndexer::Array(array.clone());
+        match array_enum {
+            PositionalIndexer::Array(a) => assert_eq!(array, a),
+            _ => unreachable!(),
+        }
     }
 }
