@@ -8,7 +8,7 @@ struct Slice<T: PrimInt> {
     pub step: T,
 }
 
-struct ConcreteSlice<T: PrimInt> {
+pub(crate) struct ConcreteSlice<T: PrimInt> {
     pub start: T,
     pub stop: T,
     pub step: T,

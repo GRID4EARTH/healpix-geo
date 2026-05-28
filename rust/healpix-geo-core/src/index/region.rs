@@ -1,3 +1,4 @@
+use super::indexing::Indexing;
 use super::set::SetOperations;
 use crate::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid};
 use moc::{moc::range::RangeMOC, qty::Hpx};
