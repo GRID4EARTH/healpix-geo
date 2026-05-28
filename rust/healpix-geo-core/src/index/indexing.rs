@@ -8,27 +8,29 @@ pub(crate) trait Indexing {
     fn sel(&self, indexer: &LabelIndexer) -> (Self, PositionalIndexer)
     where
         Self: Sized;
-    fn isel(&self, indexer: PositionalIndexer) -> Self
+
+    fn isel(&self, indexer: &PositionalIndexer) -> Self
     where
         Self: Sized;
 }
 
-pub(crate) trait SubsetMoc {
-    fn slice(&self, slice: ConcreteSlice<isize>) -> Self;
-    fn index(&self, array: Array<isize>) -> Self;
+pub(crate) trait PositionIndexing {
+    fn position_slice(&self, slice: &ConcreteSlice<isize>) -> Self;
+    fn position_index(&self, array: &Array<isize>) -> Self;
 }
 
-pub(crate) trait IndexMoc {
+pub(crate) trait LabelIndexing {
     fn label_slice(&self, slice: ConcreteSlice<u64>) -> (Self, ConcreteSlice<usize>)
     where
         Self: Sized;
+
     fn label_index(&self, array: &Array<u64>) -> (Self, Array<usize>)
     where
         Self: Sized;
 }
 
-impl SubsetMoc for RangeMOC<u64, Hpx<u64>> {
-    fn slice(&self, slice: ConcreteSlice<isize>) -> Self {
+impl PositionIndexing for RangeMOC<u64, Hpx<u64>> {
+    fn position_slice(&self, slice: &ConcreteSlice<isize>) -> Self {
         if slice.step != 1 {
             panic!("Only step size 1 is supported, got {}", slice.step);
         }
@@ -89,7 +91,7 @@ impl SubsetMoc for RangeMOC<u64, Hpx<u64>> {
         RangeMOC::new(self.depth_max(), ranges)
     }
 
-    fn index(&self, array: Array<isize>) -> Self {
+    fn position_index(&self, array: &Array<isize>) -> Self {
         let size = self.n_depth_max_cells() as usize;
         let normalized = array.normalize(size);
         let delta_depth = 29 - self.depth_max();
@@ -156,7 +158,7 @@ fn range_sizes(moc: &RangeMOC<u64, Hpx<u64>>) -> Vec<usize> {
         .collect()
 }
 
-impl IndexMoc for RangeMOC<u64, Hpx<u64>> {
+impl LabelIndexing for RangeMOC<u64, Hpx<u64>> {
     fn label_slice(&self, slice: ConcreteSlice<u64>) -> (Self, ConcreteSlice<usize>) {
         let depth = self.depth_max();
         let range_sizes = range_sizes(self);

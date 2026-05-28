@@ -1,5 +1,5 @@
 use super::indexers::{Array, LabelIndexer, PositionalIndexer, Slice};
-use super::indexing::{IndexMoc, Indexing, SubsetMoc};
+use super::indexing::{Indexing, LabelIndexing, PositionIndexing};
 use super::set::SetOperations;
 use crate::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid};
 use moc::{moc::range::RangeMOC, qty::Hpx};
@@ -145,14 +145,14 @@ impl Indexing for CellRegion {
         (new_region, positional_indexer)
     }
 
-    fn isel(&self, indexer: PositionalIndexer) -> Self {
+    fn isel(&self, indexer: &PositionalIndexer) -> Self {
         let subset = match indexer {
             PositionalIndexer::Slice(slice) => {
                 let concrete_slice = slice.normalize(self.size());
 
-                self.moc.slice(concrete_slice)
+                self.moc.position_slice(&concrete_slice)
             }
-            PositionalIndexer::Array(array) => self.moc.index(array),
+            PositionalIndexer::Array(array) => self.moc.position_index(&array),
         };
 
         CellRegion {
