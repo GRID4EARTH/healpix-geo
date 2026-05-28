@@ -5,13 +5,26 @@ use moc::qty::Hpx;
 use std::ops::Range;
 
 pub(crate) trait Indexing {
-    fn sel(&self, indexer: LabelIndexer) -> Self;
-    fn isel(&self, indexer: PositionalIndexer) -> Self;
+    fn sel(&self, indexer: &LabelIndexer) -> (Self, PositionalIndexer)
+    where
+        Self: Sized;
+    fn isel(&self, indexer: PositionalIndexer) -> Self
+    where
+        Self: Sized;
 }
 
 pub(crate) trait SubsetMoc {
     fn slice(&self, slice: ConcreteSlice<isize>) -> Self;
     fn index(&self, array: Array<isize>) -> Self;
+}
+
+pub(crate) trait IndexMoc {
+    fn label_slice(&self, slice: ConcreteSlice<u64>) -> (Self, ConcreteSlice<usize>)
+    where
+        Self: Sized;
+    fn label_index(&self, array: &Array<u64>) -> (Self, Array<usize>)
+    where
+        Self: Sized;
 }
 
 impl SubsetMoc for RangeMOC<u64, Hpx<u64>> {
@@ -120,5 +133,107 @@ impl SubsetMoc for RangeMOC<u64, Hpx<u64>> {
             .collect::<Vec<u64>>();
 
         RangeMOC::from_fixed_depth_cells(self.depth_max(), cell_ids.into_iter(), None)
+    }
+}
+
+fn range_offsets(sizes: Vec<usize>) -> Vec<usize> {
+    sizes
+        .iter()
+        .scan(0, |state, x| {
+            let val = *state;
+            *state += x;
+            Some(val)
+        })
+        .collect()
+}
+
+fn range_sizes(moc: &RangeMOC<u64, Hpx<u64>>) -> Vec<usize> {
+    let relative_depth = 29 - moc.depth_max();
+
+    moc.moc_ranges()
+        .iter()
+        .map(|r| ((r.end - r.start) >> (relative_depth << 1)) as usize)
+        .collect()
+}
+
+impl IndexMoc for RangeMOC<u64, Hpx<u64>> {
+    fn label_slice(&self, slice: ConcreteSlice<u64>) -> (Self, ConcreteSlice<usize>) {
+        let depth = self.depth_max();
+        let range_sizes = range_sizes(self);
+        let offsets = range_offsets(range_sizes);
+
+        let (slices, ranges): (Vec<_>, Vec<_>) = self
+            .moc_ranges()
+            .iter()
+            .enumerate()
+            .filter_map(|(index, range)| {
+                let offset = offsets[index];
+
+                let relative_depth = 29 - depth;
+                let range_start = range.start >> (relative_depth << 1);
+                let range_end = range.end >> (relative_depth << 1);
+
+                if (slice.start < range_end) && (slice.stop >= range_start) {
+                    let pos_slice = ConcreteSlice {
+                        start: slice.start.saturating_sub(range_start) as usize + offset as usize,
+                        stop: (slice.stop + 1).min(range_end).saturating_sub(range_start) as usize
+                            + offset as usize,
+                        step: slice.step as usize,
+                    };
+
+                    let new_range = Range {
+                        start: slice.start.max(range_start) << (relative_depth << 1),
+                        end: (slice.stop + 1).min(range_end) << (relative_depth << 1),
+                    };
+
+                    Some((pos_slice, new_range))
+                } else {
+                    None
+                }
+            })
+            .unzip();
+
+        let joined_slice = ConcreteSlice::join(slices);
+
+        let new_moc: RangeMOC<u64, Hpx<u64>> = RangeMOC::new(depth, MocRanges::new_from(ranges));
+
+        (new_moc, joined_slice)
+    }
+
+    fn label_index(&self, array: &Array<u64>) -> (Self, Array<usize>) {
+        let depth = self.depth_max();
+        let range_sizes = range_sizes(self);
+        let offsets = range_offsets(range_sizes);
+
+        let delta_depth = 29 - depth;
+        let shift = delta_depth << 1;
+
+        let ranges = self
+            .moc_ranges()
+            .iter()
+            .map(|x| Range {
+                start: x.start >> shift,
+                end: x.end >> shift,
+            })
+            .collect::<Vec<_>>();
+
+        let (positions, cell_ids): (Vec<_>, Vec<_>) = array
+            .data
+            .iter()
+            .map(|&hash| {
+                let range_index = ranges
+                    .iter()
+                    .position(|r: &Range<u64>| r.contains(&hash))
+                    .expect("Cannot find {hash}");
+
+                let position = (hash - ranges[range_index].start) as usize + offsets[range_index];
+
+                (position, hash)
+            })
+            .unzip();
+
+        let new_moc = RangeMOC::from_fixed_depth_cells(depth, cell_ids.into_iter(), None);
+
+        (new_moc, Array { data: positions })
     }
 }

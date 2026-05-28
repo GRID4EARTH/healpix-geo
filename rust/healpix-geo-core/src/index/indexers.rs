@@ -2,12 +2,13 @@ use num_traits::{FromPrimitive, PrimInt};
 
 /// Slice object with the semantics of python's slice object
 #[derive(Debug, Clone, PartialEq)]
-struct Slice<T: PrimInt> {
+pub(crate) struct Slice<T: PrimInt> {
     pub start: Option<T>,
     pub stop: Option<T>,
     pub step: T,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ConcreteSlice<T: PrimInt> {
     pub start: T,
     pub stop: T,
@@ -45,6 +46,50 @@ impl Slice<isize> {
     }
 }
 
+impl Slice<u64> {
+    pub fn normalize(&self, size: u64) -> ConcreteSlice<u64> {
+        let step = self.step;
+
+        let start = self.start.unwrap_or(0);
+        let stop = self.stop.unwrap_or(size);
+
+        ConcreteSlice { start, stop, step }
+    }
+}
+
+impl<T: PrimInt> ConcreteSlice<T> {
+    pub fn join(slices: Vec<Self>) -> Self {
+        if slices.is_empty() {
+            panic!("no slices given");
+        } else if slices.len() == 1 {
+            slices[0].clone()
+        } else if !slices
+            .windows(2)
+            .map(|w| w.first().unwrap().step == w.last().unwrap().step)
+            .reduce(|a, b| a & b)
+            .unwrap()
+        {
+            panic!("step sizes are not equal");
+        } else if !slices
+            .windows(2)
+            .map(|w| w.first().unwrap().stop == w.last().unwrap().start)
+            .reduce(|a, b| a & b)
+            .unwrap()
+        {
+            panic!("slices are not contiguous");
+        } else {
+            let first = slices.first().unwrap();
+            let last = slices.last().unwrap();
+
+            Self {
+                start: first.start,
+                stop: last.stop,
+                step: first.step,
+            }
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct Array<T> {
     pub data: Vec<T>,
@@ -73,8 +118,8 @@ pub(crate) enum PositionalIndexer {
 }
 
 pub(crate) enum LabelIndexer {
-    Slice(Slice<usize>),
-    Array(Array<usize>),
+    Slice(Slice<u64>),
+    Array(Array<u64>),
 }
 
 #[cfg(test)]
@@ -92,7 +137,7 @@ mod tests {
 
     #[test]
     fn test_slice_normalize_positive_full() {
-        let slice = Slice {
+        let slice: Slice<isize> = Slice {
             start: None,
             stop: None,
             step: 1,
@@ -106,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_slice_normalize_negative_full() {
-        let slice = Slice {
+        let slice: Slice<isize> = Slice {
             start: None,
             stop: None,
             step: -1,
@@ -120,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_slice_normalize_positive_limit() {
-        let slice = Slice {
+        let slice: Slice<isize> = Slice {
             start: None,
             stop: Some(5),
             step: 1,

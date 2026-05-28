@@ -1,4 +1,5 @@
-use super::indexing::Indexing;
+use super::indexers::{Array, LabelIndexer, PositionalIndexer, Slice};
+use super::indexing::{IndexMoc, Indexing, SubsetMoc};
 use super::set::SetOperations;
 use crate::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid};
 use moc::{moc::range::RangeMOC, qty::Hpx};
@@ -45,6 +46,10 @@ impl CellRegion {
 
     pub fn cell_ids(&self) -> Vec<u64> {
         self.moc.flatten_to_fixed_depth_cells().collect()
+    }
+
+    pub fn cells_at_depth(&self) -> u64 {
+        12 * 4u64.pow(self.depth() as u32)
     }
 }
 
@@ -93,6 +98,65 @@ impl SetOperations for CellRegion {
 
         Self {
             moc: self.moc.xor(&other.moc),
+            ellipsoid: self.ellipsoid.clone(),
+        }
+    }
+}
+
+impl Indexing for CellRegion {
+    fn sel(&self, indexer: &LabelIndexer) -> (Self, PositionalIndexer) {
+        let (subset, positional_indexer): (RangeMOC<u64, Hpx<u64>>, PositionalIndexer) =
+            match indexer {
+                LabelIndexer::Slice(slice) => {
+                    let concrete_slice = slice.normalize(self.cells_at_depth() as u64);
+
+                    let (subset, positional_slice) = self.moc.label_slice(concrete_slice);
+
+                    (
+                        subset,
+                        PositionalIndexer::Slice(Slice::create(
+                            Some(positional_slice.start as isize),
+                            Some(positional_slice.stop as isize),
+                            Some(positional_slice.step as isize),
+                        )),
+                    )
+                }
+                LabelIndexer::Array(array) => {
+                    let (subset, positional_array) = self.moc.label_index(array);
+
+                    (
+                        subset,
+                        PositionalIndexer::Array(Array {
+                            data: positional_array
+                                .data
+                                .into_iter()
+                                .map(|v| v as isize)
+                                .collect::<Vec<_>>(),
+                        }),
+                    )
+                }
+            };
+
+        let new_region = CellRegion {
+            moc: subset,
+            ellipsoid: self.ellipsoid.clone(),
+        };
+
+        (new_region, positional_indexer)
+    }
+
+    fn isel(&self, indexer: PositionalIndexer) -> Self {
+        let subset = match indexer {
+            PositionalIndexer::Slice(slice) => {
+                let concrete_slice = slice.normalize(self.size());
+
+                self.moc.slice(concrete_slice)
+            }
+            PositionalIndexer::Array(array) => self.moc.index(array),
+        };
+
+        CellRegion {
+            moc: subset,
             ellipsoid: self.ellipsoid.clone(),
         }
     }
