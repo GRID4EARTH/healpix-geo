@@ -15,3 +15,4 @@ itertools = { workspace = true }
 moc.workspace = true
 num-traits = "0.2.19"
 rayon = { workspace = true }
+serde = "1.0.228"

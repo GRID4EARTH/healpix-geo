@@ -483,6 +483,7 @@ dependencies = [
  "moc",
  "num-traits",
  "rayon",
+ "serde",
 ]
 
 [[package]]

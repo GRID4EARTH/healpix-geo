@@ -1,5 +1,9 @@
 use geodesy::authoring::FourierCoefficients;
-use geodesy::ellps::{Ellipsoid as GeodesyEllipsoid, Latitudes};
+use geodesy::ellps::{Ellipsoid as GeodesyEllipsoid, EllipsoidBase, Latitudes};
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize};
+use serde::{de, ser};
+use std::fmt;
 
 pub trait ReferenceBody {
     fn latitude_authalic_to_geographic(&self, latitude: f64) -> f64;
@@ -24,6 +28,71 @@ impl ReferenceBody for ReferenceSphere {
 
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64 {
         latitude
+    }
+}
+
+impl ser::Serialize for ReferenceSphere {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        let mut state = serializer.serialize_struct("ReferenceSphere", 2)?;
+
+        let radius = self.ellipsoid.semimajor_axis();
+
+        state.serialize_field("radius", &radius)?;
+
+        state.end()
+    }
+}
+
+impl<'de> de::Deserialize<'de> for ReferenceSphere {
+    fn deserialize<D>(deserializer: D) -> Result<ReferenceSphere, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Radius,
+        }
+
+        struct ReferenceSphereVisitor;
+
+        impl<'de> de::Visitor<'de> for ReferenceSphereVisitor {
+            type Value = ReferenceSphere;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct ReferenceSphere")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
+            where
+                V: de::MapAccess<'de>,
+            {
+                let mut radius = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Radius => {
+                            if radius.is_some() {
+                                return Err(de::Error::duplicate_field("radius"));
+                            }
+
+                            radius = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let radius = radius.ok_or_else(|| de::Error::missing_field("radius"))?;
+
+                let ellipsoid = GeodesyEllipsoid::new(radius, 0.0);
+                Ok(ReferenceSphere::new(ellipsoid))
+            }
+        }
+
+        const FIELDS: &[&str] = &["radius"];
+        deserializer.deserialize_struct("ReferenceSphere", FIELDS, ReferenceSphereVisitor)
     }
 }
 
@@ -68,7 +137,86 @@ impl PartialEq for ReferenceEllipsoid {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+impl ser::Serialize for ReferenceEllipsoid {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        let mut state = serializer.serialize_struct("ReferenceEllipsoid", 2)?;
+
+        let semimajor_axis = self.ellipsoid.semimajor_axis();
+        let flattening = self.ellipsoid.flattening();
+
+        state.serialize_field("semimajor_axis", &semimajor_axis)?;
+        state.serialize_field("flattening", &flattening)?;
+
+        state.end()
+    }
+}
+
+impl<'de> de::Deserialize<'de> for ReferenceEllipsoid {
+    fn deserialize<D>(deserializer: D) -> Result<ReferenceEllipsoid, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            SemimajorAxis,
+            Flattening,
+        }
+
+        struct ReferenceEllipsoidVisitor;
+
+        impl<'de> de::Visitor<'de> for ReferenceEllipsoidVisitor {
+            type Value = ReferenceEllipsoid;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct ReferenceEllipsoid")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
+            where
+                V: de::MapAccess<'de>,
+            {
+                let mut semimajor_axis = None;
+                let mut flattening = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::SemimajorAxis => {
+                            if semimajor_axis.is_some() {
+                                return Err(de::Error::duplicate_field("semimajor_axis"));
+                            }
+
+                            semimajor_axis = Some(map.next_value()?);
+                        }
+                        Field::Flattening => {
+                            if flattening.is_some() {
+                                return Err(de::Error::duplicate_field("flattening"));
+                            }
+
+                            flattening = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let semimajor_axis =
+                    semimajor_axis.ok_or_else(|| de::Error::missing_field("semimajor_axis"))?;
+                let flattening =
+                    flattening.ok_or_else(|| de::Error::missing_field("flattening"))?;
+
+                let ellipsoid = GeodesyEllipsoid::new(semimajor_axis, flattening);
+                Ok(ReferenceEllipsoid::new(ellipsoid))
+            }
+        }
+
+        const FIELDS: &[&str] = &["semimajor_axis", "flattening"];
+        deserializer.deserialize_struct("ReferenceEllipsoid", FIELDS, ReferenceEllipsoidVisitor)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Ellipsoid {
     Ellipsoid(ReferenceEllipsoid),
     Sphere(ReferenceSphere),
