@@ -8,6 +8,7 @@ use crate::geometry::Geometry;
 use crate::scalar;
 use cdshealpix::nested;
 use moc::moc::range::{CellSelection, RangeMOC};
+use moc::moc::{CellMOCIterator, RangeMOCIntoIterator, RangeMOCIterator};
 use moc::qty::Hpx;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,6 +57,25 @@ impl CellRegion {
 
     pub fn cells_at_depth(&self) -> u64 {
         12 * 4u64.pow(self.depth() as u32)
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut serialized: Vec<u8> = Default::default();
+
+        self.moc
+            .clone()
+            .into_range_moc_iter()
+            .cells()
+            .to_json_aladin(None, &mut serialized)
+            .expect("failed to serialize the moc");
+
+        // serde_json: serialize ellipsoid, chain both together
+
+        serialized
+    }
+
+    pub fn from_bytes(_bytes: Vec<u8>) {
+        // extract the json_aladin and the ellipsoid data, deserialize both
     }
 }
 
