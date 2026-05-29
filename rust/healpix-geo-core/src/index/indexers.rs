@@ -2,14 +2,14 @@ use num_traits::{FromPrimitive, PrimInt};
 
 /// Slice object with the semantics of python's slice object
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Slice<T: PrimInt> {
+pub struct Slice<T: PrimInt> {
     pub start: Option<T>,
     pub stop: Option<T>,
     pub step: T,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct ConcreteSlice<T: PrimInt> {
+pub struct ConcreteSlice<T: PrimInt> {
     pub start: T,
     pub stop: T,
     pub step: T,
@@ -91,7 +91,7 @@ impl<T: PrimInt> ConcreteSlice<T> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) struct Array<T> {
+pub struct Array<T> {
     pub data: Vec<T>,
 }
 
@@ -113,12 +113,12 @@ impl Array<isize> {
     }
 }
 
-pub(crate) enum PositionalIndexer {
+pub enum PositionalIndexer {
     Slice(Slice<isize>),
     Array(Array<isize>),
 }
 
-pub(crate) enum LabelIndexer {
+pub enum LabelIndexer {
     Slice(Slice<u64>),
     Array(Array<u64>),
 }

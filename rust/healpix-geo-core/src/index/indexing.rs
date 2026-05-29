@@ -4,7 +4,7 @@ use moc::moc::range::RangeMOC;
 use moc::qty::Hpx;
 use std::ops::Range;
 
-pub(crate) trait Indexing {
+pub trait Indexing {
     fn sel(&self, indexer: &LabelIndexer) -> (Self, PositionalIndexer)
     where
         Self: Sized;
@@ -14,12 +14,12 @@ pub(crate) trait Indexing {
         Self: Sized;
 }
 
-pub(crate) trait PositionIndexing {
+pub trait PositionIndexing {
     fn position_slice(&self, slice: &ConcreteSlice<isize>) -> Self;
     fn position_index(&self, array: &Array<isize>) -> Self;
 }
 
-pub(crate) trait LabelIndexing {
+pub trait LabelIndexing {
     fn label_slice(&self, slice: ConcreteSlice<u64>) -> (Self, ConcreteSlice<usize>)
     where
         Self: Sized;

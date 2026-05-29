@@ -1,6 +1,5 @@
 use super::indexers::ConcreteSlice;
 use super::indexing::range_offsets;
-use super::region::CellRegion;
 use moc::moc::range::RangeMOC;
 use moc::qty::Hpx;
 

@@ -1,16 +1,17 @@
-use super::geometry::{Geometry, GeometryQuery};
+use super::geometry::GeometryQuery;
 use super::indexers::{Array, ConcreteSlice, LabelIndexer, PositionalIndexer, Slice};
 use super::indexing::{Indexing, LabelIndexing, PositionIndexing};
 use super::ops::{JoinOp, JoinOps};
 use super::set::SetOperations;
-use crate::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid};
+use crate::ellipsoid::{Ellipsoid, ReferenceBody};
+use crate::geometry::Geometry;
 use crate::scalar;
 use cdshealpix::nested;
 use moc::moc::range::{CellSelection, RangeMOC};
 use moc::qty::Hpx;
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct CellRegion {
+pub struct CellRegion {
     moc: RangeMOC<u64, Hpx<u64>>,
     ellipsoid: Ellipsoid,
 }
@@ -229,6 +230,7 @@ impl GeometryQuery for CellRegion {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::ellipsoid::ReferenceEllipsoid;
     use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 
     fn named_ellipsoid(name: &str) -> Ellipsoid {
@@ -383,7 +385,7 @@ mod test {
 
     mod query {
         use super::*;
-        use crate::index::geometry::{BoundingBox, Geometry, Point, Polygon};
+        use crate::geometry::{BoundingBox, Geometry, Point, Polygon};
 
         #[test]
         fn test_query_point_full_domain() {
