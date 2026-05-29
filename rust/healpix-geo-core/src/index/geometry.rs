@@ -1,3 +1,5 @@
+use super::indexers::ConcreteSlice;
+
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct BoundingBox {
     pub lon_min: f64,
@@ -39,7 +41,7 @@ impl Point {
 /// No support for internal rings, yet.
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct Polygon {
-    exterior: Vec<(f64, f64)>,
+    pub exterior: Vec<(f64, f64)>,
 }
 
 impl Polygon {
@@ -59,6 +61,10 @@ pub(crate) enum Geometry {
     Point(Point),
     BoundingBox(BoundingBox),
     Polygon(Polygon),
+}
+
+pub(crate) trait GeometryQuery {
+    fn query(&self, geometry: &Geometry) -> (Vec<ConcreteSlice<isize>>, Self);
 }
 
 #[cfg(test)]

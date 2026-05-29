@@ -136,9 +136,12 @@ impl PositionIndexing for RangeMOC<u64, Hpx<u64>> {
     }
 }
 
-fn range_offsets(sizes: Vec<usize>) -> Vec<usize> {
-    sizes
+pub(crate) fn range_offsets(moc: &RangeMOC<u64, Hpx<u64>>) -> Vec<usize> {
+    let relative_depth = 29 - moc.depth_max();
+
+    moc.moc_ranges()
         .iter()
+        .map(|r| ((r.end - r.start) >> (relative_depth << 1)) as usize)
         .scan(0, |state, x| {
             let val = *state;
             *state += x;
@@ -147,20 +150,10 @@ fn range_offsets(sizes: Vec<usize>) -> Vec<usize> {
         .collect()
 }
 
-fn range_sizes(moc: &RangeMOC<u64, Hpx<u64>>) -> Vec<usize> {
-    let relative_depth = 29 - moc.depth_max();
-
-    moc.moc_ranges()
-        .iter()
-        .map(|r| ((r.end - r.start) >> (relative_depth << 1)) as usize)
-        .collect()
-}
-
 impl LabelIndexing for RangeMOC<u64, Hpx<u64>> {
     fn label_slice(&self, slice: ConcreteSlice<u64>) -> (Self, ConcreteSlice<usize>) {
         let depth = self.depth_max();
-        let range_sizes = range_sizes(self);
-        let offsets = range_offsets(range_sizes);
+        let offsets = range_offsets(self);
 
         let (slices, ranges): (Vec<_>, Vec<_>) = self
             .moc_ranges()
@@ -202,8 +195,7 @@ impl LabelIndexing for RangeMOC<u64, Hpx<u64>> {
 
     fn label_index(&self, array: &Array<u64>) -> (Self, Array<usize>) {
         let depth = self.depth_max();
-        let range_sizes = range_sizes(self);
-        let offsets = range_offsets(range_sizes);
+        let offsets = range_offsets(self);
 
         let delta_depth = 29 - depth;
         let shift = delta_depth << 1;

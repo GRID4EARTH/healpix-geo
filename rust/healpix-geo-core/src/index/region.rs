@@ -1,8 +1,13 @@
-use super::indexers::{Array, LabelIndexer, PositionalIndexer, Slice};
+use super::geometry::{Geometry, GeometryQuery};
+use super::indexers::{Array, ConcreteSlice, LabelIndexer, PositionalIndexer, Slice};
 use super::indexing::{Indexing, LabelIndexing, PositionIndexing};
+use super::ops::{JoinOp, JoinOps};
 use super::set::SetOperations;
 use crate::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid};
-use moc::{moc::range::RangeMOC, qty::Hpx};
+use crate::scalar;
+use cdshealpix::nested;
+use moc::moc::range::{CellSelection, RangeMOC};
+use moc::qty::Hpx;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct CellRegion {
@@ -162,6 +167,65 @@ impl Indexing for CellRegion {
     }
 }
 
+impl GeometryQuery for CellRegion {
+    fn query(&self, geometry: &Geometry) -> (Vec<ConcreteSlice<isize>>, Self) {
+        let depth = self.depth();
+        let layer = nested::get(depth);
+
+        let geometry_moc = match geometry {
+            Geometry::Point(point) => {
+                let (lon, lat) = point.to_tuple();
+                let hash = scalar::nested::coordinates::lonlat_to_healpix(
+                    &lon,
+                    &lat,
+                    layer,
+                    &self.ellipsoid,
+                );
+
+                RangeMOC::from_fixed_depth_cells(depth, vec![hash].into_iter(), None)
+            }
+            Geometry::BoundingBox(bbox) => {
+                let (lon_min, lat_min, lon_max, lat_max) = bbox.to_tuple();
+
+                RangeMOC::from_zone(
+                    lon_min.rem_euclid(360.0).to_radians(),
+                    self.ellipsoid
+                        .latitude_geographic_to_authalic(lat_min.to_radians()),
+                    lon_max.rem_euclid(360.0).to_radians(),
+                    self.ellipsoid
+                        .latitude_geographic_to_authalic(lat_max.to_radians()),
+                    depth,
+                    CellSelection::All,
+                )
+            }
+            Geometry::Polygon(polygon) => {
+                let converted: Vec<(f64, f64)> = polygon
+                    .exterior
+                    .iter()
+                    .map(|(lon, lat)| {
+                        (
+                            lon.rem_euclid(360.0).to_radians(),
+                            self.ellipsoid
+                                .latitude_geographic_to_authalic(lat.to_radians()),
+                        )
+                    })
+                    .collect();
+
+                RangeMOC::from_polygon(&converted, false, depth, CellSelection::All)
+            }
+        };
+
+        let (slices, moc) = self.moc.join(&geometry_moc, JoinOp::Intersection);
+
+        let new_region = CellRegion {
+            moc,
+            ellipsoid: self.ellipsoid.clone(),
+        };
+
+        (slices, new_region)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -216,91 +280,183 @@ mod test {
         );
     }
 
-    #[test]
-    fn test_size() {
-        let depth: u8 = 7;
-        let region = CellRegion::full_domain(depth, named_ellipsoid("WGS84"));
+    mod properties {
+        use super::*;
 
-        assert_eq!(region.size(), 12 * 4_usize.pow(depth as u32));
+        #[test]
+        fn test_size() {
+            let depth: u8 = 7;
+            let region = CellRegion::full_domain(depth, named_ellipsoid("WGS84"));
+
+            assert_eq!(region.size(), 12 * 4_usize.pow(depth as u32));
+        }
+
+        #[test]
+        fn test_nbytes() {
+            let depth: u8 = 7;
+            let region = CellRegion::full_domain(depth, named_ellipsoid("WGS84"));
+
+            assert_eq!(region.nbytes(), 16);
+        }
     }
 
-    #[test]
-    fn test_nbytes() {
-        let depth: u8 = 7;
-        let region = CellRegion::full_domain(depth, named_ellipsoid("WGS84"));
+    mod set_ops {
+        use super::*;
 
-        assert_eq!(region.nbytes(), 16);
+        #[test]
+        fn test_set_union() {
+            let ellipsoid = named_ellipsoid("WGS84");
+
+            let first = CellRegion::from_cell_ids(
+                1,
+                vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
+                ellipsoid.clone(),
+            );
+            let second =
+                CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+
+            let actual = first.union(&second);
+            let expected = CellRegion::from_cell_ids(
+                1,
+                vec![1, 2, 3, 16, 18, 20, 21, 39, 40, 41, 42],
+                ellipsoid.clone(),
+            );
+
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn test_set_intersection() {
+            let ellipsoid = named_ellipsoid("WGS84");
+
+            let first = CellRegion::from_cell_ids(
+                1,
+                vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
+                ellipsoid.clone(),
+            );
+            let second =
+                CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+
+            let actual = first.intersection(&second);
+            let expected = CellRegion::from_cell_ids(1, vec![1, 2, 20, 41, 42], ellipsoid.clone());
+
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn test_set_difference() {
+            let ellipsoid = named_ellipsoid("WGS84");
+
+            let first = CellRegion::from_cell_ids(
+                1,
+                vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
+                ellipsoid.clone(),
+            );
+            let second =
+                CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+
+            let actual = first.difference(&second);
+            let expected = CellRegion::from_cell_ids(1, vec![3, 18, 21, 39, 40], ellipsoid.clone());
+
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn test_set_symmetric_difference() {
+            let ellipsoid = named_ellipsoid("WGS84");
+
+            let first = CellRegion::from_cell_ids(
+                1,
+                vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
+                ellipsoid.clone(),
+            );
+            let second =
+                CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+
+            let actual = first.symmetric_difference(&second);
+            let expected =
+                CellRegion::from_cell_ids(1, vec![3, 16, 18, 21, 39, 40], ellipsoid.clone());
+
+            assert_eq!(actual, expected);
+        }
     }
 
-    #[test]
-    fn test_set_union() {
-        let ellipsoid = named_ellipsoid("WGS84");
+    mod query {
+        use super::*;
+        use crate::index::geometry::{BoundingBox, Geometry, Point, Polygon};
 
-        let first = CellRegion::from_cell_ids(
-            1,
-            vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
-            ellipsoid.clone(),
-        );
-        let second = CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+        #[test]
+        fn test_query_point_full_domain() {
+            let ellipsoid = named_ellipsoid("WGS84");
+            let depth: u8 = 6;
 
-        let actual = first.union(&second);
-        let expected = CellRegion::from_cell_ids(
-            1,
-            vec![1, 2, 3, 16, 18, 20, 21, 39, 40, 41, 42],
-            ellipsoid.clone(),
-        );
+            let region = CellRegion::full_domain(depth, ellipsoid.clone());
+            let point = Geometry::Point(Point::from_tuple((0.0, 2.0)));
 
-        assert_eq!(actual, expected);
-    }
+            let (slices, subset) = region.query(&point);
 
-    #[test]
-    fn test_set_intersection() {
-        let ellipsoid = named_ellipsoid("WGS84");
+            let expected_slices = vec![ConcreteSlice {
+                start: 19459,
+                stop: 19460,
+                step: 1,
+            }];
+            let expected_subset = CellRegion::from_cell_ids(depth, vec![19459], ellipsoid);
 
-        let first = CellRegion::from_cell_ids(
-            1,
-            vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
-            ellipsoid.clone(),
-        );
-        let second = CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+            assert_eq!(slices, expected_slices);
+            assert_eq!(subset, expected_subset);
+        }
 
-        let actual = first.intersection(&second);
-        let expected = CellRegion::from_cell_ids(1, vec![1, 2, 20, 41, 42], ellipsoid.clone());
+        #[test]
+        fn test_query_bbox_full_domain() {
+            let ellipsoid = named_ellipsoid("WGS84");
+            let depth: u8 = 1;
 
-        assert_eq!(actual, expected);
-    }
+            let region = CellRegion::full_domain(depth, ellipsoid.clone());
+            let bbox = Geometry::BoundingBox(BoundingBox::from_tuple((-10.0, 0.0, 20.0, 25.0)));
 
-    #[test]
-    fn test_set_difference() {
-        let ellipsoid = named_ellipsoid("WGS84");
+            let (slices, subset) = region.query(&bbox);
 
-        let first = CellRegion::from_cell_ids(
-            1,
-            vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
-            ellipsoid.clone(),
-        );
-        let second = CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+            let expected_slices = vec![
+                ConcreteSlice {
+                    start: 2,
+                    stop: 3,
+                    step: 1,
+                },
+                ConcreteSlice {
+                    start: 17,
+                    stop: 20,
+                    step: 1,
+                },
+            ];
+            let expected_subset = CellRegion::from_cell_ids(depth, vec![2, 17, 18, 19], ellipsoid);
 
-        let actual = first.difference(&second);
-        let expected = CellRegion::from_cell_ids(1, vec![3, 18, 21, 39, 40], ellipsoid.clone());
+            assert_eq!(slices, expected_slices);
+            assert_eq!(subset, expected_subset);
+        }
 
-        assert_eq!(actual, expected);
-    }
+        #[test]
+        fn test_query_polygon_full_domain() {
+            let ellipsoid = named_ellipsoid("WGS84");
+            let depth: u8 = 1;
 
-    #[test]
-    fn test_set_symmetric_difference() {
-        let ellipsoid = named_ellipsoid("WGS84");
+            let region = CellRegion::full_domain(depth, ellipsoid.clone());
+            let polygon = Geometry::Polygon(Polygon::create(vec![
+                (-10.0, 0.0),
+                (10.0, 0.0),
+                (0.0, 25.0),
+            ]));
 
-        let first = CellRegion::from_cell_ids(
-            1,
-            vec![1, 2, 3, 18, 20, 21, 39, 40, 41, 42],
-            ellipsoid.clone(),
-        );
-        let second = CellRegion::from_cell_ids(1, vec![1, 2, 16, 20, 41, 42], ellipsoid.clone());
+            let (slices, subset) = region.query(&polygon);
 
-        let actual = first.symmetric_difference(&second);
-        let expected = CellRegion::from_cell_ids(1, vec![3, 16, 18, 21, 39, 40], ellipsoid.clone());
+            let expected_slices = vec![ConcreteSlice {
+                start: 17,
+                stop: 20,
+                step: 1,
+            }];
+            let expected_subset = CellRegion::from_cell_ids(depth, vec![17, 18, 19], ellipsoid);
 
-        assert_eq!(actual, expected);
+            assert_eq!(slices, expected_slices);
+            assert_eq!(subset, expected_subset);
+        }
     }
 }
