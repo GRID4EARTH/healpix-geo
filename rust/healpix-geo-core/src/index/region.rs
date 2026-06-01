@@ -481,4 +481,20 @@ mod test {
             assert_eq!(subset, expected_subset);
         }
     }
+
+    mod io {
+        use super::*;
+
+        #[test]
+        fn test_roundtrip() {
+            let ellipsoid = named_ellipsoid("WGS84");
+            let depth: u8 = 10;
+            let region = CellRegion::full_domain(depth, ellipsoid.clone());
+
+            let bytes = region.to_bytes();
+            let roundtripped = CellRegion::from_bytes(bytes);
+
+            assert_eq!(region, roundtripped);
+        }
+    }
 }
