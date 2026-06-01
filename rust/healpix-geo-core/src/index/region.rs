@@ -79,14 +79,13 @@ impl CellRegion {
 
         sizes
             .into_iter()
-            .map(usize::to_le_bytes)
-            .flatten()
-            .chain(moc_bytes.into_iter())
-            .chain(ellipsoid_bytes.into_iter())
+            .flat_map(usize::to_le_bytes)
+            .chain(moc_bytes)
+            .chain(ellipsoid_bytes)
             .collect()
     }
 
-    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+    pub fn from_bytes(bytes: &[u8]) -> Self {
         // extract the json_aladin and the ellipsoid data, deserialize both
         let n_bytes: usize = usize::BITS as usize / 8;
         let sizes: Vec<usize> = bytes[0..2 * n_bytes]
@@ -529,7 +528,7 @@ mod test {
             let region = CellRegion::full_domain(depth, ellipsoid.clone());
 
             let bytes = region.to_bytes();
-            let roundtripped = CellRegion::from_bytes(bytes);
+            let roundtripped = CellRegion::from_bytes(&bytes);
 
             assert_eq!(region, roundtripped);
         }
