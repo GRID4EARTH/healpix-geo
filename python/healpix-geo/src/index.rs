@@ -139,11 +139,7 @@ impl RangeMOCIndex {
     ///     The cell depth.
     #[pyo3(signature = (depth, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
     #[classmethod]
-    fn create_empty(
-        _cls: &Bound<'_, PyType>,
-        depth: u8,
-        ellipsoid: EllipsoidLike,
-    ) -> PyResult<Self> {
+    fn empty(_cls: &Bound<'_, PyType>, depth: u8, ellipsoid: EllipsoidLike) -> PyResult<Self> {
         let index = RangeMOCIndex {
             region: CellRegion::empty(depth, ellipsoid.into_ellipsoid()?),
         };
