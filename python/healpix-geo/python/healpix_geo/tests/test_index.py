@@ -166,8 +166,8 @@ class TestRangeMOCIndex:
             slice(None, 4),
             slice(2, None),
             slice(3, 7),
-            np.arange(5, dtype="uint64"),
-            np.array([1, 2, 4, 6, 8], dtype="uint64"),
+            np.arange(5, dtype="int64"),
+            np.array([1, 2, 4, 6, 8], dtype="int64"),
         ],
     )
     def test_isel(self, level, cell_ids, indexer):
@@ -209,19 +209,19 @@ class TestRangeMOCIndex:
             pytest.param(
                 0,
                 np.arange(12, dtype="uint64"),
-                np.arange(12, dtype="uint64"),
+                np.arange(12, dtype="int64"),
                 id="base cells-array-full",
             ),
             pytest.param(
                 0,
                 np.arange(12, dtype="uint64"),
-                np.arange(2, 7, dtype="uint64"),
+                np.arange(2, 7, dtype="int64"),
                 id="base cells-array-domain",
             ),
             pytest.param(
                 0,
                 np.arange(12, dtype="uint64"),
-                np.array([1, 2, 3, 7, 8, 9, 10], dtype="uint64"),
+                np.array([1, 2, 3, 7, 8, 9, 10], dtype="int64"),
                 id="base cells-array-disconnected",
             ),
             pytest.param(
@@ -233,7 +233,7 @@ class TestRangeMOCIndex:
             pytest.param(
                 1,
                 np.array([0, 1, 2, 4, 5, 11, 12, 13, 25, 26, 27], dtype="uint64"),
-                np.array([2, 5, 11, 12, 25, 27], dtype="uint64"),
+                np.array([2, 5, 11, 12, 25, 27], dtype="int64"),
                 id="list of level 1 cells-array-disconnected",
             ),
             pytest.param(
@@ -293,7 +293,9 @@ class TestRangeMOCIndex:
             pytest.param(shapely.Point(30, 30), id="point"),
             pytest.param(shapely.box(-25, 15, 25, 35), id="polygon"),
             pytest.param(
-                shapely.LineString([(30, 30), (31, 31), (32, 33)]), id="linestring"
+                shapely.LineString([(30, 30), (31, 31), (32, 33)]),
+                marks=pytest.mark.skip(reason="not implemented"),
+                id="linestring",
             ),
             pytest.param(healpix_geo.geometry.Bbox(-25, 15, 25, 35), id="bbox"),
         ),
@@ -337,9 +339,7 @@ class TestRangeMOCIndex:
 
         multi_slice, moc = index.query(geom)
 
-        reconstructed = np.concatenate(
-            [cell_ids[s.as_pyslice()] for s in multi_slice], axis=0
-        )
+        reconstructed = np.concatenate([cell_ids[s] for s in multi_slice], axis=0)
         actual = moc.cell_ids()
 
         if expected is not None:

@@ -1,9 +1,7 @@
 use numpy::{PyArray1, PyArrayDyn, PyArrayMethods};
-use std::collections::HashMap;
-// use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PySlice, PyType};
+use std::collections::HashMap;
 
 use std::cmp::PartialEq;
 
@@ -61,10 +59,12 @@ impl<'py> IndexKind<'py> {
     ) -> PyResult<Self> {
         let indexer = match positional_indexer {
             PositionalIndexer::Slice(slice) => {
-                let pyslice = PySlice::full(py);
-                pyslice.setattr(intern!(py, "start"), slice.start)?;
-                pyslice.setattr(intern!(py, "stop"), slice.stop)?;
-                pyslice.setattr(intern!(py, "step"), slice.step)?;
+                let pyslice = py
+                    .import("builtins")?
+                    .getattr("slice")?
+                    .call1((slice.start, slice.stop, slice.step))?
+                    .cast::<PySlice>()?
+                    .clone();
 
                 Self::Slice(pyslice)
             }

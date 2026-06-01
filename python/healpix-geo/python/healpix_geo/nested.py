@@ -8,7 +8,7 @@ internal_boundary = healpix_geo.nested.internal_boundary
 
 
 def create_empty(depth):
-    return RangeMOCIndex.create_empty(depth)
+    return RangeMOCIndex.empty(depth)
 
 
 def healpix_to_lonlat(ipix, depth, ellipsoid="sphere", num_threads=0):
