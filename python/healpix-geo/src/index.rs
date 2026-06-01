@@ -8,8 +8,21 @@ use std::cmp::PartialEq;
 
 use crate::ellipsoid::EllipsoidLike;
 use crate::geometry::GeometryTypes;
-use healpix_geo_core::index::{Array, CellRegion, LabelIndexer, PositionalIndexer, Slice};
+
+use healpix_geo_core::index::{
+    Array, CellRegion, ConcreteSlice, LabelIndexer, PositionalIndexer, Slice,
+};
 use healpix_geo_core::index::{GeometryQuery, Indexing, SetOperations};
+
+trait IntoPySlice {
+    fn into_pyslice<'py>(self, py: Python<'py>) -> Bound<'py, PySlice>;
+}
+
+impl IntoPySlice for ConcreteSlice<isize> {
+    fn into_pyslice<'py>(self, py: Python<'py>) -> Bound<'py, PySlice> {
+        PySlice::new(py, self.start, self.stop, self.step)
+    }
+}
 
 #[derive(FromPyObject, IntoPyObject)]
 enum IndexKind<'py> {
@@ -384,7 +397,7 @@ impl RangeMOCIndex {
         Ok((
             positional_slices
                 .into_iter()
-                .map(|x| x.into_pyslice(py)?)
+                .map(|x| x.into_pyslice(py))
                 .collect(),
             RangeMOCIndex { region: new_region },
         ))
