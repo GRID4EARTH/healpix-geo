@@ -1,6 +1,10 @@
-use pyo3::exceptions::{PyImportError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyImportError, PyNotImplementedError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyString, PyTuple, PyType};
+
+use healpix_geo_core::geometry::{
+    BoundingBox as HgBoundingBox, Geometry, Point as HgPoint, Polygon as HgPolygon,
+};
 
 /// bounding box
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
@@ -146,5 +150,42 @@ impl GeometryTypes {
                 }
             }
         }
+    }
+
+    pub fn into_geometry(self) -> PyResult<Geometry> {
+        let geom: Geometry = match self {
+            Self::Point(x, y) => {
+                let p = HgPoint::from_tuple((x, y));
+
+                Geometry::Point(p)
+            }
+            Self::LineString(_) => {
+                return Err(PyNotImplementedError::new_err(
+                    "line strings are not supported, yet",
+                ));
+            }
+            Self::Polygon(exterior, interiors) => {
+                if !interiors.is_empty() {
+                    return Err(PyNotImplementedError::new_err(
+                        "interior rings are not supported, yet",
+                    ));
+                }
+                let p = HgPolygon::create(exterior);
+
+                Geometry::Polygon(p)
+            }
+            Self::Bbox(lon_min, lat_min, lon_max, lat_max) => {
+                let bbox = HgBoundingBox {
+                    lon_min,
+                    lat_min,
+                    lon_max,
+                    lat_max,
+                };
+
+                Geometry::BoundingBox(bbox)
+            }
+        };
+
+        Ok(geom)
     }
 }
