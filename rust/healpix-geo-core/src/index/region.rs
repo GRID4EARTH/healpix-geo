@@ -29,7 +29,7 @@ impl CellRegion {
         }
     }
 
-    pub fn create_empty(depth: u8, ellipsoid: Ellipsoid) -> Self {
+    pub fn empty(depth: u8, ellipsoid: Ellipsoid) -> Self {
         Self {
             moc: RangeMOC::new_empty(depth),
             ellipsoid,
@@ -309,11 +309,11 @@ mod test {
     }
 
     #[test]
-    fn test_create_empty() {
+    fn test_empty() {
         let depth: u8 = 5;
         let ellipsoid = named_ellipsoid("WGS84");
 
-        let actual = CellRegion::create_empty(depth, ellipsoid.clone());
+        let actual = CellRegion::empty(depth, ellipsoid.clone());
 
         assert_eq!(actual.moc.n_depth_max_cells(), 0);
         assert_eq!(actual.ellipsoid, ellipsoid);
