@@ -1,4 +1,5 @@
 use numpy::{PyArray1, PyArrayDyn, PyArrayMethods};
+use std::collections::HashMap;
 // use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -9,6 +10,7 @@ use std::cmp::PartialEq;
 use crate::ellipsoid::EllipsoidLike;
 use crate::geometry::GeometryTypes;
 
+use healpix_geo_core::ellipsoid::ReferenceBody;
 use healpix_geo_core::index::{
     Array, CellRegion, ConcreteSlice, LabelIndexer, PositionalIndexer, Slice,
 };
@@ -275,6 +277,11 @@ impl RangeMOCIndex {
     #[getter]
     fn depth(&self) -> u8 {
         self.region.depth()
+    }
+
+    #[getter]
+    fn ellipsoid(&self) -> HashMap<String, f64> {
+        self.region.ellipsoid().to_mapping()
     }
 
     pub fn __setstate__(&mut self, state: &[u8]) -> PyResult<()> {

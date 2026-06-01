@@ -3,11 +3,14 @@ use geodesy::ellps::{Ellipsoid as GeodesyEllipsoid, EllipsoidBase, Latitudes};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use serde::{de, ser};
+use std::collections::HashMap;
 use std::fmt;
 
 pub trait ReferenceBody {
     fn latitude_authalic_to_geographic(&self, latitude: f64) -> f64;
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64;
+    fn to_mapping(&self) -> HashMap<String, f64>;
+    fn from_mapping(mapping: &HashMap<String, f64>) -> Self;
 }
 
 #[derive(Clone, Debug)]
@@ -28,6 +31,21 @@ impl ReferenceBody for ReferenceSphere {
 
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64 {
         latitude
+    }
+
+    fn to_mapping(&self) -> HashMap<String, f64> {
+        let mut mapping = HashMap::new();
+        mapping.insert("radius".to_string(), self.ellipsoid.semimajor_axis());
+
+        mapping
+    }
+
+    fn from_mapping(mapping: &HashMap<String, f64>) -> Self {
+        let radius = mapping.get("radius").unwrap();
+
+        let ellipsoid = GeodesyEllipsoid::new(*radius, 0.0);
+
+        Self { ellipsoid }
     }
 }
 
@@ -129,6 +147,30 @@ impl ReferenceBody for ReferenceEllipsoid {
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64 {
         self.ellipsoid
             .latitude_geographic_to_authalic(latitude, &self.coefficients)
+    }
+
+    fn to_mapping(&self) -> HashMap<String, f64> {
+        let mut mapping = HashMap::new();
+        mapping.insert(
+            "semimajor_axis".to_string(),
+            self.ellipsoid.semimajor_axis(),
+        );
+        mapping.insert("flattening".to_string(), self.ellipsoid.flattening());
+
+        mapping
+    }
+
+    fn from_mapping(mapping: &HashMap<String, f64>) -> Self {
+        let semimajor_axis = mapping.get("semimajor_axis").unwrap();
+        let flattening = mapping.get("flattening").unwrap();
+
+        let ellipsoid = GeodesyEllipsoid::new(*semimajor_axis, *flattening);
+        let coefficients = ellipsoid.coefficients_for_authalic_latitude_computations();
+
+        Self {
+            ellipsoid,
+            coefficients,
+        }
     }
 }
 
@@ -237,6 +279,21 @@ impl ReferenceBody for Ellipsoid {
         match self {
             Self::Ellipsoid(wrapped) => wrapped.latitude_geographic_to_authalic(latitude),
             Self::Sphere(wrapped) => wrapped.latitude_geographic_to_authalic(latitude),
+        }
+    }
+
+    fn to_mapping(&self) -> HashMap<String, f64> {
+        match self {
+            Self::Ellipsoid(wrapped) => wrapped.to_mapping(),
+            Self::Sphere(wrapped) => wrapped.to_mapping(),
+        }
+    }
+
+    fn from_mapping(mapping: &HashMap<String, f64>) -> Self {
+        if mapping.contains_key("flattening") {
+            Self::Ellipsoid(ReferenceEllipsoid::from_mapping(mapping))
+        } else {
+            Self::Sphere(ReferenceSphere::from_mapping(mapping))
         }
     }
 }

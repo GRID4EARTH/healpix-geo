@@ -63,6 +63,10 @@ impl CellRegion {
         12 * 4u64.pow(self.depth() as u32)
     }
 
+    pub fn ellipsoid(&self) -> &Ellipsoid {
+        &self.ellipsoid
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut moc_bytes: Vec<u8> = Default::default();
 
