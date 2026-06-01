@@ -5,7 +5,6 @@ mod execution;
 mod geometry;
 mod index;
 mod indexing_schemes;
-mod slice_objects;
 
 #[pymodule]
 mod nested {
@@ -39,12 +38,6 @@ mod zuniq {
     };
 }
 
-#[pymodule]
-mod slices {
-    #[pymodule_export]
-    use crate::slice_objects::{ConcreteSlice, MultiConcreteSlice, PositionalSlice};
-}
-
 #[pymodule(name = "geometry")]
 mod geometry_ {
     #[pymodule_export]
@@ -62,9 +55,6 @@ mod healpix_geo {
 
     #[pymodule_export]
     use super::zuniq;
-
-    #[pymodule_export]
-    use super::slices;
 
     #[pymodule_export]
     use crate::geometry_;
