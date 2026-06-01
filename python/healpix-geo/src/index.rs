@@ -60,9 +60,9 @@ impl<'py> IndexKind<'py> {
         let indexer = match positional_indexer {
             PositionalIndexer::Slice(slice) => {
                 let pyslice = PySlice::full(py);
-                pyslice.setattr(intern!(py, "start"), slice.start);
-                pyslice.setattr(intern!(py, "stop"), slice.stop);
-                pyslice.setattr(intern!(py, "step"), slice.step);
+                pyslice.setattr(intern!(py, "start"), slice.start)?;
+                pyslice.setattr(intern!(py, "stop"), slice.stop)?;
+                pyslice.setattr(intern!(py, "step"), slice.step)?;
 
                 Self::Slice(pyslice)
             }
@@ -391,7 +391,7 @@ impl RangeMOCIndex {
         py: Python<'py>,
         geometry: &Bound<'py, PyAny>,
     ) -> PyResult<(Vec<Bound<'py, PySlice>>, Self)> {
-        let geom = GeometryTypes::from_pyobject(py, geometry)?.into_geometry();
+        let geom = GeometryTypes::from_pyobject(py, geometry)?.into_geometry()?;
         let (positional_slices, new_region) = self.region.query(&geom);
 
         Ok((
