@@ -7,8 +7,12 @@ use crate::ellipsoid::{Ellipsoid, ReferenceBody};
 use crate::geometry::Geometry;
 use crate::scalar;
 use cdshealpix::nested;
+use moc::deser::json::from_json_aladin;
+use moc::moc::cell::CellMOC;
 use moc::moc::range::{CellSelection, RangeMOC};
-use moc::moc::{CellMOCIterator, RangeMOCIntoIterator, RangeMOCIterator};
+use moc::moc::{
+    CellMOCIntoIterator, CellMOCIterator, HasMaxDepth, RangeMOCIntoIterator, RangeMOCIterator,
+};
 use moc::qty::Hpx;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -60,22 +64,55 @@ impl CellRegion {
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut serialized: Vec<u8> = Default::default();
+        let mut moc_bytes: Vec<u8> = Default::default();
 
         self.moc
             .clone()
             .into_range_moc_iter()
             .cells()
-            .to_json_aladin(None, &mut serialized)
+            .to_json_aladin(None, &mut moc_bytes)
             .expect("failed to serialize the moc");
 
         // serde_json: serialize ellipsoid, chain both together
+        let ellipsoid_bytes = serde_json::to_vec(&self.ellipsoid).unwrap();
+        let sizes: Vec<usize> = vec![moc_bytes.len(), ellipsoid_bytes.len()];
 
-        serialized
+        sizes
+            .into_iter()
+            .map(usize::to_le_bytes)
+            .flatten()
+            .chain(moc_bytes.into_iter())
+            .chain(ellipsoid_bytes.into_iter())
+            .collect()
     }
 
-    pub fn from_bytes(_bytes: Vec<u8>) {
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
         // extract the json_aladin and the ellipsoid data, deserialize both
+        let n_bytes: usize = usize::BITS as usize / 8;
+        let sizes: Vec<usize> = bytes[0..2 * n_bytes]
+            .chunks(n_bytes)
+            .map(|c| usize::from_le_bytes(c.try_into().unwrap()))
+            .collect();
+
+        let cell_moc: CellMOC<u64, Hpx<u64>> = from_json_aladin(
+            std::str::from_utf8(&bytes[2 * n_bytes..2 * n_bytes + sizes[0]]).unwrap(),
+        )
+        .unwrap();
+        let reconstructed_moc = RangeMOC::from_cells(
+            cell_moc.depth_max(),
+            cell_moc
+                .into_cell_moc_iter()
+                .map(|c| -> (u8, u64) { (c.depth, c.idx) }),
+            None,
+        );
+
+        let ellipsoid: Ellipsoid =
+            serde_json::from_slice(&bytes[2 * n_bytes + sizes[0]..]).unwrap();
+
+        Self {
+            moc: reconstructed_moc,
+            ellipsoid,
+        }
     }
 }
 

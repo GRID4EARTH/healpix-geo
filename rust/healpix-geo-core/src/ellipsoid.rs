@@ -54,6 +54,7 @@ impl<'de> de::Deserialize<'de> for ReferenceSphere {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "lowercase")]
         enum Field {
+            #[serde(rename = "radius")]
             Radius,
         }
 
@@ -162,7 +163,9 @@ impl<'de> de::Deserialize<'de> for ReferenceEllipsoid {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "lowercase")]
         enum Field {
+            #[serde(rename = "semimajor_axis")]
             SemimajorAxis,
+            #[serde(rename = "flattening")]
             Flattening,
         }
 
