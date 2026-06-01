@@ -117,6 +117,7 @@ impl RangeMOCIndex {
     /// ----------
     /// depth : int
     ///     The cell depth.
+    #[pyo3(signature = (depth, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
     #[classmethod]
     fn full_domain(
         _cls: &Bound<'_, PyType>,
@@ -136,6 +137,7 @@ impl RangeMOCIndex {
     /// ----------
     /// depth : int
     ///     The cell depth.
+    #[pyo3(signature = (depth, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
     #[classmethod]
     fn create_empty(
         _cls: &Bound<'_, PyType>,
@@ -157,6 +159,7 @@ impl RangeMOCIndex {
     ///     The cell depth.
     /// cell_ids : numpy.ndarray
     ///     The cells to construct the the index from.
+    #[pyo3(signature = (depth, cell_ids, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
     #[classmethod]
     fn from_cell_ids<'a>(
         _cls: &Bound<'a, PyType>,
