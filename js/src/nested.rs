@@ -13,7 +13,7 @@ use crate::geometry::spherical_vertex;
 /// numbering within a base-resolution pixel — into the cell index at `depth`.
 /// Note the parameter order: the function takes `(depth, j, i)` but interleaves
 /// them as `ij2h(i, j)`.
-#[wasm_bindgen(js_name = bitCombinedNested)]
+#[wasm_bindgen(js_name = bitCombineNested)]
 pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
     let zoc = healpix::nested::zordercurve::get_zoc(depth);
 
