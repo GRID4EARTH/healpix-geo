@@ -153,7 +153,7 @@ depends-on = [
 ]
 
 [environments]
-dev = ["tests", "py313", "dev"]
+default = ["tests", "py313", "dev"]
 py311 = ["py311"]
 py312 = ["py312"]
 py313 = ["py313"]
