@@ -1,5 +1,6 @@
 use geodesy::authoring::FourierCoefficients;
-use geodesy::ellps::{Ellipsoid as GeodesyEllipsoid, EllipsoidBase, Latitudes};
+use geodesy::ellps::{Ellipsoid as GeodesyEllipsoid, EllipsoidBase, GeoCart, Latitudes};
+use geodesy::prelude::{Coor2D, Coor3D, CoordinateTuple};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use serde::{de, ser};
@@ -9,8 +10,21 @@ use std::fmt;
 pub trait ReferenceBody {
     fn latitude_authalic_to_geographic(&self, latitude: f64) -> f64;
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64;
+
     fn to_mapping(&self) -> HashMap<String, f64>;
     fn from_mapping(mapping: &HashMap<String, f64>) -> Self;
+
+    fn ellipsoid(&self) -> &GeodesyEllipsoid;
+
+    fn geographic_to_cartesian(&self, point: &(f64, f64)) -> (f64, f64, f64) {
+        let p = Coor2D::gis(point.0, point.1);
+        self.ellipsoid().cartesian(&p).xyz()
+    }
+
+    fn cartesian_to_geographic(&self, point: &(f64, f64, f64)) -> (f64, f64) {
+        let p = Coor3D::raw(point.0, point.1, point.2);
+        self.ellipsoid().geographic(&p).xy()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -31,6 +45,10 @@ impl ReferenceBody for ReferenceSphere {
 
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64 {
         latitude
+    }
+
+    fn ellipsoid(&self) -> &GeodesyEllipsoid {
+        &self.ellipsoid
     }
 
     fn to_mapping(&self) -> HashMap<String, f64> {
@@ -147,6 +165,10 @@ impl ReferenceBody for ReferenceEllipsoid {
     fn latitude_geographic_to_authalic(&self, latitude: f64) -> f64 {
         self.ellipsoid
             .latitude_geographic_to_authalic(latitude, &self.coefficients)
+    }
+
+    fn ellipsoid(&self) -> &GeodesyEllipsoid {
+        &self.ellipsoid
     }
 
     fn to_mapping(&self) -> HashMap<String, f64> {
@@ -279,6 +301,13 @@ impl ReferenceBody for Ellipsoid {
         match self {
             Self::Ellipsoid(wrapped) => wrapped.latitude_geographic_to_authalic(latitude),
             Self::Sphere(wrapped) => wrapped.latitude_geographic_to_authalic(latitude),
+        }
+    }
+
+    fn ellipsoid(&self) -> &GeodesyEllipsoid {
+        match self {
+            Self::Ellipsoid(wrapped) => wrapped.ellipsoid(),
+            Self::Sphere(wrapped) => wrapped.ellipsoid(),
         }
     }
 
