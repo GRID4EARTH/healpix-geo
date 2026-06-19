@@ -53,6 +53,36 @@ pub fn vertices(
     result
 }
 
+pub fn healpix_to_cartesian(
+    ipix: &[u64],
+    layer: &Layer,
+    ellipsoid: &Ellipsoid,
+    nthreads: usize,
+) -> Vec<(f64, f64, f64)> {
+    let mut result = Vec::<(f64, f64, f64)>::with_capacity(ipix.len());
+
+    maybe_parallelize!(nthreads, ipix, result, |hash| {
+        scalar::healpix_to_cartesian(hash, layer, ellipsoid)
+    });
+
+    result
+}
+
+pub fn cartesian_to_healpix(
+    coords: &[(f64, f64, f64)],
+    layer: &Layer,
+    ellipsoid: &Ellipsoid,
+    nthreads: usize,
+) -> Vec<u64> {
+    let mut result = Vec::<u64>::with_capacity(coords.len());
+
+    maybe_parallelize!(nthreads, coords, result, |(x, y, z)| {
+        scalar::cartesian_to_healpix(x, y, z, layer, ellipsoid)
+    });
+
+    result
+}
+
 pub fn bilinear_interpolation(
     coords: &[(f64, f64)],
     layer: &Layer,
