@@ -107,7 +107,8 @@ mxp = marray.masked_namespace(np)
             3,
             "sphere",
             mxp.asarray(
-                np.array([[310, 311, 316, 317], [541, 328, 543, 330]]), mask=False
+                np.array([[240, 209, 208, 176], [566, 535, 534, 502]], dtype="uint64"),
+                mask=False,
             ),
             mxp.asarray(
                 np.array(
@@ -138,7 +139,24 @@ mxp = marray.masked_namespace(np)
             3,
             "sphere",
             mxp.asarray(
-                np.array([[310, 311, 316, 317], [541, 328, 543, 330]]), mask=False
+                np.array(
+                    [
+                        [
+                            2796735368597078016,
+                            2805742567851819008,
+                            2850778564125523968,
+                            2859785763380264960,
+                        ],
+                        [
+                            4877398396442247168,
+                            2958864955182415872,
+                            4895412794951729152,
+                            2976879353691897856,
+                        ],
+                    ],
+                    dtype="uint64",
+                ),
+                mask=False,
             ),
             mxp.asarray(
                 np.array(
