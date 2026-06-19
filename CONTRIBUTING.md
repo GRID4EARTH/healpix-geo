@@ -4,8 +4,8 @@ Thank you for your interest in contributing! This project is licensed under the 
 
 ## How to Contribute
 
-- Report bugs or request features via [GitHub Issues](https://github.com/EOPF-DGGS/healpix-geo/issues).
-- For all non-trivial contributions, please start a discussion with the maintainers by opening an [issue](https://github.com/EOPF-DGGS/healpix-geo/issues/new) to ensure alignment with project goals and future plans.
+- Report bugs or request features via [GitHub Issues](https://github.com/GRID4EARTH/healpix-geo/issues).
+- For all non-trivial contributions, please start a discussion with the maintainers by opening an [issue](https://github.com/GRID4EARTH/healpix-geo/issues/new) to ensure alignment with project goals and future plans.
 
 ### Discussion Before Submitting
 

@@ -60,7 +60,7 @@ Center of a cell
     The geometric center of a HEALPix cell. Coordinates returned by `healpix_to_lonlat`.
 ```
 
-## Ellipsoids et geodesy
+## Ellipsoids and geodesy
 
 ```{glossary}
 Ellipsoid

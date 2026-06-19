@@ -28,3 +28,15 @@ Hierarchy and neighbourhood
    :toctree: ../generated/
 
    kth_neighbourhood
+
+Coverage requests
+-----------------
+
+.. autosummary::
+   :toctree: ../generated/
+
+   box_coverage
+   zone_coverage
+   polygon_coverage
+   cone_coverage
+   elliptical_cone_coverage

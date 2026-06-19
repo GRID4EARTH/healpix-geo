@@ -109,7 +109,7 @@ def lonlat_to_healpix(longitude, latitude, depth, ellipsoid="sphere", num_thread
     )
 
 
-def vertices(ipix, depth, ellipsoid, num_threads=0):
+def vertices(ipix, depth, ellipsoid, step=1, num_threads=0):
     """Get the longitudes and latitudes of the vertices of some HEALPix cells at a given depth.
 
     This method returns the 4 vertices of each cell in `ipix`.
@@ -123,6 +123,11 @@ def vertices(ipix, depth, ellipsoid, num_threads=0):
     ellipsoid : str, default: "sphere"
         Reference ellipsoid to evaluate healpix on. If ``"sphere"``, this will return
         the same result as :py:func:`cdshealpix.ring.vertices`.
+    step : int, default: 1
+        The number of vertices returned per HEALPix side. By default it is set to 1 meaning that
+        it will only return the vertices of the cell. 2 means that it will return the vertices of
+        the cell plus one more vertex per edge (the center of the edge). More generally, the number
+        of vertices returned is ``4 * step``.
     num_threads : int, optional
         Specifies the number of threads to use for the computation. Default to 0 means
         it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
@@ -169,7 +174,7 @@ def vertices(ipix, depth, ellipsoid, num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.vertices(depth, ipix, ellipsoid, num_threads)
+    return healpix_geo.ring.vertices(depth, ipix, ellipsoid, step, num_threads)
 
 
 def bilinear_interpolation(
@@ -383,3 +388,214 @@ def angular_distances(from_, to_, depth, num_threads=0):
     )
 
     return np.where(mask, np.reshape(distances, to_.shape), np.nan)
+
+
+def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):
+    """Search the cells covering the given bounding box
+
+    Parameters
+    ----------
+    bbox : tuple of float
+        The 2D bounding box to rasterize.
+    depth : int
+        The maximum depth of the cells to be returned.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
+        spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.zone_search` followed by a translation to the ring
+        scheme.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    depths : numpy.ndarray
+        The depths of the cell ids. If ``flat is True``, these will all have the same
+        value.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the bounding box.
+    """
+    _check_depth(depth)
+
+    return healpix_geo.ring.zone_coverage(depth, bbox, ellipsoid=ellipsoid, flat=flat)
+
+
+def box_coverage(center, size, angle, depth, *, ellipsoid="sphere", flat=True):
+    """Search the cells covering the given box.
+
+    Parameters
+    ----------
+    center : numpy.ndarray or tuple of float
+        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    size : numpy.ndarray or tuple of float
+        The size of the box, in degree.
+    angle : float
+        The angle by which the box is rotated, in degree.
+    depth : int
+        The maximum depth of the cells to be returned.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
+        spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.box_search` followed by a translation to the ring
+        scheme.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    depths : numpy.ndarray
+        The depths of the cell ids. If ``flat is True``, these will all have the same
+        value.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the box.
+    """
+    _check_depth(depth)
+
+    if not isinstance(center, tuple):
+        center = tuple(center)
+    if not isinstance(size, tuple):
+        size = tuple(size)
+
+    return healpix_geo.ring.box_coverage(
+        depth, center, size, angle, ellipsoid=ellipsoid, flat=flat
+    )
+
+
+def polygon_coverage(vertices, depth, *, ellipsoid="sphere", flat=True):
+    """Search the cells covering the given polygon.
+
+    Parameters
+    ----------
+    vertices : numpy.ndarray
+        The vertices of the polygon without holes. Must be an array of shape ``(n, 2)``.
+    depth : int
+        The maximum depth of the cells to be returned.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
+        spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.polygon_search` followed by a translation to the ring
+        scheme.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    depths : numpy.ndarray
+        The depths of the cell ids. If ``flat is True``, these will all have the same
+        value.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the polygon.
+    """
+    _check_depth(depth)
+
+    return healpix_geo.ring.polygon_coverage(
+        depth, vertices, ellipsoid=ellipsoid, flat=flat
+    )
+
+
+def cone_coverage(
+    center, radius, depth, *, delta_depth=0, ellipsoid="sphere", flat=True
+):
+    """Search the cells covering the given cone
+
+    Cone in this case means a circle on the surface of the reference ellipsoid.
+
+    Parameters
+    ----------
+    center : numpy.ndarray or tuple of float
+        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    radius : float
+        The radius of the cone, in degree.
+    depth : int
+        The maximum depth of the cells to be returned.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
+        spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.cone_search` followed by a translation to the ring
+        scheme.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    depths : numpy.ndarray
+        The depths of the cell ids. If ``flat is True``, these will all have the same
+        value.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the circle.
+    """
+    _check_depth(depth)
+
+    if not isinstance(center, tuple):
+        center = tuple(center)
+
+    return healpix_geo.ring.cone_coverage(
+        depth, center, radius, delta_depth=delta_depth, ellipsoid=ellipsoid, flat=flat
+    )
+
+
+def elliptical_cone_coverage(
+    center,
+    ellipse_geometry,
+    position_angle,
+    depth,
+    *,
+    delta_depth=0,
+    ellipsoid="sphere",
+    flat=True,
+):
+    """Search the cells covering the given elliptical cone.
+
+    Elliptical cone in this case refers to an ellipse on the surface of the reference ellipsoid.
+
+    Parameters
+    ----------
+    center : numpy.ndarray or tuple of float
+        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    ellipse_geometry : numpy.ndarray or tuple of float
+        The semimajor and semimajor axis, as a 2-sized array or as a 2-tuple of float.
+    position_angle : float
+        The orientation of the ellipse.
+    depth : int
+        The maximum depth of the cells to be returned.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
+        spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.polygon_search` followed by a translation to the ring
+        scheme.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    depths : numpy.ndarray
+        The depths of the cell ids. If ``flat is True``, these will all have the same value.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the ellipse.
+    """
+    _check_depth(depth)
+
+    if not isinstance(center, tuple):
+        center = tuple(center)
+    if not isinstance(ellipse_geometry, tuple):
+        ellipse_geometry = tuple(ellipse_geometry)
+
+    return healpix_geo.ring.elliptical_cone_coverage(
+        depth,
+        center,
+        ellipse_geometry,
+        position_angle,
+        delta_depth=delta_depth,
+        ellipsoid=ellipsoid,
+        flat=flat,
+    )

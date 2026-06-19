@@ -129,7 +129,7 @@ def lonlat_to_healpix(
 
 
 def vertices(
-    ipix: npt.NDArray[np.uint64], grid: Grid, *, num_threads: int = 0
+    ipix: npt.NDArray[np.uint64], grid: Grid, *, step: int = 1, num_threads: int = 0
 ) -> (npt.NDArray[np.float64], npt.NDArray[np.float64]):
     """Get the longitudes and latitudes of the vertices of some HEALPix cells.
 
@@ -141,6 +141,11 @@ def vertices(
         The HEALPix cell indexes given as a `np.uint64` numpy array.
     grid : Grid
         The definition of the HEALPix grid.
+    step : int, default: 1
+        The number of vertices returned per HEALPix side. By default it is set to 1 meaning that
+        it will only return the vertices of the cell. 2 means that it will return the vertices of
+        the cell plus one more vertex per edge (the center of the edge). More generally, the number
+        of vertices returned is ``4 * step``.
     num_threads : int, optional
         Specifies the number of threads to use for the computation. Default to 0 means
         it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
@@ -154,12 +159,20 @@ def vertices(
 
     Examples
     --------
+    Imports
+
     >>> import healpix_geo.auto as hg
     >>> import numpy as np
+
+    Set up the grid and cell ids
+
     >>> ipix = np.array([42, 6, 10])
     >>> grid = hg.Grid(level=12, indexing_scheme="nested", ellipsoid="sphere")
     >>> grid
     Grid(level=12, indexing_scheme='nested', ellipsoid='sphere')
+
+    Compute just the vertices:
+
     >>> lon, lat = hg.vertices(ipix, grid)
     >>> np.stack([lon, lat], axis=-1)
     array([[[4.49230957e+01, 6.52784088e-02],
@@ -176,11 +189,66 @@ def vertices(
             [4.49780273e+01, 3.73019424e-02],
             [4.49670410e+01, 4.66274299e-02],
             [4.49560547e+01, 3.73019424e-02]]])
+
+    Subsample the edges to have 3 additional points per edge:
+
+    >>> lon, lat = hg.vertices(ipix, grid, step=4)
+    >>> np.stack([lon, lat], axis=-1)
+    array([[[4.49230957e+01, 6.52784088e-02],
+            [4.49258423e+01, 6.76097816e-02],
+            [4.49285889e+01, 6.99411545e-02],
+            [4.49313354e+01, 7.22725275e-02],
+            [4.49340820e+01, 7.46039007e-02],
+            [4.49313354e+01, 7.69352739e-02],
+            [4.49285889e+01, 7.92666473e-02],
+            [4.49258423e+01, 8.15980209e-02],
+            [4.49230957e+01, 8.39293945e-02],
+            [4.49203491e+01, 8.15980209e-02],
+            [4.49176025e+01, 7.92666473e-02],
+            [4.49148560e+01, 7.69352739e-02],
+            [4.49121094e+01, 7.46039007e-02],
+            [4.49148560e+01, 7.22725275e-02],
+            [4.49176025e+01, 6.99411545e-02],
+            [4.49203491e+01, 6.76097816e-02]],
+    <BLANKLINE>
+           [[4.50109863e+01, 2.79764560e-02],
+            [4.50137329e+01, 3.03078275e-02],
+            [4.50164795e+01, 3.26391991e-02],
+            [4.50192261e+01, 3.49705707e-02],
+            [4.50219727e+01, 3.73019424e-02],
+            [4.50192261e+01, 3.96333142e-02],
+            [4.50164795e+01, 4.19646860e-02],
+            [4.50137329e+01, 4.42960579e-02],
+            [4.50109863e+01, 4.66274299e-02],
+            [4.50082397e+01, 4.42960579e-02],
+            [4.50054932e+01, 4.19646860e-02],
+            [4.50027466e+01, 3.96333142e-02],
+            [4.50000000e+01, 3.73019424e-02],
+            [4.50027466e+01, 3.49705707e-02],
+            [4.50054932e+01, 3.26391991e-02],
+            [4.50082397e+01, 3.03078275e-02]],
+    <BLANKLINE>
+           [[4.49670410e+01, 2.79764560e-02],
+            [4.49697876e+01, 3.03078275e-02],
+            [4.49725342e+01, 3.26391991e-02],
+            [4.49752808e+01, 3.49705707e-02],
+            [4.49780273e+01, 3.73019424e-02],
+            [4.49752808e+01, 3.96333142e-02],
+            [4.49725342e+01, 4.19646860e-02],
+            [4.49697876e+01, 4.42960579e-02],
+            [4.49670410e+01, 4.66274299e-02],
+            [4.49642944e+01, 4.42960579e-02],
+            [4.49615479e+01, 4.19646860e-02],
+            [4.49588013e+01, 3.96333142e-02],
+            [4.49560547e+01, 3.73019424e-02],
+            [4.49588013e+01, 3.49705707e-02],
+            [4.49615479e+01, 3.26391991e-02],
+            [4.49642944e+01, 3.03078275e-02]]])
     """
     module = _dispatch_module(grid.indexing_scheme)
     params = grid._as_params()
 
-    return module.vertices(ipix, num_threads=num_threads, **params)
+    return module.vertices(ipix, num_threads=num_threads, step=step, **params)
 
 
 def kth_neighbourhood(
@@ -258,3 +326,215 @@ def kth_neighbourhood(
         params["depth"] = grid.level
 
     return module.kth_neighbourhood(ipix, ring=ring, num_threads=num_threads, **params)
+
+
+def zone_coverage(
+    bbox: tuple[float, float, float, float], grid: Grid, *, flat: bool = True
+) -> (
+    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
+    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+):
+    """Search the cells covering the given bounding box
+
+    Parameters
+    ----------
+    bbox : tuple of float
+        The 2D bounding box to rasterize.
+    grid : Grid
+        The definition of the HEALPix grid.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    levels : numpy.ndarray
+        The refinement levels of the cell ids. If ``flat is True``, these will all have the
+        same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the bounding box.
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    return module.zone_coverage(
+        bbox, depth=grid.level, ellipsoid=grid.ellipsoid, flat=flat
+    )
+
+
+def box_coverage(
+    center: tuple[float, float] | npt.NDArray[np.float64],
+    size: tuple[float, float] | npt.NDArray[np.float64],
+    angle: float,
+    grid: Grid,
+    *,
+    flat: bool = True,
+) -> (
+    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
+    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+):
+    """Search the cells covering the given box.
+
+    Parameters
+    ----------
+    center : numpy.ndarray or tuple of float
+        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    size : numpy.ndarray or tuple of float
+        The size of the box, in degree.
+    angle : float
+        The angle by which the box is rotated, in degree.
+    grid : Grid
+        The definition of the HEALPix grid.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    levels : numpy.ndarray
+        The refinement levels of the cell ids. If ``flat is True``, these will all have the
+        same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the box.
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    return module.box_coverage(
+        center=center,
+        size=size,
+        angle=angle,
+        depth=grid.level,
+        ellipsoid=grid.ellipsoid,
+        flat=flat,
+    )
+
+
+def polygon_coverage(
+    vertices: npt.NDArray[np.float64], grid: Grid, *, flat: bool = True
+) -> (
+    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
+    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+):
+    """Search the cells covering the given polygon.
+
+    Parameters
+    ----------
+    vertices : numpy.ndarray
+        The vertices of the polygon without holes. Must be an array of shape ``(n, 2)``.
+    grid : Grid
+        The definition of the HEALPix grid.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    levels : numpy.ndarray
+        The refinement levels of the cell ids. If ``flat is True``, these will all have the
+        same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the polygon.
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    return module.polygon_coverage(
+        vertices=vertices, depth=grid.level, ellipsoid=grid.ellipsoid, flat=flat
+    )
+
+
+def cone_coverage(
+    center: tuple[float, float] | npt.NDArray[np.float64],
+    radius: float,
+    grid: Grid,
+    *,
+    delta_level: int = 0,
+    flat: bool = True,
+) -> (
+    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
+    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+):
+    """Search the cells covering the given cone
+
+    Cone in this case means a circle on the surface of the reference ellipsoid.
+
+    Parameters
+    ----------
+    center : numpy.ndarray or tuple of float
+        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    radius : float
+        The radius of the cone, in degree.
+    grid : Grid
+        The definition of the HEALPix grid.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    levels : numpy.ndarray
+        The refinement levels of the cell ids. If ``flat is True``, these will all have the
+        same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the circle.
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    return module.cone_coverage(
+        center=center,
+        radius=radius,
+        depth=grid.level,
+        ellipsoid=grid.ellipsoid,
+        delta_depth=delta_level,
+        flat=flat,
+    )
+
+
+def elliptical_cone_coverage(
+    center,
+    ellipse_geometry,
+    position_angle,
+    grid,
+    *,
+    delta_level=0,
+    ellipsoid="sphere",
+    flat=True,
+) -> (
+    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
+    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+):
+    """Search the cells covering the given elliptical cone.
+
+    Elliptical cone in this case refers to an ellipse on the surface of the reference ellipsoid.
+
+    Parameters
+    ----------
+    center : numpy.ndarray or tuple of float
+        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    ellipse_geometry : numpy.ndarray or tuple of float
+        The semimajor and semimajor axis, as a 2-sized array or as a 2-tuple of float.
+    position_angle : float
+        The orientation of the ellipse.
+    grid : Grid
+        The definition of the HEALPix grid.
+    flat : bool, default: True
+        If ``True``, the cells returned will all be at the passed depth.
+
+    Returns
+    -------
+    cell_ids : numpy.ndarray
+        The rasterized cell ids.
+    levels : numpy.ndarray
+        The refinement levels of the cell ids. If ``flat is True``, these will all have the
+        same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray
+        Boolean array marking whether the cells are fully covered by the ellipse.
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    return module.elliptical_cone_coverage(
+        center=center,
+        ellipse_geometry=ellipse_geometry,
+        position_angle=position_angle,
+        depth=grid.level,
+        ellipsoid=grid.ellipsoid,
+        delta_depth=delta_level,
+        flat=flat,
+    )

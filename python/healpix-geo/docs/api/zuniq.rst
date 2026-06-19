@@ -31,9 +31,26 @@ Coordinates Conversions
    vertices
 
 Hierarchy and neighbourhood
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
    :toctree: ../generated/
 
    kth_neighbourhood
+
+Coverage
+~~~~~~~~
+
+Find all cells which intersect a region.
+
+.. autosummary::
+   :toctree: ../generated/
+
+   box_coverage
+   zone_coverage
+   polygon_coverage
+   cone_coverage
+   elliptical_cone_coverage
+
+.. seealso::
+   Complete tutorial : :doc:`../tutorials/coverage_queries`

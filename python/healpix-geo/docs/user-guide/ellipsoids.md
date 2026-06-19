@@ -10,4 +10,4 @@ For more details, see:
 
 - {doc}`../reference-system` - Complete Reference Systems
 - {doc}`../tutorials/ellipsoid_basics` - Tutorial on Ellipsoids
-- {doc}`../terminology` - Glossary
+- {doc}`../healpix/ellipsoidal-extension` - Extension of the HEALPix pixelation scheme to ellipsoidal Earth models

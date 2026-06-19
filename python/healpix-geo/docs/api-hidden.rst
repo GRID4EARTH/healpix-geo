@@ -45,3 +45,7 @@
 
    healpix_geo.slices.MultiConcreteSlice.size
    healpix_geo.slices.MultiConcreteSlice.slices
+
+   healpix_geo.auto.Grid.level
+   healpix_geo.auto.Grid.indexing_scheme
+   healpix_geo.auto.Grid.ellipsoid

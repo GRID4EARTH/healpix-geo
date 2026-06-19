@@ -94,10 +94,12 @@ pub(crate) fn lonlat_to_healpix<'py>(
 
 #[allow(clippy::type_complexity)]
 #[pyfunction]
+#[pyo3(signature = (ipix, ellipsoid_like, step=1, nthreads=0))]
 pub(crate) fn vertices<'py>(
     py: Python<'py>,
     ipix: &Bound<'py, PyArrayDyn<u64>>,
     ellipsoid_like: EllipsoidLike,
+    step: usize,
     nthreads: u16,
 ) -> PyResult<(Bound<'py, PyArrayDyn<f64>>, Bound<'py, PyArrayDyn<f64>>)> {
     let ellipsoid = ellipsoid_like.into_ellipsoid()?;
@@ -106,7 +108,7 @@ pub(crate) fn vertices<'py>(
     let ipix_ = ipix.readonly();
 
     let vertices: Vec<Vec<(f64, f64)>> =
-        vectorized::vertices(ipix_.as_slice()?, &ellipsoid, nthreads as usize);
+        vectorized::vertices(ipix_.as_slice()?, &ellipsoid, step, nthreads as usize);
 
     let (lon, lat): (Vec<Vec<f64>>, Vec<Vec<f64>>) = vertices
         .into_iter()

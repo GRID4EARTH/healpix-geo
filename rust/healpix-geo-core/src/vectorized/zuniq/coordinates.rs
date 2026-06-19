@@ -32,11 +32,16 @@ pub fn lonlat_to_healpix(
     result
 }
 
-pub fn vertices(ipix: &[u64], ellipsoid: &Ellipsoid, nthreads: usize) -> Vec<Vec<(f64, f64)>> {
+pub fn vertices(
+    ipix: &[u64],
+    ellipsoid: &Ellipsoid,
+    step: usize,
+    nthreads: usize,
+) -> Vec<Vec<(f64, f64)>> {
     let mut result = Vec::<Vec<(f64, f64)>>::with_capacity(ipix.len());
 
     maybe_parallelize!(nthreads, ipix, result, |hash| scalar::vertices(
-        hash, ellipsoid
+        hash, ellipsoid, &step
     ));
 
     result

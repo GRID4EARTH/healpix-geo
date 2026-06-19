@@ -1,6 +1,7 @@
 use crate::ellipsoid::{Ellipsoid, ReferenceBody};
 
 use cdshealpix as healpix;
+use cdshealpix::compass_point::Cardinal;
 use cdshealpix::nested::Layer;
 
 pub fn healpix_to_lonlat(hash: &u64, nside: &u32, ellipsoid: &Ellipsoid) -> (f64, f64) {
@@ -21,12 +22,20 @@ pub fn lonlat_to_healpix(lon: &f64, lat: &f64, nside: &u32, ellipsoid: &Ellipsoi
     healpix::ring::hash(*nside, lon_, lat_)
 }
 
-pub fn vertices(hash: &u64, nside: &u32, ellipsoid: &Ellipsoid) -> Vec<(f64, f64)> {
-    let vertices = healpix::ring::vertices(*nside, *hash);
+pub fn vertices(hash: &u64, nside: &u32, ellipsoid: &Ellipsoid, step: &usize) -> Vec<(f64, f64)> {
+    let vertices: Vec<(f64, f64)> = if *step == 1 {
+        healpix::ring::vertices(*nside, *hash).into()
+    } else {
+        let layer = healpix::nested::get(healpix::depth(*nside));
+
+        layer
+            .path_along_cell_edge(layer.from_ring(*hash), &Cardinal::S, false, *step as u32)
+            .into()
+    };
 
     vertices
         .into_iter()
-        .map(|(lon, lat)| {
+        .map(|(lon, lat): (f64, f64)| {
             (
                 lon.to_degrees().rem_euclid(360.0),
                 ellipsoid.latitude_authalic_to_geographic(lat).to_degrees(),

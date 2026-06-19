@@ -41,12 +41,13 @@ pub fn vertices(
     ipix: &[u64],
     layer: &Layer,
     ellipsoid: &Ellipsoid,
+    step: usize,
     nthreads: usize,
 ) -> Vec<Vec<(f64, f64)>> {
     let mut result = Vec::<Vec<(f64, f64)>>::with_capacity(ipix.len());
 
     maybe_parallelize!(nthreads, ipix, result, |hash| scalar::vertices(
-        hash, layer, ellipsoid
+        hash, layer, ellipsoid, &step
     ));
 
     result

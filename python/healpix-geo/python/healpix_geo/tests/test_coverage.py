@@ -1,13 +1,26 @@
 import numpy as np
 import pytest
 
-import healpix_geo.nested as healpix
+import healpix_geo
 
 
 @pytest.mark.parametrize(
-    ["flat", "expected_ids", "expected_depths", "expected_coverage"],
+    [
+        "zone",
+        "indexing_scheme",
+        "depth",
+        "ellipsoid",
+        "flat",
+        "expected_ids",
+        "expected_depths",
+        "expected_coverage",
+    ],
     (
         pytest.param(
+            (0.0, 0.0, 90.0, 90.0),
+            "nested",
+            2,
+            "sphere",
             False,
             np.array(
                 [
@@ -98,8 +111,13 @@ import healpix_geo.nested as healpix
                     False,
                 ]
             ),
+            id="nested-2-compacted",
         ),
         pytest.param(
+            (0.0, 0.0, 90.0, 90.0),
+            "nested",
+            2,
+            "sphere",
             True,
             np.array(
                 [
@@ -199,95 +217,648 @@ import healpix_geo.nested as healpix
                     False,
                 ]
             ),
-            id="flat",
+            id="nested-2-flat",
+        ),
+        pytest.param(
+            (20.0, 10.0, 50.0, 40.0),
+            "ring",
+            4,
+            "WGS84",
+            False,
+            np.array(
+                [
+                    178,
+                    179,
+                    211,
+                    242,
+                    243,
+                    483,
+                    484,
+                    485,
+                    486,
+                    487,
+                    488,
+                    548,
+                    549,
+                    550,
+                    551,
+                    552,
+                    553,
+                    611,
+                    612,
+                    613,
+                    614,
+                    615,
+                    616,
+                    676,
+                    678,
+                    680,
+                    681,
+                    739,
+                    744,
+                    804,
+                    808,
+                    809,
+                    867,
+                    868,
+                    871,
+                    872,
+                    932,
+                    936,
+                    937,
+                    995,
+                    1000,
+                    1060,
+                    1062,
+                    1064,
+                    1065,
+                    1123,
+                    1124,
+                    1125,
+                    1126,
+                    1127,
+                    1128,
+                    1188,
+                    1189,
+                    1190,
+                    1191,
+                    1192,
+                    1193,
+                    1251,
+                    1252,
+                    1253,
+                    1254,
+                    1255,
+                    1256,
+                ],
+                dtype="uint64",
+            ),
+            np.array(
+                [
+                    3,
+                    3,
+                    3,
+                    3,
+                    3,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                    4,
+                ],
+                dtype="uint8",
+            ),
+            np.array(
+                [
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    True,
+                    True,
+                    True,
+                    False,
+                    False,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    False,
+                    False,
+                    True,
+                    True,
+                    False,
+                    False,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    True,
+                    False,
+                    False,
+                    True,
+                    True,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                ],
+                dtype="bool",
+            ),
+            id="ring-4-compacted",
+        ),
+        pytest.param(
+            (20.0, 10.0, 50.0, 40.0),
+            "ring",
+            2,
+            "WGS84",
+            True,
+            np.array([24, 25, 26, 41, 42, 56, 57, 58, 73, 74], dtype="uint64"),
+            np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2], dtype="uint8"),
+            np.array(
+                [False, False, False, False, False, False, False, False, False, False],
+                dtype="bool",
+            ),
+            id="ring-2-flat",
+        ),
+        pytest.param(
+            (20.0, 10.0, 50.0, 40.0),
+            "zuniq",
+            4,
+            "WGS84",
+            False,
+            np.array(
+                [
+                    14636698788954112,
+                    16888498602639360,
+                    21392098230009856,
+                    23643898043695104,
+                    25895697857380352,
+                    28147497671065600,
+                    30399297484750848,
+                    32651097298436096,
+                    34902897112121344,
+                    55169095435288576,
+                    59672695062659072,
+                    61924494876344320,
+                    73183493944770560,
+                    75435293758455808,
+                    77687093572141056,
+                    79938893385826304,
+                    85568392920039424,
+                    94575592174780416,
+                    103582791429521408,
+                    109212290963734528,
+                    111464090777419776,
+                    113715890591105024,
+                    115967690404790272,
+                    118219490218475520,
+                    122723089845846016,
+                    124974889659531264,
+                    130604389193744384,
+                    136233888727957504,
+                    138485688541642752,
+                    140737488355328000,
+                    142989288169013248,
+                    235313080530108416,
+                    239816680157478912,
+                    289356276058554368,
+                    291608075872239616,
+                    293859875685924864,
+                    296111675499610112,
+                    301741175033823232,
+                    309622474381721600,
+                    316377873822777344,
+                    318629673636462592,
+                    320881473450147840,
+                    323133273263833088,
+                    325385073077518336,
+                    327636872891203584,
+                    329888672704888832,
+                    332140472518574080,
+                    334392272332259328,
+                    336644072145944576,
+                    338895871959629824,
+                    343399471587000320,
+                    345651271400685568,
+                    347903071214370816,
+                    372672869164908544,
+                    2570429487321710592,
+                    2572681287135395840,
+                    2574933086949081088,
+                    2579436686576451584,
+                    2586192086017507328,
+                    2588443885831192576,
+                    2590695685644877824,
+                    2592947485458563072,
+                    2786602269435494400,
+                ],
+                dtype="uint64",
+            ),
+            None,
+            np.array(
+                [
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    False,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    True,
+                    True,
+                    False,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    False,
+                    False,
+                    True,
+                    False,
+                    False,
+                    True,
+                    False,
+                    False,
+                    True,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    True,
+                    False,
+                    False,
+                    False,
+                ],
+                dtype="bool",
+            ),
+            id="zuniq-4-compacted",
+        ),
+        pytest.param(
+            (20.0, 10.0, 50.0, 40.0),
+            "zuniq",
+            2,
+            "WGS84",
+            True,
+            np.array(
+                [
+                    18014398509481984,
+                    54043195528445952,
+                    90071992547409920,
+                    126100789566373888,
+                    234187180623265792,
+                    306244774661193728,
+                    342273571680157696,
+                    378302368699121664,
+                    2576058986855923712,
+                    2792231768969707520,
+                ],
+                dtype="uint64",
+            ),
+            None,
+            np.array(
+                [False, False, False, False, False, False, False, False, False, False],
+                dtype="bool",
+            ),
+            id="zuniq-2-flat",
         ),
     ),
 )
-def test_zone_coverage(flat, expected_ids, expected_depths, expected_coverage):
-    zone = (0.0, 0.0, 90.0, 90.0)
-    depth = 2
+def test_zone_coverage(
+    zone,
+    indexing_scheme,
+    depth,
+    ellipsoid,
+    flat,
+    expected_ids,
+    expected_depths,
+    expected_coverage,
+):
+    funcs = {
+        "nested": healpix_geo.nested.zone_coverage,
+        "ring": healpix_geo.ring.zone_coverage,
+        "zuniq": healpix_geo.zuniq.zone_coverage,
+    }
+    results = funcs[indexing_scheme](zone, depth, ellipsoid="sphere", flat=flat)
 
-    cell_ids, depths, fully_covered = healpix.zone_coverage(
-        zone, depth, ellipsoid="sphere", flat=flat
-    )
+    if indexing_scheme in ("nested", "ring"):
+        cell_ids, depths, fully_covered = results
+    else:
+        cell_ids, fully_covered = results
 
     np.testing.assert_equal(cell_ids, expected_ids)
-    np.testing.assert_equal(depths, expected_depths)
+    if indexing_scheme in ("nested", "ring"):
+        np.testing.assert_equal(depths, expected_depths)
     np.testing.assert_equal(fully_covered, expected_coverage)
 
 
-def test_box_coverage():
+@pytest.mark.parametrize(
+    ["scheme", "expected_cell_ids", "expected_depths", "expected_coverage"],
+    (
+        pytest.param(
+            "nested",
+            np.array([0, 1, 2, 3], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False]),
+            id="nested",
+        ),
+        pytest.param(
+            "ring",
+            np.array([0, 4, 5, 13], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype=bool),
+            id="ring",
+        ),
+        pytest.param(
+            "zuniq",
+            np.array(
+                [
+                    72057594037927936,
+                    216172782113783808,
+                    360287970189639680,
+                    504403158265495552,
+                ],
+                dtype="uint64",
+            ),
+            None,
+            np.array([False, False, False, False], dtype=bool),
+            id="zuniq",
+        ),
+    ),
+)
+def test_box_coverage(scheme, expected_cell_ids, expected_depths, expected_coverage):
     center = (45.0, 45.0)
     size = (10.0, 10.0)
     angle = 0.0
 
     depth = 1
 
-    cell_ids, depths, fully_covered = healpix.box_coverage(
-        center, size, angle, depth, ellipsoid="WGS84"
-    )
+    ns = getattr(healpix_geo, scheme)
 
-    expected_cell_ids = np.array([0, 1, 2, 3], dtype="uint64")
-    expected_depths = np.array([1, 1, 1, 1], dtype="uint8")
-    expected_coverage = np.array([False, False, False, False])
+    result = ns.box_coverage(center, size, angle, depth, ellipsoid="WGS84")
+    if scheme in {"zuniq"}:
+        cell_ids, fully_covered = result
+    else:
+        cell_ids, depths, fully_covered = result
+        np.testing.assert_equal(depths, expected_depths)
 
     np.testing.assert_equal(cell_ids, expected_cell_ids)
-    np.testing.assert_equal(depths, expected_depths)
     np.testing.assert_equal(fully_covered, expected_coverage)
 
 
-def test_polygon_coverage():
+@pytest.mark.parametrize(
+    ["scheme", "expected_cell_ids", "expected_depths", "expected_coverage"],
+    (
+        pytest.param(
+            "nested",
+            np.array([0, 1, 2, 3], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype="bool"),
+            id="nested",
+        ),
+        pytest.param(
+            "ring",
+            np.array([0, 4, 5, 13], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype="bool"),
+            id="ring",
+        ),
+        pytest.param(
+            "zuniq",
+            np.array(
+                [
+                    72057594037927936,
+                    216172782113783808,
+                    360287970189639680,
+                    504403158265495552,
+                ],
+                dtype="uint64",
+            ),
+            None,
+            np.array([False, False, False, False], dtype="bool"),
+            id="zuniq",
+        ),
+    ),
+)
+def test_polygon_coverage(
+    scheme, expected_cell_ids, expected_depths, expected_coverage
+):
     vertices = np.array(
         [[40.0, 40.0], [50.0, 40.0], [50.0, 50.0], [40.0, 50.0]], dtype="float64"
     )
 
     depth = 1
+    ns = getattr(healpix_geo, scheme)
 
-    cell_ids, depths, fully_covered = healpix.polygon_coverage(
-        vertices, depth, ellipsoid="WGS84"
-    )
-
-    expected_cell_ids = np.array([0, 1, 2, 3], dtype="uint64")
-    expected_depths = np.array([1, 1, 1, 1], dtype="uint8")
-    expected_coverage = np.array([False, False, False, False])
+    result = ns.polygon_coverage(vertices, depth, ellipsoid="WGS84")
+    if scheme in {"zuniq"}:
+        cell_ids, fully_covered = result
+    else:
+        cell_ids, depths, fully_covered = result
+        np.testing.assert_equal(depths, expected_depths)
 
     np.testing.assert_equal(cell_ids, expected_cell_ids)
-    np.testing.assert_equal(depths, expected_depths)
     np.testing.assert_equal(fully_covered, expected_coverage)
 
 
-def test_cone_coverage():
+@pytest.mark.parametrize(
+    ["scheme", "expected_cell_ids", "expected_depths", "expected_coverage"],
+    (
+        pytest.param(
+            "nested",
+            np.array([0, 1, 2, 3], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype="bool"),
+            id="nested",
+        ),
+        pytest.param(
+            "ring",
+            np.array([0, 4, 5, 13], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype="bool"),
+            id="ring",
+        ),
+        pytest.param(
+            "zuniq",
+            np.array(
+                [
+                    72057594037927936,
+                    216172782113783808,
+                    360287970189639680,
+                    504403158265495552,
+                ],
+                dtype="uint64",
+            ),
+            None,
+            np.array([False, False, False, False], dtype="bool"),
+            id="zuniq",
+        ),
+    ),
+)
+def test_cone_coverage(scheme, expected_cell_ids, expected_depths, expected_coverage):
     center = (45.0, 45.0)
     radius = 5.0
     depth = 1
 
-    cell_ids, depths, fully_covered = healpix.cone_coverage(
-        center, radius, depth, ellipsoid="WGS84"
-    )
-
-    expected_cell_ids = np.array([0, 1, 2, 3], dtype="uint64")
-    expected_depths = np.array([1, 1, 1, 1], dtype="uint8")
-    expected_coverage = np.array([False, False, False, False])
+    ns = getattr(healpix_geo, scheme)
+    result = ns.cone_coverage(center, radius, depth, ellipsoid="WGS84")
+    if scheme in {"zuniq"}:
+        cell_ids, fully_covered = result
+    else:
+        cell_ids, depths, fully_covered = result
+        np.testing.assert_equal(depths, expected_depths)
 
     np.testing.assert_equal(cell_ids, expected_cell_ids)
-    np.testing.assert_equal(depths, expected_depths)
     np.testing.assert_equal(fully_covered, expected_coverage)
 
 
-def test_elliptical_cone_coverage():
+@pytest.mark.parametrize(
+    ["scheme", "expected_cell_ids", "expected_depths", "expected_coverage"],
+    (
+        pytest.param(
+            "nested",
+            np.array([0, 1, 2, 3], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype="bool"),
+            id="nested",
+        ),
+        pytest.param(
+            "ring",
+            np.array([0, 4, 5, 13], dtype="uint64"),
+            np.array([1, 1, 1, 1], dtype="uint8"),
+            np.array([False, False, False, False], dtype="bool"),
+            id="ring",
+        ),
+        pytest.param(
+            "zuniq",
+            np.array(
+                [
+                    72057594037927936,
+                    216172782113783808,
+                    360287970189639680,
+                    504403158265495552,
+                ],
+                dtype="uint64",
+            ),
+            None,
+            np.array([False, False, False, False], dtype="bool"),
+            id="zuniq",
+        ),
+    ),
+)
+def test_elliptical_cone_coverage(
+    scheme, expected_cell_ids, expected_depths, expected_coverage
+):
     center = (45.0, 45.0)
     ellipse_geometry = (10.0, 8.0)
     positional_angle = 30.0
     depth = 1
 
-    cell_ids, depths, fully_covered = healpix.elliptical_cone_coverage(
+    ns = getattr(healpix_geo, scheme)
+    result = ns.elliptical_cone_coverage(
         center, ellipse_geometry, positional_angle, depth, ellipsoid="WGS84"
     )
-
-    expected_cell_ids = np.array([0, 1, 2, 3], dtype="uint64")
-    expected_depths = np.array([1, 1, 1, 1], dtype="uint8")
-    expected_coverage = np.array([False, False, False, False])
+    if scheme in {"zuniq"}:
+        cell_ids, fully_covered = result
+    else:
+        cell_ids, depths, fully_covered = result
+        np.testing.assert_equal(depths, expected_depths)
 
     np.testing.assert_equal(cell_ids, expected_cell_ids)
-    np.testing.assert_equal(depths, expected_depths)
     np.testing.assert_equal(fully_covered, expected_coverage)

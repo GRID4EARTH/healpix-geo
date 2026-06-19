@@ -437,6 +437,7 @@ class TestGeographicToHealpix:
 
 
 class TestVertices:
+    @pytest.mark.parametrize("step", [1, 3])
     @pytest.mark.parametrize(
         ["cell_ids", "depth", "indexing_scheme"],
         (
@@ -480,20 +481,22 @@ class TestVertices:
             ),
         ),
     )
-    def test_spherical(self, cell_ids, depth, indexing_scheme):
+    def test_spherical(self, cell_ids, depth, indexing_scheme, step):
         if indexing_scheme == "ring":
             param_cds = 2**depth
             hg_vertices = healpix_geo.ring.vertices
             cds_vertices = cdshealpix.ring.vertices
         elif indexing_scheme == "zuniq":
 
-            def cds_vertices(cell_ids, depth):
+            def cds_vertices(cell_ids, depth, step):
                 cell_ids, depths = healpix_geo.zuniq.to_nested(cell_ids)
 
-                return cdshealpix.nested.vertices(cell_ids, depths)
+                return cdshealpix.nested.vertices(cell_ids, depths, step=step)
 
-            def hg_vertices(cell_ids, depth, ellipsoid):
-                return healpix_geo.zuniq.vertices(cell_ids, ellipsoid=ellipsoid)
+            def hg_vertices(cell_ids, depth, ellipsoid, step):
+                return healpix_geo.zuniq.vertices(
+                    cell_ids, ellipsoid=ellipsoid, step=step
+                )
 
             param_cds = depth
         else:
@@ -501,8 +504,10 @@ class TestVertices:
             hg_vertices = healpix_geo.nested.vertices
             cds_vertices = cdshealpix.nested.vertices
 
-        actual_lon, actual_lat = hg_vertices(cell_ids, depth, ellipsoid="sphere")
-        expected_lon_, expected_lat_ = cds_vertices(cell_ids, param_cds)
+        actual_lon, actual_lat = hg_vertices(
+            cell_ids, depth, ellipsoid="sphere", step=step
+        )
+        expected_lon_, expected_lat_ = cds_vertices(cell_ids, param_cds, step=step)
         expected_lon = np.asarray(expected_lon_.to("degree"))
         expected_lat = np.asarray(expected_lat_.to("degree"))
 

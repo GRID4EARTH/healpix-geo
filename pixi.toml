@@ -22,12 +22,6 @@ depends-on = [
   { task = "build-wheel", environment = "py314" },
 ]
 
-[tasks.ci-lint-rust]
-depends-on = [{ task = "rust-lints", environment = "py313" }]
-
-[tasks.lint-rust]
-depends-on = [{ task = "rust-lints", environment = "dev" }]
-
 [feature.dev.dependencies]
 ipython = "*"
 jupyterlab = ">=4.5.5,<5"
@@ -58,7 +52,7 @@ python = "3.12.*"
 python = "3.13.*"
 
 [feature.py313.tasks]
-rust-lints = "cargo clippy --all-targets --all-features -- -D warnings"
+lint-rust = { cmd = "cargo clippy --all-targets --all-features -- -D warnings", cwd = ".", default-environment = "rust" }
 
 [feature.py314.dependencies]
 python = "3.14.*"
@@ -143,6 +137,12 @@ build-clean-and-host-docs = [
   { task = "host-docs" },
 ]
 
+[feature.rust.dependencies]
+rust = "*"
+
+[feature.rust.tasks]
+rust-tests = { cmd = "cargo test", cwd = "rust/healpix-geo-core" }
+
 [tasks.build-and-host]
 depends-on = [
   { task = "build-emscripten" },
@@ -161,6 +161,8 @@ py314 = ["py314"]
 ci-py311 = ["py311", "tests"]
 ci-py312 = ["py312", "tests"]
 ci-py313 = ["py313", "tests"]
+ci-py314 = ["py314", "tests"]
 jupyterlite = { no-default-feature = true, features = ["jupyterlite"] }
 docs = ["docs", "py313"]
 templates = { features = ["templates"], no-default-feature = true }
+rust = { features = ["rust", "py313"], no-default-feature = true }

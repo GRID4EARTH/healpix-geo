@@ -46,5 +46,5 @@ about:
   summary: healpix for the geo-sciences
   license: Apache-2.0
   license_file: LICENSE
-  homepage: https://github.com/EOPF-DGGS/healpix-geo
-  repository: https://github.com/EOPF-DGGS/healpix-geo
+  homepage: https://github.com/GRID4EARTH/healpix-geo
+  repository: https://github.com/GRID4EARTH/healpix-geo

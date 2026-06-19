@@ -1,6 +1,6 @@
 [package]
 name = "healpix-geo"
-version = "0.0.12"
+version = { workspace = true }
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
