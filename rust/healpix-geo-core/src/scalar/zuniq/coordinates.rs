@@ -23,3 +23,20 @@ pub fn vertices(hash: &u64, ellipsoid: &Ellipsoid, step: &usize) -> Vec<(f64, f6
 
     crate::scalar::nested::coordinates::vertices(&hash_nested, layer, ellipsoid, step)
 }
+
+pub fn bilinear_interpolation(
+    lon: &f64,
+    lat: &f64,
+    layer: &Layer,
+    ellipsoid: &Ellipsoid,
+) -> Vec<(u64, f64)> {
+    crate::scalar::nested::coordinates::bilinear_interpolation(lon, lat, layer, ellipsoid)
+        .into_iter()
+        .map(|(hash, weight)| {
+            (
+                healpix::nested::to_zuniq_unsafe(layer.depth(), hash),
+                weight,
+            )
+        })
+        .collect()
+}
