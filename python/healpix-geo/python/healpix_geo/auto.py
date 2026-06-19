@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -249,6 +249,91 @@ def vertices(
     params = grid._as_params()
 
     return module.vertices(ipix, num_threads=num_threads, step=step, **params)
+
+
+def bilinear_interpolation(
+    longitude: npt.NDArray[np.floating],
+    latitude: npt.NDArray[np.floating],
+    grid: Grid,
+    *,
+    num_threads: int = 0,
+) -> tuple[Any, Any]:
+    """Get the cell ids and weights necessary to bilinearly interpolate the given values.
+
+    Parameters
+    ----------
+    longitude : array-like
+        The longitudes of the input points, in degrees.
+    latitude : array-like
+        The latitudes of the input points, in degrees.
+    grid : Grid
+        The definition of the HEALPix grid.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    cell_ids : array-like
+        The neighbours above and below the given points as a :math:`N` x :math:`4` masked array.
+    weights : array-like
+        The associated weights as a :math:`N` x :math:`4` masked array.
+
+    Raises
+    ------
+    ValueError
+        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth})`.
+
+    Examples
+    --------
+    >>> import healpix_geo.auto as hg
+    >>> import numpy as np
+
+    Define the grid
+    >>> grid = hg.Grid(level=12, indexing_scheme="nested", ellipsoid="sphere")
+    >>> grid
+    Grid(level=12, indexing_scheme='nested', ellipsoid='sphere')
+
+    Define coordinates
+    >>> lon = np.array([-15.0, -10.0, -5.0, 0.0, 5.0], dtype="float64")
+    >>> lat = np.array([30.0, 35.0, 40.0, 45.0, 50.0], dtype="float64")
+
+    Compute interpolation weights
+    >>> cell_ids, weights = hg.bilinear_interpolation(lon, lat, grid)
+    >>> cell_ids
+    MArray(
+        array([[54892952, 54892953, 54892954, 54892955],
+               [55675332, 55675333, 55675334, 55675335],
+               [55890822, 55890823, 55890828, 55890829],
+               [11206655, 11250346, 55967743, 56055125],
+               [11481364, 11481365, 11481366, 11481367]], dtype=uint64),
+        array([[False, False, False, False],
+               [False, False, False, False],
+               [False, False, False, False],
+               [False, False, False, False],
+               [False, False, False, False]])
+    )
+    >>> weights
+    MArray(
+        array([[0.13888889, 0.69444444, 0.02777778, 0.13888889],
+               [0.21156076, 0.15051566, 0.37273788, 0.2651857 ],
+               [0.12397948, 0.17692801, 0.28803912, 0.4110534 ],
+               [0.00248345, 0.49751655, 0.00248345, 0.49751655],
+               [0.0540781 , 0.08623943, 0.33131993, 0.52836254]]),
+        array([[False, False, False, False],
+               [False, False, False, False],
+               [False, False, False, False],
+               [False, False, False, False],
+               [False, False, False, False]])
+    )
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    params = grid._as_params() | {"depth": grid.level}
+
+    return module.bilinear_interpolation(
+        longitude, latitude, **params, num_threads=num_threads
+    )
 
 
 def kth_neighbourhood(
