@@ -91,6 +91,11 @@ jobs:
         with:
           cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
 
+      - name: Create rust cache
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # 2.9.1
+        with:
+          prefix-key: "py${{ matrix.python-version }}"
+
       - name: setup environment
         uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # 0.9.6
         with:
@@ -98,11 +103,6 @@ jobs:
           pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
           cache: true
           frozen: true
-
-      - name: Create rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # 2.9.1
-        with:
-          prefix-key: "py${{ matrix.python-version }}"
 
       - name: Help finding installed libraries
         run: |
