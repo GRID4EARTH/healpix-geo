@@ -100,6 +100,7 @@ pub(crate) fn vertices<'py>(
     Ok((longitude, latitude))
 }
 
+#[allow(clippy::type_complexity)]
 #[pyfunction]
 pub(crate) fn bilinear_interpolation<'py>(
     py: Python<'py>,
