@@ -91,12 +91,7 @@ jobs:
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: |
-            3.10
-            3.11
-            3.12
-            3.13
-            3.14
+          python-version: 3.10
 
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # 1.51.0
@@ -140,12 +135,7 @@ jobs:
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: |
-            3.10
-            3.11
-            3.12
-            3.13
-            3.14
+          python-version: 3.10
 
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # 1.51.0
@@ -186,12 +176,7 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           architecture: ${{ matrix.platform.target }}
-          python-version: |
-            3.10
-            3.11
-            3.12
-            3.13
-            3.14
+          python-version: 3.10
 
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # 1.51.0
@@ -230,12 +215,7 @@ jobs:
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: |
-            3.10
-            3.11
-            3.12
-            3.13
-            3.14
+          python-version: 3.10
 
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # 1.51.0
