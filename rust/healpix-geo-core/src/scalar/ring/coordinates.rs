@@ -44,6 +44,23 @@ pub fn vertices(hash: &u64, nside: &u32, ellipsoid: &Ellipsoid, step: &usize) ->
         .collect()
 }
 
+pub fn healpix_to_cartesian(hash: &u64, nside: &u32, ellipsoid: &Ellipsoid) -> (f64, f64, f64) {
+    let center = healpix::ring::center(*nside, *hash);
+    let p = (
+        center.0,
+        ellipsoid.latitude_authalic_to_geographic(center.1),
+    );
+
+    ellipsoid.geographic_to_cartesian(&p)
+}
+
+pub fn cartesian_to_healpix(x: &f64, y: &f64, z: &f64, nside: &u32, ellipsoid: &Ellipsoid) -> u64 {
+    let p = (*x, *y, *z);
+    let (lon, lat) = ellipsoid.cartesian_to_geographic(&p);
+
+    lonlat_to_healpix(&lon, &lat, nside, ellipsoid)
+}
+
 pub fn bilinear_interpolation(
     lon: &f64,
     lat: &f64,

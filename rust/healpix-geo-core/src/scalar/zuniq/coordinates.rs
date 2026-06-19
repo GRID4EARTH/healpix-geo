@@ -24,6 +24,25 @@ pub fn vertices(hash: &u64, ellipsoid: &Ellipsoid, step: &usize) -> Vec<(f64, f6
     crate::scalar::nested::coordinates::vertices(&hash_nested, layer, ellipsoid, step)
 }
 
+pub fn healpix_to_cartesian(hash: &u64, ellipsoid: &Ellipsoid) -> (f64, f64, f64) {
+    let (depth, hash_nested) = healpix::nested::from_zuniq(*hash);
+    let layer = healpix::nested::get(depth);
+
+    crate::scalar::nested::coordinates::healpix_to_cartesian(&hash_nested, layer, ellipsoid)
+}
+
+pub fn cartesian_to_healpix(
+    x: &f64,
+    y: &f64,
+    z: &f64,
+    layer: &Layer,
+    ellipsoid: &Ellipsoid,
+) -> u64 {
+    let hash = crate::scalar::nested::coordinates::cartesian_to_healpix(x, y, z, layer, ellipsoid);
+
+    healpix::nested::to_zuniq_unsafe(layer.depth(), hash)
+}
+
 pub fn bilinear_interpolation(
     lon: &f64,
     lat: &f64,
