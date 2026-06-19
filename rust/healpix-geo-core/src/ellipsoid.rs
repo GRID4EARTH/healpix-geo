@@ -1,6 +1,6 @@
 use geodesy::authoring::FourierCoefficients;
 use geodesy::ellps::{Ellipsoid as GeodesyEllipsoid, EllipsoidBase, GeoCart, Latitudes};
-use geodesy::prelude::{Coor2D, Coor3D, CoordinateTuple};
+use geodesy::prelude::{Coor3D, CoordinateTuple};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use serde::{de, ser};
@@ -17,7 +17,7 @@ pub trait ReferenceBody {
     fn ellipsoid(&self) -> &GeodesyEllipsoid;
 
     fn geographic_to_cartesian(&self, point: &(f64, f64)) -> (f64, f64, f64) {
-        let p = Coor2D::gis(point.0, point.1);
+        let p = Coor3D::raw(point.0, point.1, 0.0);
         self.ellipsoid().cartesian(&p).xyz()
     }
 
