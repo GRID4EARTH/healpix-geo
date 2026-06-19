@@ -224,11 +224,11 @@ def bilinear_interpolation(
     >>> cell_ids, weights = bilinear_interpolation(lon, lat, depth=6, ellipsoid="WGS84")
     >>> cell_ids
     MArray(
-        array([[13400, 13401, 13402, 13403],
-               [13581, 13592, 13583, 13594],
-               [13638, 13639, 13644, 13645],
-               [ 2735,  2746, 13663, 13685],
-               [ 2800,  2801,  2802,  2803]], dtype=uint64),
+        array([[12661, 12405, 12404, 12149],
+               [10872, 10617, 10616, 10360],
+               [ 9340,  9085,  9084,  8828],
+               [ 7320,  7080,  7563,  7319],
+               [ 5943,  5727,  5726,  5514]], dtype=uint64),
         array([[False, False, False, False],
                [False, False, False, False],
                [False, False, False, False],
