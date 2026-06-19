@@ -1,7 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 use rayon::prelude::*;
 
-use cdshealpix as healpix;
 use cdshealpix::nested::Layer;
 
 use crate::ellipsoid::Ellipsoid;
@@ -50,11 +49,10 @@ pub fn vertices(
 
 pub fn bilinear_interpolation(
     coords: &[(f64, f64)],
-    depth: &u8,
+    layer: &Layer,
     ellipsoid: &Ellipsoid,
     nthreads: usize,
 ) -> Vec<Vec<(u64, f64)>> {
-    let layer = healpix::nested::get(*depth);
     let mut result = Vec::<Vec<(u64, f64)>>::with_capacity(coords.len());
 
     maybe_parallelize!(nthreads, coords, result, |(lon, lat)| {
@@ -71,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_bilinear_interpolation() {
-        let depth: u8 = 3;
+        let layer = healpix::nested::Layer(3);
         let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
             GeodesyEllipsoid::named("WGS84").unwrap(),
         ));
