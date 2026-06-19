@@ -8,11 +8,20 @@ mxp = marray.masked_namespace(np)
 
 
 @pytest.mark.parametrize(
-    ["lon", "lat", "depth", "ellipsoid", "expected_cell_ids", "expected_weights"],
+    [
+        "lon",
+        "lat",
+        "scheme",
+        "depth",
+        "ellipsoid",
+        "expected_cell_ids",
+        "expected_weights",
+    ],
     (
-        (
+        pytest.param(
             np.array([3.5, 71.2], dtype="float64"),
             np.array([23.1, -23.1], dtype="float64"),
+            "nested",
             3,
             "sphere",
             mxp.asarray(
@@ -38,10 +47,12 @@ mxp = marray.masked_namespace(np)
                 ),
                 mask=False,
             ),
+            id="nested-sphere-3",
         ),
-        (
+        pytest.param(
             np.array([0.0, 90.0, 180.0, 270.0], dtype="float64"),
             np.array([-90, -33.0, 33.0, 90], dtype="float64"),
+            "nested",
             5,
             "WGS84",
             mxp.asarray(
@@ -87,15 +98,78 @@ mxp = marray.masked_namespace(np)
                 ),
                 mask=False,
             ),
+            id="nested-wgs84-5",
+        ),
+        pytest.param(
+            np.array([3.5, 71.2], dtype="float64"),
+            np.array([23.1, -23.1], dtype="float64"),
+            "ring",
+            3,
+            "sphere",
+            mxp.asarray(
+                np.array([[310, 311, 316, 317], [541, 328, 543, 330]]), mask=False
+            ),
+            mxp.asarray(
+                np.array(
+                    [
+                        [
+                            0.3816076602587845,
+                            0.07548075123095703,
+                            0.45325852900873526,
+                            0.0896530595015232,
+                        ],
+                        [
+                            0.09605305950152325,
+                            0.08685852900873488,
+                            0.4290807512309573,
+                            0.3880076602587846,
+                        ],
+                    ],
+                    dtype="float64",
+                ),
+                mask=False,
+            ),
+            id="ring-sphere-3",
+        ),
+        pytest.param(
+            np.array([3.5, 71.2], dtype="float64"),
+            np.array([23.1, -23.1], dtype="float64"),
+            "zuniq",
+            3,
+            "sphere",
+            mxp.asarray(
+                np.array([[310, 311, 316, 317], [541, 328, 543, 330]]), mask=False
+            ),
+            mxp.asarray(
+                np.array(
+                    [
+                        [
+                            0.3816076602587845,
+                            0.07548075123095703,
+                            0.45325852900873526,
+                            0.0896530595015232,
+                        ],
+                        [
+                            0.09605305950152325,
+                            0.08685852900873488,
+                            0.4290807512309573,
+                            0.3880076602587846,
+                        ],
+                    ],
+                    dtype="float64",
+                ),
+                mask=False,
+            ),
+            id="zuniq-sphere-3",
         ),
     ),
 )
 def test_bilinear_interpolation(
-    lon, lat, depth, ellipsoid, expected_cell_ids, expected_weights
+    lon, lat, scheme, depth, ellipsoid, expected_cell_ids, expected_weights
 ):
-    actual_cell_ids, actual_weights = healpix_geo.nested.bilinear_interpolation(
-        lon, lat, depth=depth, ellipsoid=ellipsoid
-    )
+    actual_cell_ids, actual_weights = getattr(
+        healpix_geo, scheme
+    ).bilinear_interpolation(lon, lat, depth=depth, ellipsoid=ellipsoid)
 
     np.testing.assert_equal(actual_cell_ids.data, expected_cell_ids.data)
     np.testing.assert_equal(actual_cell_ids.mask, expected_cell_ids.mask)
