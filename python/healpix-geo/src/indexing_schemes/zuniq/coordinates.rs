@@ -122,3 +122,40 @@ pub(crate) fn vertices<'py>(
 
     Ok((longitude, latitude))
 }
+
+#[pyfunction]
+pub(crate) fn bilinear_interpolation<'py>(
+    py: Python<'py>,
+    depth: u8,
+    longitude: &Bound<'py, PyArrayDyn<f64>>,
+    latitude: &Bound<'py, PyArrayDyn<f64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<(Bound<'py, PyArrayDyn<u64>>, Bound<'py, PyArrayDyn<f64>>)> {
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let input_shape = longitude.shape();
+
+    let lon = longitude.readonly();
+    let lat = latitude.readonly();
+    let coords: Vec<(f64, f64)> = lon
+        .as_slice()?
+        .iter()
+        .zip(lat.as_slice()?)
+        .map(|(&lon, &lat)| (lon, lat))
+        .collect();
+
+    let layer = cdshealpix::nested::get(depth);
+
+    let (ipix, weights): (Vec<Vec<u64>>, Vec<Vec<f64>>) =
+        vectorized::bilinear_interpolation(&coords, layer, &ellipsoid, nthreads as usize)
+            .into_iter()
+            .map(|row: Vec<(u64, f64)>| -> (Vec<u64>, Vec<f64>) { row.into_iter().unzip() })
+            .unzip();
+
+    let output_shape: Vec<usize> = input_shape.iter().copied().chain([ipix[0].len()]).collect();
+
+    let ipix_ = PyArray2::from_vec2(py, &ipix)?.reshape(output_shape.as_slice())?;
+    let weights_ = PyArray2::from_vec2(py, &weights)?.reshape(output_shape.as_slice())?;
+
+    Ok((ipix_, weights_))
+}

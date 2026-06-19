@@ -23,9 +23,9 @@ mod nested {
 mod ring {
     #[pymodule_export]
     use crate::indexing_schemes::ring::{
-        angular_distances, box_coverage, cone_coverage, elliptical_cone_coverage,
-        healpix_to_lonlat, kth_neighbourhood, lonlat_to_healpix, polygon_coverage, vertices,
-        zone_coverage,
+        angular_distances, bilinear_interpolation, box_coverage, cone_coverage,
+        elliptical_cone_coverage, healpix_to_lonlat, kth_neighbourhood, lonlat_to_healpix,
+        polygon_coverage, vertices, zone_coverage,
     };
 }
 
@@ -33,8 +33,9 @@ mod ring {
 mod zuniq {
     #[pymodule_export]
     use crate::indexing_schemes::zuniq::{
-        box_coverage, cone_coverage, elliptical_cone_coverage, from_nested, healpix_to_lonlat,
-        kth_neighbourhood, lonlat_to_healpix, polygon_coverage, to_nested, vertices, zone_coverage,
+        bilinear_interpolation, box_coverage, cone_coverage, elliptical_cone_coverage, from_nested,
+        healpix_to_lonlat, kth_neighbourhood, lonlat_to_healpix, polygon_coverage, to_nested,
+        vertices, zone_coverage,
     };
 }
 
