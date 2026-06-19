@@ -65,11 +65,13 @@ pub fn bilinear_interpolation(
 mod tests {
     use super::*;
     use crate::ellipsoid::ReferenceEllipsoid;
+
+    use cdshealpix as healpix;
     use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 
     #[test]
     fn test_bilinear_interpolation() {
-        let layer = healpix::nested::Layer(3);
+        let layer = healpix::nested::get(3);
         let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
             GeodesyEllipsoid::named("WGS84").unwrap(),
         ));
@@ -77,7 +79,7 @@ mod tests {
         let coords = vec![(10.0, 30.0), (45.0, 50.0), (80.0, 70.0)];
         let nthreads: usize = 0;
 
-        let actual = bilinear_interpolation(&coords, &depth, &ellipsoid, nthreads);
+        let actual = bilinear_interpolation(&coords, layer, &ellipsoid, nthreads);
         let expected: Vec<Vec<(u64, f64)>> = vec![
             vec![
                 (2805742567851819008, 0.24782825502968173),
