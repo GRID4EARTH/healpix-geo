@@ -436,6 +436,94 @@ class TestGeographicToHealpix:
         np.testing.assert_equal(actual, expected)
 
 
+class TestHealpixToCartesian:
+    @pytest.mark.parametrize(
+        [
+            "ipix",
+            "depth",
+            "scheme",
+            "ellipsoid",
+            "expected_x",
+            "expected_y",
+            "expected_z",
+        ],
+        (
+            pytest.param(
+                np.array([23, 42, 61], dtype="uint64"),
+                3,
+                "nested",
+                "WGS84",
+                np.array(
+                    [476237.29439881, 4728734.69011096, 495094.69891854],
+                    dtype="float64",
+                ),
+                np.array(
+                    [4226722.89212488, 465739.71573273, 1195264.33678817],
+                    dtype="float64",
+                ),
+                np.array(
+                    [4736816.04690125, 4240471.60205904, 6224606.75696243],
+                    dtype="float64",
+                ),
+                id="nested",
+            ),
+            pytest.param(
+                np.array([90, 112, 5], dtype="uint64"),
+                3,
+                "ring",
+                "sphere",
+                np.array(
+                    [475999.90684385, 4725794.69249386, 495071.15870441],
+                    dtype="float64",
+                ),
+                np.array(
+                    [4224616.019301899, 465450.15124155843, 1195207.5056839434],
+                    dtype="float64",
+                ),
+                np.array(
+                    [4745065.473958334, 4247331.333333333, 6238267.895833333],
+                    dtype="float64",
+                ),
+                id="ring",
+            ),
+            pytest.param(
+                np.array([23, 42, 61], dtype="uint64"),
+                3,
+                "zuniq",
+                "WGS84",
+                np.array(
+                    [476237.29439881, 4728734.69011096, 495094.69891854],
+                    dtype="float64",
+                ),
+                np.array(
+                    [4226722.89212488, 465739.71573273, 1195264.33678817],
+                    dtype="float64",
+                ),
+                np.array(
+                    [4736816.04690125, 4240471.60205904, 6224606.75696243],
+                    dtype="float64",
+                ),
+                id="zuniq",
+            ),
+        ),
+    )
+    def test_conversion(
+        self, ipix, depth, scheme, ellipsoid, expected_x, expected_y, expected_z
+    ):
+        ns = getattr(healpix_geo, scheme)
+        params = {"ellipsoid": ellipsoid}
+        if scheme == "zuniq":
+            ipix = ns.from_nested(ipix, depth)
+        else:
+            params["depth"] = depth
+
+        actual_x, actual_y, actual_z = ns.healpix_to_cartesian(ipix, **params)
+
+        np.testing.assert_allclose(actual_x, expected_x)
+        np.testing.assert_allclose(actual_y, expected_y)
+        np.testing.assert_allclose(actual_z, expected_z)
+
+
 class TestVertices:
     @pytest.mark.parametrize("step", [1, 3])
     @pytest.mark.parametrize(

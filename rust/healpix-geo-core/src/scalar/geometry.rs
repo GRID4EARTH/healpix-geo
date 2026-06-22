@@ -35,6 +35,24 @@ mod tests {
     }
 
     #[test]
+    fn test_lonlat_to_cartesian2() {
+        let base_ellipsoid = GeodesyEllipsoid::named("WGS84").unwrap();
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(base_ellipsoid));
+
+        let lon: f64 = 83.57142857;
+        let lat: f64 = 48.26869833;
+
+        let (x, y, z) = lonlat_to_cartesian(&lon, &lat, &ellipsoid);
+
+        let expected = (476237.2944918946, 4226722.89200382, 4736816.046999251);
+
+        // FIXME: why does this only match up to the millimeter?
+        assert!((x - expected.0).abs() < 1e-12);
+        assert!((y - expected.1).abs() < 1e-12);
+        assert!((z - expected.2).abs() < 1e-12);
+    }
+
+    #[test]
     fn test_cartesian_to_lonlat() {
         let base_ellipsoid = GeodesyEllipsoid::named("WGS84").unwrap();
         let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(base_ellipsoid));

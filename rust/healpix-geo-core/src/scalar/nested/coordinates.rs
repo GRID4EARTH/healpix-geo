@@ -84,23 +84,41 @@ mod tests {
     use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 
     #[test]
-    fn test_healpix_to_cartesian() {
+    fn test_healpix_to_cartesian_level0() {
         let layer = healpix::nested::get(0);
 
         let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
-            GeodesyEllipsoid::named("sphere").unwrap(),
+            GeodesyEllipsoid::named("WGS84").unwrap(),
         ));
 
         let hash = 10;
 
         let (x, y, z) = healpix_to_cartesian(&hash, layer, &ellipsoid);
 
-        let (expected_x, expected_y, expected_z) =
-            (-3357810.2476832955, -3357810.2476832923, -4247331.333333333);
+        let expected = (-3359899.1988056432, -3359899.1988056437, -4240471.602059038);
 
-        assert!((x - expected_x).abs() < 1e-8);
-        assert!((y - expected_y).abs() < 1e-8);
-        assert!((z - expected_z).abs() < 1e-8);
+        assert!((x - expected.0).abs() < 1e-8);
+        assert!((y - expected.1).abs() < 1e-8);
+        assert!((z - expected.2).abs() < 1e-8);
+    }
+
+    #[test]
+    fn test_healpix_to_cartesian_level3() {
+        let layer = healpix::nested::get(3);
+
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("WGS84").unwrap(),
+        ));
+
+        let hash = 23;
+
+        let (x, y, z) = healpix_to_cartesian(&hash, layer, &ellipsoid);
+
+        let expected = (476237.29439881037, 4226722.89212488, 4736816.0469012465);
+
+        assert!((x - expected.0).abs() < 1e-8);
+        assert!((y - expected.1).abs() < 1e-8);
+        assert!((z - expected.2).abs() < 1e-8);
     }
 
     #[test]
