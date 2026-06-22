@@ -109,6 +109,120 @@ def lonlat_to_healpix(longitude, latitude, depth, ellipsoid="sphere", num_thread
     )
 
 
+def healpix_to_cartesian(ipix, depth, ellipsoid="sphere", num_threads=0):
+    r"""Get the cartesian coordinates of the center of the given HEALPix cells.
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    depth : `numpy.ndarray`
+        The HEALPix cell depth given as a `np.uint8` numpy array.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid
+        is spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.healpix_to_lonlat`.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    x, y, z : array-like
+        The coordinates of the center of the HEALPix cells.
+
+    Raises
+    ------
+    ValueError
+        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth}[`.
+    ValueError
+        When the name of the ellipsoid is unknown.
+
+    Examples
+    --------
+    >>> from healpix_geo.ring import healpix_to_cartesian
+    >>> import numpy as np
+    >>> ipix = np.array([42, 6, 10])
+    >>> depth = 3
+    >>> x, y, z = healpix_to_cartesian(ipix, depth, ellipsoid="WGS84")
+    >>> x
+    array([2223448.21176852, -495094.69891854,  495094.69891854])
+    >>> y
+    array([ 2223448.21176852,  1195264.33678817, -1195264.33678817])
+    >>> z
+    array([5530555.70358274, 6224606.75696243, 6224606.75696243])
+    """
+    _check_depth(depth)
+    ipix = np.atleast_1d(ipix)
+    _check_ipixels(data=ipix, depth=depth)
+    ipix = ipix.astype(np.uint64)
+
+    num_threads = np.uint16(num_threads)
+
+    return healpix_geo.ring.healpix_to_cartesian(depth, ipix, ellipsoid, num_threads)
+
+
+def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
+    r"""Get the HEALPix indexes that contain specific points.
+
+    Parameters
+    ----------
+    x : array-like
+        The x coordinate of the input points, in meters.
+    y : array-like
+        The y coordinate of the input points, in meters.
+    z : array-like
+        The z coordinate of the input points, in meters.
+    depth : int or array-like of int
+        The HEALPix cell depth given as a `np.uint8` numpy array.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid
+        is spherical, this will return the same result as
+        :py:func:`cdshealpix.nested.lonlat_to_healpix`.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    ipix : `numpy.ndarray`
+        A numpy array containing all the HEALPix cell indexes stored as `np.uint64`.
+
+    Raises
+    ------
+    ValueError
+        When the number of longitudes and latitudes given do not match.
+    ValueError
+        When the name of the ellipsoid is unknown.
+
+    Examples
+    --------
+    >>> from healpix_geo.ring import cartesian_to_healpix
+    >>> import numpy as np
+    >>> x = np.array(
+    ...     [6343428.894701699, 4010777.6054728953, 4094327.79214653], dtype="float64"
+    ... )
+    >>> y = np.array([0.0, 4779858.620418726, 1909216.4044747741], dtype="float64")
+    >>> z = np.array(
+    ...     [662257.957592079, -1317402.5312295998, 4487348.408865919], dtype="float64"
+    ... )
+    >>> depth = 3
+    >>> ipix = cartesian_to_healpix(x, y, z, depth, ellipsoid="WGS84")
+    >>> ipix
+    array([336, 368, 336], dtype=uint64)
+    """
+    _check_depth(depth)
+    x = np.atleast_1d(x).astype("float64")
+    y = np.atleast_1d(y).astype("float64")
+    z = np.atleast_1d(z).astype("float64")
+
+    num_threads = np.uint16(num_threads)
+
+    return healpix_geo.ring.cartesian_to_healpix(depth, x, y, z, ellipsoid, num_threads)
+
+
 def vertices(ipix, depth, ellipsoid, step=1, num_threads=0):
     """Get the longitudes and latitudes of the vertices of some HEALPix cells at a given depth.
 
