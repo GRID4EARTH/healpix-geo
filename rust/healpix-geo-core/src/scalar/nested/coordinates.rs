@@ -84,6 +84,26 @@ mod tests {
     use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 
     #[test]
+    fn test_healpix_to_cartesian() {
+        let layer = healpix::nested::get(0);
+
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("sphere").unwrap(),
+        ));
+
+        let hash = 10;
+
+        let (x, y, z) = healpix_to_cartesian(&hash, layer, &ellipsoid);
+
+        let (expected_x, expected_y, expected_z) =
+            (-3357810.2476832955, -3357810.2476832923, -4247331.333333333);
+
+        assert!((x - expected_x).abs() < 1e-8);
+        assert!((y - expected_y).abs() < 1e-8);
+        assert!((z - expected_z).abs() < 1e-8);
+    }
+
+    #[test]
     fn test_lonlat_to_healpix_edge_cases_lon() {
         let layer = healpix::nested::get(0);
 

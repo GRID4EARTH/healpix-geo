@@ -59,3 +59,28 @@ pub fn bilinear_interpolation(
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ellipsoid::ReferenceEllipsoid;
+    use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
+
+    #[test]
+    fn test_healpix_to_cartesian() {
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("sphere").unwrap(),
+        ));
+
+        let hash = 6052837899185946624;
+
+        let (x, y, z) = healpix_to_cartesian(&hash, &ellipsoid);
+
+        let (expected_x, expected_y, expected_z) =
+            (-3357810.2476832955, -3357810.2476832923, -4247331.333333333);
+
+        assert!((x - expected_x).abs() < 1e-8);
+        assert!((y - expected_y).abs() < 1e-8);
+        assert!((z - expected_z).abs() < 1e-8);
+    }
+}
