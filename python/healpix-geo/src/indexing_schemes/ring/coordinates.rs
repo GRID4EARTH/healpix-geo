@@ -3,6 +3,7 @@ use cdshealpix as healpix;
 use numpy::{PyArray1, PyArray2, PyArrayDyn, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::prelude::*;
 
+use crate::traits::Unzip3;
 use healpix_geo_core::vectorized::ring::coordinates as vectorized;
 
 #[allow(clippy::type_complexity)]
@@ -56,6 +57,68 @@ pub(crate) fn lonlat_to_healpix<'py>(
     let nside = healpix::nside(depth);
 
     let ipix = vectorized::lonlat_to_healpix(&coords, &nside, &ellipsoid, nthreads as usize);
+
+    PyArray1::from_vec(py, ipix).reshape(input_shape)
+}
+
+#[allow(clippy::type_complexity)]
+#[pyfunction]
+pub(crate) fn healpix_to_cartesian<'py>(
+    py: Python<'py>,
+    depth: u8,
+    ipix: &Bound<'py, PyArrayDyn<u64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<(
+    Bound<'py, PyArrayDyn<f64>>,
+    Bound<'py, PyArrayDyn<f64>>,
+    Bound<'py, PyArrayDyn<f64>>,
+)> {
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let input_shape = ipix.shape();
+
+    let nside = healpix::nside(depth);
+
+    let ipix_ = ipix.readonly();
+
+    let (x, y, z): (Vec<f64>, Vec<f64>, Vec<f64>) =
+        vectorized::healpix_to_cartesian(ipix_.as_slice()?, &nside, &ellipsoid, nthreads as usize)
+            .unzip3();
+
+    Ok((
+        PyArray1::from_vec(py, x).reshape(input_shape)?,
+        PyArray1::from_vec(py, y).reshape(input_shape)?,
+        PyArray1::from_vec(py, z).reshape(input_shape)?,
+    ))
+}
+
+#[pyfunction]
+pub(crate) fn cartesian_to_healpix<'py>(
+    py: Python<'py>,
+    depth: u8,
+    x: &Bound<'py, PyArrayDyn<f64>>,
+    y: &Bound<'py, PyArrayDyn<f64>>,
+    z: &Bound<'py, PyArrayDyn<f64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<Bound<'py, PyArrayDyn<u64>>> {
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let input_shape = x.shape();
+
+    let x = x.readonly();
+    let y = y.readonly();
+    let z = z.readonly();
+    let coords: Vec<(f64, f64, f64)> = x
+        .as_slice()?
+        .iter()
+        .zip(y.as_slice()?)
+        .zip(z.as_slice()?)
+        .map(|((&x, &y), &z)| (x, y, z))
+        .collect();
+
+    let nside = healpix::nside(depth);
+
+    let ipix = vectorized::cartesian_to_healpix(&coords, &nside, &ellipsoid, nthreads as usize);
 
     PyArray1::from_vec(py, ipix).reshape(input_shape)
 }
