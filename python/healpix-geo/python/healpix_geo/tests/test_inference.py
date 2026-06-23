@@ -89,6 +89,37 @@ def test_ellipsoid_like(ellipsoid_like, error_handler):
         healpix_geo.nested.healpix_to_lonlat(cell_ids, depth, ellipsoid=ellipsoid_like)
 
 
+class TestGeographicCartesian:
+    def test_geographic_to_cartesian(self):
+        lon = np.array([5.625, 50.625, 28.125], dtype="float64")
+        lat = np.array([41.93785391, 19.55202227, 19.55202227], dtype="float64")
+
+        x, y, z = healpix_geo.lonlat_to_cartesian(lon, lat, ellipsoid="WGS84")
+
+        expected_x = np.array([4728734.69011096, 3814362.85063174, 5302653.40426395])
+        expected_y = np.array([465739.71573273, 4647814.58136658, 2834327.29466645])
+        expected_z = np.array([4240471.60205904, 2121029.89621885, 2121029.89621885])
+
+        np.testing.assert_allclose(x, expected_x)
+        np.testing.assert_allclose(y, expected_y)
+        np.testing.assert_allclose(z, expected_z)
+
+    def test_cartesian_to_geographic(self):
+        x = np.array([4728734.69011096, 3814362.85063174, 5302653.40426395])
+        y = np.array([465739.71573273, 4647814.58136658, 2834327.29466645])
+        z = np.array([4240471.60205904, 2121029.89621885, 2121029.89621885])
+
+        lon, lat = healpix_geo.cartesian_to_lonlat(x, y, z, ellipsoid="WGS84")
+
+        expected_lon = np.array([5.625, 50.625, 28.125], dtype="float64")
+        expected_lat = np.array(
+            [41.93785391, 19.55202227, 19.55202227], dtype="float64"
+        )
+
+        np.testing.assert_allclose(lon, expected_lon)
+        np.testing.assert_allclose(lat, expected_lat)
+
+
 class TestHealpixToGeographic:
     @pytest.mark.parametrize(
         ["cell_ids", "depth", "indexing_scheme"],
