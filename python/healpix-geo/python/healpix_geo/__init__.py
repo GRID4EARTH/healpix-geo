@@ -77,11 +77,11 @@ def lonlat_to_cartesian(longitude, latitude, ellipsoid="sphere", num_threads=0):
 
     >>> x, y, z = lonlat_to_cartesian(lon, lat, ellipsoid="WGS84")
     >>> x
-    array([4728734.69011096, 3814362.85063174, 5302653.40426395])
+    array([4728734.69012279, 3814362.85054704, 5302653.4041462 ])
     >>> y
-    array([ 465739.71573273, 4647814.58136658, 2834327.29466645])
+    array([ 465739.7157339 , 4647814.58126337, 2834327.29460352])
     >>> z
-    array([4240471.60205904, 2121029.89621885, 2121029.89621885])
+    array([4240471.60204581, 2121029.8965948 , 2121029.8965948 ])
     """
     longitude = np.atleast_1d(longitude).astype("float64")
     latitude = np.atleast_1d(latitude).astype("float64")
