@@ -61,4 +61,7 @@ mod healpix_geo {
 
     #[pymodule_export]
     use crate::geometry_;
+
+    #[pymodule_export]
+    use crate::geometry::{cartesian_to_lonlat, lonlat_to_cartesian};
 }

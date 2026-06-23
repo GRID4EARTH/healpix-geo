@@ -34,6 +34,34 @@ pub(crate) fn healpix_to_lonlat<'py>(
     ))
 }
 
+#[pyfunction]
+pub(crate) fn lonlat_to_healpix<'py>(
+    py: Python<'py>,
+    depth: u8,
+    longitude: &Bound<'py, PyArrayDyn<f64>>,
+    latitude: &Bound<'py, PyArrayDyn<f64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<Bound<'py, PyArrayDyn<u64>>> {
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let input_shape = longitude.shape();
+
+    let lon = longitude.readonly();
+    let lat = latitude.readonly();
+    let coords: Vec<(f64, f64)> = lon
+        .as_slice()?
+        .iter()
+        .zip(lat.as_slice()?)
+        .map(|(&lon, &lat)| (lon, lat))
+        .collect();
+
+    let layer = healpix::nested::get(depth);
+
+    let ipix = vectorized::lonlat_to_healpix(&coords, layer, &ellipsoid, nthreads as usize);
+
+    PyArray1::from_vec(py, ipix).reshape(input_shape)
+}
+
 #[allow(clippy::type_complexity)]
 #[pyfunction]
 pub(crate) fn healpix_to_cartesian<'py>(
@@ -92,34 +120,6 @@ pub(crate) fn cartesian_to_healpix<'py>(
     let layer = healpix::nested::get(depth);
 
     let ipix = vectorized::cartesian_to_healpix(&coords, layer, &ellipsoid, nthreads as usize);
-
-    PyArray1::from_vec(py, ipix).reshape(input_shape)
-}
-
-#[pyfunction]
-pub(crate) fn lonlat_to_healpix<'py>(
-    py: Python<'py>,
-    depth: u8,
-    longitude: &Bound<'py, PyArrayDyn<f64>>,
-    latitude: &Bound<'py, PyArrayDyn<f64>>,
-    ellipsoid_like: EllipsoidLike,
-    nthreads: u16,
-) -> PyResult<Bound<'py, PyArrayDyn<u64>>> {
-    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
-    let input_shape = longitude.shape();
-
-    let lon = longitude.readonly();
-    let lat = latitude.readonly();
-    let coords: Vec<(f64, f64)> = lon
-        .as_slice()?
-        .iter()
-        .zip(lat.as_slice()?)
-        .map(|(&lon, &lat)| (lon, lat))
-        .collect();
-
-    let layer = healpix::nested::get(depth);
-
-    let ipix = vectorized::lonlat_to_healpix(&coords, layer, &ellipsoid, nthreads as usize);
 
     PyArray1::from_vec(py, ipix).reshape(input_shape)
 }

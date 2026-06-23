@@ -1,3 +1,4 @@
+use numpy::{PyArray1, PyArrayDyn, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::exceptions::{PyImportError, PyNotImplementedError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyString, PyTuple, PyType};
@@ -5,6 +6,10 @@ use pyo3::types::{PyString, PyTuple, PyType};
 use healpix_geo_core::geometry::{
     BoundingBox as HgBoundingBox, Geometry, Point as HgPoint, Polygon as HgPolygon,
 };
+use healpix_geo_core::vectorized::geometry as vectorized;
+
+use crate::ellipsoid::EllipsoidLike;
+use crate::traits::Unzip3;
 
 /// bounding box
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
@@ -188,4 +193,74 @@ impl GeometryTypes {
 
         Ok(geom)
     }
+}
+
+#[allow(clippy::type_complexity)]
+#[pyfunction]
+pub(crate) fn lonlat_to_cartesian<'py>(
+    py: Python<'py>,
+    longitude: &Bound<'py, PyArrayDyn<f64>>,
+    latitude: &Bound<'py, PyArrayDyn<f64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<(
+    Bound<'py, PyArrayDyn<f64>>,
+    Bound<'py, PyArrayDyn<f64>>,
+    Bound<'py, PyArrayDyn<f64>>,
+)> {
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let input_shape = longitude.shape();
+
+    let lon = longitude.readonly();
+    let lat = latitude.readonly();
+    let coords: Vec<(f64, f64)> = lon
+        .as_slice()?
+        .iter()
+        .zip(lat.as_slice()?)
+        .map(|(&lon, &lat)| (lon, lat))
+        .collect();
+
+    let (x, y, z) =
+        vectorized::lonlat_to_cartesian(&coords, &ellipsoid, nthreads as usize).unzip3();
+
+    Ok((
+        PyArray1::from_vec(py, x).reshape(input_shape)?,
+        PyArray1::from_vec(py, y).reshape(input_shape)?,
+        PyArray1::from_vec(py, z).reshape(input_shape)?,
+    ))
+}
+
+#[allow(clippy::type_complexity)]
+#[pyfunction]
+pub(crate) fn cartesian_to_lonlat<'py>(
+    py: Python<'py>,
+    x: &Bound<'py, PyArrayDyn<f64>>,
+    y: &Bound<'py, PyArrayDyn<f64>>,
+    z: &Bound<'py, PyArrayDyn<f64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<(Bound<'py, PyArrayDyn<f64>>, Bound<'py, PyArrayDyn<f64>>)> {
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let input_shape = x.shape();
+
+    let x = x.readonly();
+    let y = y.readonly();
+    let z = z.readonly();
+
+    let coords: Vec<(f64, f64, f64)> = x
+        .as_slice()?
+        .iter()
+        .zip(y.as_slice()?)
+        .zip(z.as_slice()?)
+        .map(|((&x, &y), &z)| (x, y, z))
+        .collect();
+
+    let (lon, lat) = vectorized::cartesian_to_lonlat(&coords, &ellipsoid, nthreads as usize)
+        .into_iter()
+        .unzip();
+
+    Ok((
+        PyArray1::from_vec(py, lon).reshape(input_shape)?,
+        PyArray1::from_vec(py, lat).reshape(input_shape)?,
+    ))
 }
