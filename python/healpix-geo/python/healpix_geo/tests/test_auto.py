@@ -130,6 +130,38 @@ def test_healpix_to_cartesian(grid, cell_ids, expected_x, expected_y, expected_z
 
 
 @pytest.mark.parametrize(
+    ["grid", "x", "y", "z", "expected_cell_ids"],
+    (
+        (
+            auto.Grid(level=5, indexing_scheme="nested", ellipsoid="sphere"),
+            np.array([5135976.029120959, 4377780.484325115, 4807395.498488697]),
+            np.array([3617162.4288051003, 4598126.636314509, 4146887.8757006973]),
+            np.array([1061832.8333333333, 530916.4166666666, 530916.4166666666]),
+            np.array([42, 6, 10], dtype="uint64"),
+        ),
+        (
+            auto.Grid(level=3, indexing_scheme="ring", ellipsoid="sphere"),
+            np.array([4489305.655250199, 2831507.466796499, 3810568.0007241173]),
+            np.array([4489305.655250198, 5297377.8773753615, 4643190.543375064]),
+            np.array([530916.4166666666, 2123665.6666666665, 2123665.6666666665]),
+            np.array([340, 245, 244], dtype="uint64"),
+        ),
+        (
+            auto.Grid(level=6, indexing_scheme="zuniq", ellipsoid="WGS84"),
+            np.array([4490116.435263974]),
+            np.array([4490116.435263973]),
+            np.array([596608.3469093519]),
+            np.array([6825768185233408], dtype="uint64"),
+        ),
+    ),
+)
+def test_cartesian_to_healpix(grid, x, y, z, expected_cell_ids):
+    actual_cell_ids = auto.cartesian_to_healpix(x, y, z, grid)
+
+    np.testing.assert_equal(actual_cell_ids, expected_cell_ids)
+
+
+@pytest.mark.parametrize(
     ["grid", "cell_ids", "step", "expected_lon", "expected_lat"],
     (
         (
