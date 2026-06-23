@@ -48,7 +48,7 @@ class Grid:
 
 def healpix_to_lonlat(
     ipix: npt.NDArray[np.uint64], grid: Grid, *, num_threads: int = 0
-) -> (npt.NDArray[np.float64], npt.NDArray[np.float64]):
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     r"""Get the longitudes and latitudes of the center of some HEALPix cells.
 
     Parameters
@@ -126,6 +126,108 @@ def lonlat_to_healpix(
     params = {"depth": grid.level, "ellipsoid": grid.ellipsoid}
 
     return module.lonlat_to_healpix(lon, lat, num_threads=num_threads, **params)
+
+
+def healpix_to_cartesian(
+    ipix: npt.NDArray[np.uint64], grid: Grid, num_threads: int = 0
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""Get the cartesian coordinates of the center of the given HEALPix cells.
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    grid : Grid
+        The definition of the HEALPix grid.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    x, y, z : array-like
+        The coordinates of the center of the HEALPix cells.
+
+    Raises
+    ------
+    ValueError
+        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth}[`.
+    ValueError
+        When the name of the ellipsoid is unknown.
+
+    Examples
+    --------
+    >>> import healpix_geo.auto as hg
+    >>> import numpy as np
+    >>> ipix = np.array([42, 6, 10])
+    >>> grid = hg.Grid(level=3, indexing_scheme="nested", ellipsoid="WGS84")
+    >>> x, y, z = hg.healpix_to_cartesian(ipix, grid)
+    >>> x
+    array([4728734.69011096, 3814362.85063174, 5302653.40426395])
+    >>> y
+    array([ 465739.71573273, 4647814.58136658, 2834327.29466645])
+    >>> z
+    array([4240471.60205904, 2121029.89621885, 2121029.89621885])
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    params = grid._as_params()
+
+    return module.healpix_to_cartesian(ipix, num_threads=num_threads, **params)
+
+
+def cartesian_to_healpix(
+    x: npt.NDArray[np.float64],
+    y: npt.NDArray[np.float64],
+    z: npt.NDArray[np.float64],
+    grid: Grid,
+    num_threads: int = 0,
+) -> npt.NDArray[np.uint64]:
+    r"""Get the HEALPix indexes that contain specific points.
+
+    Parameters
+    ----------
+    x : array-like
+        The x coordinate of the input points, in meters.
+    y : array-like
+        The y coordinate of the input points, in meters.
+    z : array-like
+        The z coordinate of the input points, in meters.
+    grid : Grid
+        The definition of the HEALPix grid.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    ipix : `numpy.ndarray`
+        A numpy array containing all the HEALPix cell indexes stored as `np.uint64`.
+
+    Raises
+    ------
+    ValueError
+        When the number of longitudes and latitudes given do not match.
+    ValueError
+        When the name of the ellipsoid is unknown.
+
+    Examples
+    --------
+    >>> import healpix_geo.auto as hg
+    >>> import numpy as np
+    >>> x = np.array([4728734.69011096, 3814362.85063174, 5302653.40426395])
+    >>> y = np.array([465739.71573273, 4647814.58136658, 2834327.29466645])
+    >>> z = np.array([4240471.60205904, 2121029.89621885, 2121029.89621885])
+    >>> grid = hg.Grid(level=3, indexing_scheme="nested", ellipsoid="WGS84")
+    >>> ipix = hg.cartesian_to_healpix(x, y, z, grid)
+    >>> ipix
+    array([304, 282, 282], dtype=uint64)
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    params = {"depth": grid.level, "ellipsoid": grid.ellipsoid}
+
+    return module.cartesian_to_healpix(x, y, z, num_threads=num_threads, **params)
 
 
 def vertices(
