@@ -61,7 +61,9 @@ pub fn cartesian_to_healpix(
     let p = (*x, *y, *z);
     let (lon, lat) = ellipsoid.cartesian_to_geographic(&p);
 
-    lonlat_to_healpix(&lon, &lat, layer, ellipsoid)
+    let lat_ = ellipsoid.latitude_geographic_to_authalic(lat);
+
+    layer.hash(lon, lat_)
 }
 
 pub fn bilinear_interpolation(

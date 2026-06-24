@@ -58,7 +58,9 @@ pub fn cartesian_to_healpix(x: &f64, y: &f64, z: &f64, nside: &u32, ellipsoid: &
     let p = (*x, *y, *z);
     let (lon, lat) = ellipsoid.cartesian_to_geographic(&p);
 
-    lonlat_to_healpix(&lon, &lat, nside, ellipsoid)
+    let lat_ = ellipsoid.latitude_geographic_to_authalic(lat);
+
+    healpix::ring::hash(*nside, lon, lat_)
 }
 
 pub fn bilinear_interpolation(
