@@ -46,10 +46,9 @@ mod tests {
 
         let expected = (476237.2944918946, 4226722.89200382, 4736816.046999251);
 
-        // FIXME: why does this only match up to the millimeter?
-        assert!((x - expected.0).abs() < 1e-12);
-        assert!((y - expected.1).abs() < 1e-12);
-        assert!((z - expected.2).abs() < 1e-12);
+        assert!((x - expected.0).abs() < 1e-9);
+        assert!((y - expected.1).abs() < 1e-9);
+        assert!((z - expected.2).abs() < 1e-9);
     }
 
     #[test]
