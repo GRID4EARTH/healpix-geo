@@ -15,6 +15,8 @@ Conversions between geographic coordinates and HEALPix indices.
 
    healpix_to_lonlat
    lonlat_to_healpix
+   healpix_to_cartesian
+   cartesian_to_healpix
    vertices
 
 .. seealso::
