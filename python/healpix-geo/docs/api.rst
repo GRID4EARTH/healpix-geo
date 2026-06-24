@@ -38,6 +38,9 @@ Helpers
    slices.ConcreteSlice
    slices.MultiConcreteSlice
 
+   cartesian_to_lonlat
+   lonlat_to_cartesian
+
 Common Parameters
 ==================
 
