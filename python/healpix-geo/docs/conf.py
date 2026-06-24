@@ -86,6 +86,7 @@ napoleon_preprocess_types = True
 napoleon_type_aliases = {
     # healpix-geo
     "ellipsoid-like": ":term:`ellipsoid-like`",
+    "geometry-like": ":term:`geometry-like`",
     "array-like": ":py:class:`numpy.ndarray`",
 }
 
