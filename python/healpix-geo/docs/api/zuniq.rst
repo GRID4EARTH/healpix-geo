@@ -32,6 +32,16 @@ Coordinates Conversions
    cartesian_to_healpix
    vertices
 
+Interpolation
+~~~~~~~~~~~~~
+
+Interpolation from HEALPix to geographic coordinates.
+
+.. autosummary::
+   :toctree: ../generated/
+
+   bilinear_interpolation
+
 Hierarchy and neighbourhood
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

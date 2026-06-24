@@ -22,6 +22,16 @@ Conversions between geographic coordinates and HEALPix indices.
 .. seealso::
    Tutorial complete : :doc:`../tutorials/coordinate_conversion`
 
+Interpolation
+~~~~~~~~~~~~~
+
+Interpolation from HEALPix to geographic coordinates.
+
+.. autosummary::
+   :toctree: ../generated/
+
+   bilinear_interpolation
+
 Hierarchy and neighborhood
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
