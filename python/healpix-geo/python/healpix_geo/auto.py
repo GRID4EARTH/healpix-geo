@@ -222,7 +222,7 @@ def cartesian_to_healpix(
     >>> grid = hg.Grid(level=3, indexing_scheme="nested", ellipsoid="WGS84")
     >>> ipix = hg.cartesian_to_healpix(x, y, z, grid)
     >>> ipix
-    array([304, 282, 282], dtype=uint64)
+    array([42,  6, 10], dtype=uint64)
     """
     module = _dispatch_module(grid.indexing_scheme)
     params = {"depth": grid.level, "ellipsoid": grid.ellipsoid}

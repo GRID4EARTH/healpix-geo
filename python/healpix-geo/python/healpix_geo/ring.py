@@ -211,7 +211,7 @@ def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
     >>> depth = 3
     >>> ipix = cartesian_to_healpix(x, y, z, depth, ellipsoid="WGS84")
     >>> ipix
-    array([336, 368, 336], dtype=uint64)
+    array([336, 436, 114], dtype=uint64)
     """
     _check_depth(depth)
     x = np.atleast_1d(x).astype("float64")

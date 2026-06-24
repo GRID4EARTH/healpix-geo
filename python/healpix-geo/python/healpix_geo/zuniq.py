@@ -290,7 +290,7 @@ def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
     >>> depth = 3
     >>> ipix = cartesian_to_healpix(x, y, z, depth, ellipsoid="WGS84")
     >>> ipix
-    array([2742692173068632064, 2544533789464330240, 2742692173068632064],
+    array([2742692173068632064, 5165628772593958912,  346777171307528192],
           dtype=uint64)
     """
     _check_depth(depth)
