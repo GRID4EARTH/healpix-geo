@@ -347,10 +347,12 @@ def bilinear_interpolation(
     >>> import numpy as np
 
     Define coordinates
+
     >>> lon = np.array([-15.0, -10.0, -5.0, 0.0, 5.0])
     >>> lat = np.array([30.0, 35.0, 40.0, 45.0, 50.0])
 
     Compute interpolation weights
+
     >>> cell_ids, weights = bilinear_interpolation(lon, lat, depth=6, ellipsoid="WGS84")
     >>> cell_ids
     MArray(
