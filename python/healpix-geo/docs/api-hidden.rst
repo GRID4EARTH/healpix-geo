@@ -18,6 +18,7 @@
    healpix_geo.nested.RangeMOCIndex.symmetric_difference
 
    healpix_geo.nested.RangeMOCIndex.depth
+   healpix_geo.nested.RangeMOCIndex.ellipsoid
    healpix_geo.nested.RangeMOCIndex.nbytes
    healpix_geo.nested.RangeMOCIndex.size
 
