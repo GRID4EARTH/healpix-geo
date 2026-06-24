@@ -92,7 +92,7 @@ mod tests {
         let layer = healpix::nested::get(0);
 
         let (x, y, z) = (-3357810.2476832955, -3357810.2476832923, -4247331.333333333);
-        let actual = cartesian_to_healpix(&x, &y, &z, &layer, &ellipsoid);
+        let actual = cartesian_to_healpix(&x, &y, &z, layer, &ellipsoid);
 
         let expected = 6052837899185946624;
 
