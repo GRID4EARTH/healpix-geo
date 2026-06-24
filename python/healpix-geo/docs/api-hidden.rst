@@ -3,7 +3,7 @@
 .. autosummary::
    :toctree: generated/
 
-   healpix_geo.nested.RangeMOCIndex.create_empty
+   healpix_geo.nested.RangeMOCIndex.empty
    healpix_geo.nested.RangeMOCIndex.from_cell_ids
    healpix_geo.nested.RangeMOCIndex.full_domain
 
