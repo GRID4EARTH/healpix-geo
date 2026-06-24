@@ -83,4 +83,19 @@ mod tests {
         assert!((y - expected_y).abs() < 1e-8);
         assert!((z - expected_z).abs() < 1e-8);
     }
+
+    #[test]
+    fn test_cartesian_to_healpix() {
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("sphere").unwrap(),
+        ));
+        let layer = healpix::nested::get(0);
+
+        let (x, y, z) = (-3357810.2476832955, -3357810.2476832923, -4247331.333333333);
+        let actual = cartesian_to_healpix(&x, &y, &z, &layer, &ellipsoid);
+
+        let expected = 6052837899185946624;
+
+        assert_eq!(actual, expected);
+    }
 }

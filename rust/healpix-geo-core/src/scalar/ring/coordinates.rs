@@ -107,6 +107,22 @@ mod tests {
     }
 
     #[test]
+    fn test_cartesian_to_healpix() {
+        let nside = 1;
+
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("sphere").unwrap(),
+        ));
+
+        let (x, y, z) = (-3357810.2476832955, -3357810.2476832923, -4247331.333333333);
+
+        let actual = cartesian_to_healpix(&x, &y, &z, &nside, &ellipsoid);
+        let expected = 10;
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
     fn test_lonlat_to_healpix_edge_cases_lon() {
         let nside = healpix::nside(0);
         let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(

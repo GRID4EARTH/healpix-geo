@@ -124,6 +124,22 @@ mod tests {
     }
 
     #[test]
+    fn test_cartesian_to_healpix_level3() {
+        let layer = healpix::nested::get(3);
+
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("WGS84").unwrap(),
+        ));
+
+        let (x, y, z) = (476237.29439881037, 4226722.89212488, 4736816.0469012465);
+
+        let actual = cartesian_to_healpix(&x, &y, &z, layer, &ellipsoid);
+        let expected = 23;
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
     fn test_lonlat_to_healpix_edge_cases_lon() {
         let layer = healpix::nested::get(0);
 
