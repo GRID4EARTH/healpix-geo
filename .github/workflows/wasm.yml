@@ -30,6 +30,8 @@ jobs:
       - name: Create rust cache
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # 2.9.1
 
+      - name: setup rust target
+        run: rustup target add wasm32-unknown-unknown
       - name: run tests
         run: cargo test --target wasm32-unknown-unknown
 
