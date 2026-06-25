@@ -107,6 +107,7 @@ pub mod tests_wasm32 {
     use serde::{Deserialize, Serialize};
     use serde_wasm_bindgen::to_value;
     use std::collections::HashMap;
+    use wasm_bindgen_test::*;
 
     #[derive(Serialize, Deserialize)]
     enum Value {
