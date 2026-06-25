@@ -4,6 +4,10 @@ channels:
   - https://prefix.dev/emscripten-forge-4x
   - https://prefix.dev/conda-forge
 dependencies:
-  - xeus-python
+  - xeus-python>=0.19
   - numpy
   - healpix-geo
+  # help mamba resolve the env
+  - nlohmann_json-abi>=3.12.0
+  - xeus-python-shell>=0.8
+  - xeus-python-shell-lite>=0.8
