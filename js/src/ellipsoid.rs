@@ -104,8 +104,15 @@ mod tests {
 #[cfg(all(test, target_arch = "wasm32"))]
 mod tests_wasm32 {
     use super::*;
+    use serde::{Deserialize, Serialize};
     use serde_wasm_bindgen::to_value;
     use std::collections::HashMap;
+
+    #[derive(Serialize, Deserialize)]
+    enum Value {
+        String(String),
+        Float(f64),
+    }
 
     #[test]
     fn test_parse_ellipsoid_ellipsoid() {
@@ -114,9 +121,9 @@ mod tests_wasm32 {
         let if_: f64 = 298.257223563;
         let name = "WGS84".to_string();
 
-        map.insert("name".to_string(), to_value(&name));
-        map.insert("semi_major_axis".to_string(), to_value(&a));
-        map.insert("inverse_flattening".to_string(), to_value(&if_));
+        map.insert("name".to_string(), Value::String(name));
+        map.insert("semi_major_axis".to_string(), Value::Float(a));
+        map.insert("inverse_flattening".to_string(), Value::Float(if_));
 
         let obj = to_value(&map);
 
