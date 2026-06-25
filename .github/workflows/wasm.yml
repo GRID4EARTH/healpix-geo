@@ -32,15 +32,15 @@ jobs:
         with:
           prefix-key: wasm32
 
-      - name: setup rust target
-        run: rustup target add wasm32-unknown-unknown
-      - name: run tests
-        run: cargo test --target wasm32-unknown-unknown
-
       - name: setup rust
         run: |
           # TODO: pin
           cargo install wasm-pack
+
+      - name: run tests
+        run: |
+          wasm-pack test --headless --firefox
+          wasm-pack test --headless --chrome
 
       # - name: build node bundle
       #   run: |
