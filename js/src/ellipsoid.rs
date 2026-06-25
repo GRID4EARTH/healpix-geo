@@ -110,9 +110,13 @@ mod tests_wasm32 {
     #[test]
     fn test_parse_ellipsoid_ellipsoid() {
         let mut map = HashMap::new();
-        map.insert("name".to_string(), to_value("WGS84".to_string()));
-        map.insert("semi_major_axis".to_string(), to_value(6378137.0));
-        map.insert("inverse_flattening".to_string(), to_value(298.257223563));
+        let a: f64 = 6378137.0;
+        let if_: f64 = 298.257223563;
+        let name = "WGS84".to_string();
+
+        map.insert("name".to_string(), to_value(&name));
+        map.insert("semi_major_axis".to_string(), to_value(&a));
+        map.insert("inverse_flattening".to_string(), to_value(&if_));
 
         let obj = to_value(&map);
 
