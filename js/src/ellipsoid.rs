@@ -46,6 +46,8 @@ pub struct Sphere {
 
 #[wasm_bindgen(js_name = parseEllipsoid)]
 pub fn parse_ellipsoid(obj: JsValue) -> Result<EllipsoidLike, JsValue> {
+    println!("received: {obj:?}");
+
     let parsed = from_value(obj)?;
 
     Ok(parsed)
