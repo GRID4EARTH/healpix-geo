@@ -109,6 +109,8 @@ pub mod tests_wasm32 {
     use std::collections::HashMap;
     use wasm_bindgen_test::*;
 
+    wasm_bindgen_test_configure!(run_in_browser);
+
     #[derive(Serialize, Deserialize)]
     enum Value {
         String(String),
