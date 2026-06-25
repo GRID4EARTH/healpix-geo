@@ -125,7 +125,7 @@ mod tests_wasm32 {
         map.insert("semi_major_axis".to_string(), Value::Float(a));
         map.insert("inverse_flattening".to_string(), Value::Float(if_));
 
-        let obj = to_value(&map);
+        let obj = to_value(&map).unwrap();
 
         let actual: EllipsoidLike = parse_ellipsoid(obj).unwrap();
         match actual {
