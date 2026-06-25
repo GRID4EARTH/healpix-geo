@@ -102,7 +102,7 @@ mod tests {
 }
 
 #[cfg(all(test, target_arch = "wasm32"))]
-mod tests_wasm32 {
+pub mod tests_wasm32 {
     use super::*;
     use serde::{Deserialize, Serialize};
     use serde_wasm_bindgen::to_value;
@@ -114,7 +114,7 @@ mod tests_wasm32 {
         Float(f64),
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_parse_ellipsoid_ellipsoid() {
         let mut map = HashMap::new();
         let a: f64 = 6378137.0;
