@@ -15,6 +15,10 @@ wasm-bindgen = "0.2.123"
 healpix-geo-core = { workspace = true }
 cdshealpix = { workspace = true }
 geodesy = { workspace = true }
+# `geodesy` pulls in `uuid` (with `rng`/`v4`), which hard-errors on
+# `wasm32-unknown-unknown` unless a randomness backend is selected. These two
+# dependencies exist solely to enable that backend for the wasm build; neither
+# is used directly. Do not remove them.
 uuid = { version = "1.23.3", features = ["rng-getrandom"] }
 getrandom = { version = "0.4.2", features = ["wasm_js"] }
 console_error_panic_hook = "0.1.7"

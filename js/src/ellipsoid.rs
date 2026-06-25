@@ -18,14 +18,44 @@ pub struct EllipsoidInverse {
 }
 
 #[wasm_bindgen]
+impl EllipsoidInverse {
+    #[wasm_bindgen(constructor)]
+    pub fn new(semi_major_axis: f64, inverse_flattening: f64) -> Self {
+        Self {
+            semi_major_axis,
+            inverse_flattening,
+        }
+    }
+}
+
+#[wasm_bindgen]
 pub struct EllipsoidSemiMinor {
     pub semi_major_axis: f64,
     pub semi_minor_axis: f64,
 }
 
 #[wasm_bindgen]
+impl EllipsoidSemiMinor {
+    #[wasm_bindgen(constructor)]
+    pub fn new(semi_major_axis: f64, semi_minor_axis: f64) -> Self {
+        Self {
+            semi_major_axis,
+            semi_minor_axis,
+        }
+    }
+}
+
+#[wasm_bindgen]
 pub struct Sphere {
     pub radius: f64,
+}
+
+#[wasm_bindgen]
+impl Sphere {
+    #[wasm_bindgen(constructor)]
+    pub fn new(radius: f64) -> Self {
+        Self { radius }
+    }
 }
 
 impl Ellipsoid {

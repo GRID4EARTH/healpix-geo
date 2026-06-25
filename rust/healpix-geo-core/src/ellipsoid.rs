@@ -5,7 +5,6 @@ use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use serde::{de, ser};
 use std::collections::HashMap;
-use std::default::Default;
 use std::fmt;
 
 pub trait ReferenceBody {

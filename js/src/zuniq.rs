@@ -7,6 +7,12 @@ use crate::coordinates::Coordinate;
 use crate::ellipsoid::Ellipsoid;
 use crate::geometry::spherical_vertex;
 
+/// `zuniq` index of the cell at the given z-order coordinates
+///
+/// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
+/// numbering within a base-resolution pixel — into the nested cell index at
+/// `depth`, then converts it to the `zuniq` scheme. Note the parameter order:
+/// the function takes `(depth, j, i)` but interleaves them as `ij2h(i, j)`.
 #[wasm_bindgen(js_name = bitCombinedZuniq)]
 pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
     let zoc = healpix::nested::zordercurve::get_zoc(depth);

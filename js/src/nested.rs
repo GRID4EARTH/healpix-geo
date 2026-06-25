@@ -7,6 +7,12 @@ use crate::coordinates::Coordinate;
 use crate::ellipsoid::Ellipsoid;
 use crate::geometry::spherical_vertex;
 
+/// Nested index of the cell at the given z-order coordinates
+///
+/// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
+/// numbering within a base-resolution pixel — into the cell index at `depth`.
+/// Note the parameter order: the function takes `(depth, j, i)` but interleaves
+/// them as `ij2h(i, j)`.
 #[wasm_bindgen(js_name = bitCombinedNested)]
 pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
     let zoc = healpix::nested::zordercurve::get_zoc(depth);
@@ -105,5 +111,33 @@ mod tests {
         let hash = bit_combine(depth, j, i);
 
         assert_eq!(hash, 2);
+    }
+
+    #[test]
+    fn test_healpix_to_lonlat_ellipsoid() {
+        use crate::ellipsoid::{EllipsoidInverse, Sphere};
+
+        let depth: u8 = 0;
+        // a base pixel whose center sits at a mid latitude (~41.8 deg), where the
+        // authalic -> geographic conversion produces a measurable difference
+        let ipix: u64 = 0;
+
+        let sphere_default = healpix_to_lonlat(ipix, depth, None);
+
+        // WGS84: the geographic latitude differs measurably from the authalic
+        // (spherical) latitude, while the longitude is unaffected
+        let wgs84 =
+            Ellipsoid::EllipsoidInverseFlattening(EllipsoidInverse::new(6378137.0, 298.257223563));
+        let ellipsoidal = healpix_to_lonlat(ipix, depth, Some(wgs84));
+
+        assert!((sphere_default.lon - ellipsoidal.lon).abs() < 1e-9);
+        assert!((sphere_default.lat - ellipsoidal.lat).abs() > 1e-3);
+
+        // an explicit sphere reproduces the default (radius does not affect lon/lat)
+        let sphere = Ellipsoid::Sphere(Sphere::new(6_371_000.0));
+        let explicit_sphere = healpix_to_lonlat(ipix, depth, Some(sphere));
+
+        assert!((sphere_default.lon - explicit_sphere.lon).abs() < 1e-9);
+        assert!((sphere_default.lat - explicit_sphere.lat).abs() < 1e-9);
     }
 }
