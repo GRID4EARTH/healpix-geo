@@ -2,75 +2,61 @@ use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 use healpix_geo_core::ellipsoid::{
     Ellipsoid as RustEllipsoid, ReferenceEllipsoid, ReferenceSphere,
 };
+use serde::Deserialize;
+use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 
+#[derive(Deserialize, Debug)]
 #[wasm_bindgen]
-pub enum Ellipsoid {
-    EllipsoidInverseFlattening(EllipsoidInverse),
-    EllipsoidSemiMinorAxis(EllipsoidSemiMinor),
+pub enum EllipsoidLike {
+    Ellipsoid(Ellipsoid),
     Sphere(Sphere),
 }
 
+#[derive(Deserialize, Debug)]
 #[wasm_bindgen]
-pub struct EllipsoidInverse {
+pub struct Ellipsoid {
     pub semi_major_axis: f64,
     pub inverse_flattening: f64,
 }
 
-#[wasm_bindgen]
-impl EllipsoidInverse {
-    #[wasm_bindgen(constructor)]
-    pub fn new(semi_major_axis: f64, inverse_flattening: f64) -> Self {
-        Self {
-            semi_major_axis,
-            inverse_flattening,
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub struct EllipsoidSemiMinor {
+#[derive(Deserialize, Debug)]
+struct EllipsoidSemiMinor {
     pub semi_major_axis: f64,
     pub semi_minor_axis: f64,
 }
 
-#[wasm_bindgen]
-impl EllipsoidSemiMinor {
-    #[wasm_bindgen(constructor)]
-    pub fn new(semi_major_axis: f64, semi_minor_axis: f64) -> Self {
-        Self {
-            semi_major_axis,
-            semi_minor_axis,
+impl From<EllipsoidSemiMinor> for Ellipsoid {
+    fn from(val: EllipsoidSemiMinor) -> Ellipsoid {
+        let a = val.semi_major_axis;
+        let b = val.semi_minor_axis;
+
+        Ellipsoid {
+            semi_major_axis: a,
+            inverse_flattening: a / (a - b),
         }
     }
 }
 
+#[derive(Deserialize, Debug)]
 #[wasm_bindgen]
 pub struct Sphere {
     pub radius: f64,
 }
 
-#[wasm_bindgen]
-impl Sphere {
-    #[wasm_bindgen(constructor)]
-    pub fn new(radius: f64) -> Self {
-        Self { radius }
-    }
+#[wasm_bindgen(js_name = parseEllipsoid)]
+pub fn parse_ellipsoid(obj: JsValue) -> Result<EllipsoidLike, JsValue> {
+    let parsed = from_value(obj)?;
+
+    Ok(parsed)
 }
 
-impl Ellipsoid {
+impl EllipsoidLike {
     pub fn into_ellipsoid(self) -> RustEllipsoid {
         match self {
-            Self::EllipsoidInverseFlattening(ell) => {
+            Self::Ellipsoid(ell) => {
                 let ellipsoid =
                     GeodesyEllipsoid::new(ell.semi_major_axis, 1.0f64 / ell.inverse_flattening);
-
-                RustEllipsoid::Ellipsoid(ReferenceEllipsoid::new(ellipsoid))
-            }
-            Self::EllipsoidSemiMinorAxis(ell) => {
-                let a = ell.semi_major_axis;
-                let b = ell.semi_minor_axis;
-                let ellipsoid = GeodesyEllipsoid::new(a, (a - b) / a);
 
                 RustEllipsoid::Ellipsoid(ReferenceEllipsoid::new(ellipsoid))
             }

@@ -4,7 +4,7 @@ use healpix_geo_core::scalar::nested::coordinates as scalar;
 use wasm_bindgen::prelude::*;
 
 use crate::coordinates::Coordinate;
-use crate::ellipsoid::Ellipsoid;
+use crate::ellipsoid::EllipsoidLike;
 use crate::geometry::spherical_vertex;
 
 /// Nested index of the cell at the given z-order coordinates
@@ -22,7 +22,7 @@ pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
 
 /// Center coordinates for the given cell
 #[wasm_bindgen(js_name = healpixToLonLatNested)]
-pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<Ellipsoid>) -> Coordinate {
+pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
     let layer = healpix::nested::get(depth);
 
     let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
@@ -34,7 +34,7 @@ pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<Ellipsoid>) -> 
 
 /// Project the given coordinate to the healpix grid
 #[wasm_bindgen(js_name = lonLatToHealpixNested)]
-pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<Ellipsoid>) -> u64 {
+pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> u64 {
     let layer = healpix::nested::get(depth);
     let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
@@ -45,7 +45,13 @@ pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<Ellips
 ///
 /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
 #[wasm_bindgen(js_name = vertexNested)]
-pub fn vertex(hash: u64, depth: u8, u: f64, v: f64, ellipsoid: Option<Ellipsoid>) -> Coordinate {
+pub fn vertex(
+    hash: u64,
+    depth: u8,
+    u: f64,
+    v: f64,
+    ellipsoid: Option<EllipsoidLike>,
+) -> Coordinate {
     let layer = healpix::nested::get(depth);
     let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
@@ -115,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_healpix_to_lonlat_ellipsoid() {
-        use crate::ellipsoid::{EllipsoidInverse, Sphere};
+        use crate::ellipsoid::{Ellipsoid, EllipsoidLike, Sphere};
 
         let depth: u8 = 0;
         // a base pixel whose center sits at a mid latitude (~41.8 deg), where the
@@ -126,15 +132,19 @@ mod tests {
 
         // WGS84: the geographic latitude differs measurably from the authalic
         // (spherical) latitude, while the longitude is unaffected
-        let wgs84 =
-            Ellipsoid::EllipsoidInverseFlattening(EllipsoidInverse::new(6378137.0, 298.257223563));
+        let wgs84 = EllipsoidLike::Ellipsoid(Ellipsoid {
+            semi_major_axis: 6378137.0,
+            inverse_flattening: 298.257223563,
+        });
         let ellipsoidal = healpix_to_lonlat(ipix, depth, Some(wgs84));
 
         assert!((sphere_default.lon - ellipsoidal.lon).abs() < 1e-9);
         assert!((sphere_default.lat - ellipsoidal.lat).abs() > 1e-3);
 
         // an explicit sphere reproduces the default (radius does not affect lon/lat)
-        let sphere = Ellipsoid::Sphere(Sphere::new(6_371_000.0));
+        let sphere = EllipsoidLike::Sphere(Sphere {
+            radius: 6_371_000.0,
+        });
         let explicit_sphere = healpix_to_lonlat(ipix, depth, Some(sphere));
 
         assert!((sphere_default.lon - explicit_sphere.lon).abs() < 1e-9);
