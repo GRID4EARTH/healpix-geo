@@ -70,3 +70,57 @@ impl EllipsoidLike {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use geodesy::prelude::EllipsoidBase;
+    use healpix_geo_core::ellipsoid::ReferenceBody;
+
+    #[test]
+    fn test_ellipsoidlike_to_ellipsoid() {
+        let a: f64 = 6378137.0;
+        let if_: f64 = 298.257223563;
+        let f: f64 = 1.0 / if_;
+
+        let obj = EllipsoidLike::Ellipsoid(Ellipsoid {
+            semi_major_axis: a,
+            inverse_flattening: if_,
+        });
+
+        let actual = obj.into_ellipsoid();
+        match actual {
+            RustEllipsoid::Ellipsoid(ell) => {
+                let unpacked = ell.ellipsoid();
+
+                assert_eq!(unpacked.semimajor_axis(), a);
+                assert_eq!(unpacked.flattening(), f);
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[cfg(all(test, target_arch = "wasm32"))]
+mod tests_wasm32 {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_parse_ellipsoid_ellipsoid() {
+        let mut map = HashMap::new();
+        map.insert("semi_major_axis".to_string(), 6378137.0);
+        map.insert("inverse_flattening".to_string(), 298.257223563);
+
+        let obj = to_value(&map);
+
+        let actual: EllipsoidLike = parse_ellipsoid(obj);
+        match actual {
+            EllipsoidLike::Ellipsoid(ell) => {
+                assert_eq!(ell.semi_major_axis, map["semi_major_axis"]);
+                assert_eq!(ell.inverse_flattening, map["inverse_flattening"]);
+            }
+            _ => unreachable!(),
+        }
+    }
+}
