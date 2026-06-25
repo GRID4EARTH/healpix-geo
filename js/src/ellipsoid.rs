@@ -104,6 +104,7 @@ mod tests {
 #[cfg(all(test, target_arch = "wasm32"))]
 mod tests_wasm32 {
     use super::*;
+    use serde_wasm_bindgen::to_value;
     use std::collections::HashMap;
 
     #[test]
@@ -115,7 +116,7 @@ mod tests_wasm32 {
 
         let obj = to_value(&map);
 
-        let actual: EllipsoidLike = parse_ellipsoid(obj);
+        let actual: EllipsoidLike = parse_ellipsoid(obj).unwrap();
         match actual {
             EllipsoidLike::Ellipsoid(ell) => {
                 assert_eq!(ell.semi_major_axis, map["semi_major_axis"]);
