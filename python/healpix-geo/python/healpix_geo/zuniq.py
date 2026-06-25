@@ -409,10 +409,12 @@ def bilinear_interpolation(
     >>> import numpy as np
 
     Define coordinates
+
     >>> lon = np.array([-15.0, -10.0, -5.0, 0.0, 5.0])
     >>> lat = np.array([30.0, 35.0, 40.0, 45.0, 50.0])
 
     Compute interpolation weights
+
     >>> cell_ids, weights = bilinear_interpolation(lon, lat, depth=6, ellipsoid="WGS84")
     >>> cell_ids
     MArray(
@@ -569,10 +571,7 @@ def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):
     depth : int
         The maximum depth of the cells to be returned.
     ellipsoid : ellipsoid-like, default: "sphere"
-        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
-        spherical, this will return the same result as
-        :py:func:`cdshealpix.nested.zone_search` followed by a translation to the zuniq
-        scheme.
+        Reference ellipsoid to evaluate healpix on.
     flat : bool, default: True
         If ``True``, the cells returned will all be at the passed depth.
 
@@ -602,10 +601,7 @@ def box_coverage(center, size, angle, depth, *, ellipsoid="sphere", flat=True):
     depth : int
         The maximum depth of the cells to be returned.
     ellipsoid : ellipsoid-like, default: "sphere"
-        Reference ellipsoid to evaluate healpix on. If the reference ellipsoid is
-        spherical, this will return the same result as
-        :py:func:`cdshealpix.nested.box_search` followed by a translation to the zuniq
-        scheme.
+        Reference ellipsoid to evaluate healpix on.
     flat : bool, default: True
         If ``True``, the cells returned will all be at the passed depth.
 

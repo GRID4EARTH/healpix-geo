@@ -123,7 +123,7 @@ jupyterlite-sphinx = ">=0.22.1,<0.23"
 jupyterlite-core = ">=0.7.3,<0.8"
 
 [feature.docs.tasks]
-clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/", cwd = "python/healpix-geo/docs" }
+clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/ _contents", cwd = "python/healpix-geo/docs" }
 build-docs = { cmd = "python -m sphinx -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "python/healpix-geo/docs" }
 autobuild-docs = { cmd = "sphinx-autobuild -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "python/healpix-geo/docs" }
 build-docs-rtd = { cmd = "python -m sphinx -b html -W -T -j auto . $READTHEDOCS_OUTPUT/html", cwd = "python/healpix-geo/docs" }

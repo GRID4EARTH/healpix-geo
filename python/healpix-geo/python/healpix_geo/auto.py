@@ -393,15 +393,18 @@ def bilinear_interpolation(
     >>> import numpy as np
 
     Define the grid
+
     >>> grid = hg.Grid(level=12, indexing_scheme="nested", ellipsoid="sphere")
     >>> grid
     Grid(level=12, indexing_scheme='nested', ellipsoid='sphere')
 
     Define coordinates
+
     >>> lon = np.array([-15.0, -10.0, -5.0, 0.0, 5.0], dtype="float64")
     >>> lat = np.array([30.0, 35.0, 40.0, 45.0, 50.0], dtype="float64")
 
     Compute interpolation weights
+
     >>> cell_ids, weights = hg.bilinear_interpolation(lon, lat, grid)
     >>> cell_ids
     MArray(

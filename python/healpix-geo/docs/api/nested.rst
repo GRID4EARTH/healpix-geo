@@ -15,10 +15,22 @@ Conversions between geographic coordinates and HEALPix indices.
 
    healpix_to_lonlat
    lonlat_to_healpix
+   healpix_to_cartesian
+   cartesian_to_healpix
    vertices
 
 .. seealso::
    Tutorial complete : :doc:`../tutorials/coordinate_conversion`
+
+Interpolation
+~~~~~~~~~~~~~
+
+Interpolation from HEALPix to geographic coordinates.
+
+.. autosummary::
+   :toctree: ../generated/
+
+   bilinear_interpolation
 
 Hierarchy and neighborhood
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

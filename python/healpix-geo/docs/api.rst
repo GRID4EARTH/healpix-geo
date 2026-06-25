@@ -34,9 +34,9 @@ Helpers
    :toctree: generated/
 
    geometry.Bbox
-   slices.Slice
-   slices.ConcreteSlice
-   slices.MultiConcreteSlice
+
+   cartesian_to_lonlat
+   lonlat_to_cartesian
 
 Common Parameters
 ==================

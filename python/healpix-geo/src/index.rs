@@ -381,7 +381,7 @@ impl RangeMOCIndex {
     ///
     /// Parameters
     /// ----------
-    /// geometry : healpix_geo.geometry.Bbox or shapely.Geometry
+    /// geometry : healpix_geo.geometry.Bbox or geometry-like
     ///     The geometry to query by. Supported are:
     ///     - Bbox for true bounding box queries (planar geometry)
     ///     - shapely objects for spherical geometry queries
