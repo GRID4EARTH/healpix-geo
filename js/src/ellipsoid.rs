@@ -130,8 +130,8 @@ mod tests_wasm32 {
         let actual: EllipsoidLike = parse_ellipsoid(obj).unwrap();
         match actual {
             EllipsoidLike::Ellipsoid(ell) => {
-                assert_eq!(ell.semi_major_axis, map["semi_major_axis"]);
-                assert_eq!(ell.inverse_flattening, map["inverse_flattening"]);
+                assert_eq!(ell.semi_major_axis, a);
+                assert_eq!(ell.inverse_flattening, if_);
             }
             _ => unreachable!(),
         }
