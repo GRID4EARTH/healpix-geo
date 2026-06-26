@@ -91,7 +91,6 @@ jobs:
           if-no-files-found: "error"
 
   release:
-    if: event_name == 'release'
     runs-on: ubuntu-latest
 
     environment:
