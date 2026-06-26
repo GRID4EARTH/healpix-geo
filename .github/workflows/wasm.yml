@@ -112,7 +112,10 @@ jobs:
           node-version: "26"
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false # never use caching in release builds
-      - name: inspect package
+      - name: unpack
         working-directory: dist
+        run: tar xvfz healpix-geo*.tgz
+      - name: publish
+        working-directory: dist/package
         run: |
-          npm stage publish
+          npm stage publish --dry-run
