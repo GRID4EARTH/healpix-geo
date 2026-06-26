@@ -106,7 +106,6 @@ pub mod tests_wasm32 {
     use super::*;
     use serde_json::json;
     use serde_wasm_bindgen::to_value;
-    use std::collections::HashMap;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
