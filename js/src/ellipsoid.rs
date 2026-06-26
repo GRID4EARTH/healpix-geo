@@ -111,9 +111,11 @@ pub mod tests_wasm32 {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
     enum Value {
+        #[serde(untagged)]
         String(String),
+        #[serde(untagged)]
         Float(f64),
     }
 
