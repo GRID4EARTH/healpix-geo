@@ -118,4 +118,4 @@ jobs:
       - name: publish
         working-directory: dist/package
         run: |
-          npm stage publish --dry-run
+          npm stage publish
