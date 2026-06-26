@@ -115,4 +115,4 @@ jobs:
       - name: inspect package
         working-directory: dist
         run: |
-          ls -l
+          npm stage publish
