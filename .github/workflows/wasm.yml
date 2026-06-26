@@ -61,7 +61,7 @@ jobs:
         run: |
           mkdir pkg
           cp build/bundler/index* pkg/
-          jq '.files = ["*"] | .module = ["index.js"] | .types = ["index.d.ts"] | .name = "healpix-geo"' build/bundler/package.json > pkg/package.json
+          jq '.files = ["*"] | .module = ["index.js"] | .types = ["index.d.ts"] | .name = "healpix-geo" | .repository.url = "git+https://github.com/GRID4EARTH/healpix-geo.git"' build/bundler/package.json > pkg/package.json
 
       - name: pack the package
         run: |
