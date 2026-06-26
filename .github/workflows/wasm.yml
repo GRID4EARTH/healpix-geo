@@ -113,6 +113,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false # never use caching in release builds
       - name: inspect package
+        working-directory: dist
         run: |
-          cd dist
           ls -l
