@@ -35,8 +35,7 @@ jobs:
 
       - name: setup rust
         run: |
-          # TODO: pin
-          cargo install wasm-pack
+          cargo install wasm-pack@0.15.0
 
       - name: run tests
         run: |
@@ -55,6 +54,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
+      - name: setup rust
+        run: |
+          cargo install wasm-pack@0.15.0
 
       # - name: build node bundle
       #   run: |
