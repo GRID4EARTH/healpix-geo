@@ -9,7 +9,7 @@ pub mod zuniq;
 use wasm_bindgen::prelude::*;
 
 pub use crate::coordinates::Coordinate;
-pub use crate::ellipsoid::Ellipsoid;
+pub use crate::ellipsoid::EllipsoidLike;
 
 pub use crate::nested::{
     bit_combine as bit_combine_nested, healpix_to_lonlat as healpix_to_lonlat_nested,

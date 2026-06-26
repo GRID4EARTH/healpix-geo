@@ -2,43 +2,48 @@ use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 use healpix_geo_core::ellipsoid::{
     Ellipsoid as RustEllipsoid, ReferenceEllipsoid, ReferenceSphere,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
 pub enum EllipsoidLike {
-    Ellipsoid(Ellipsoid),
+    #[serde(untagged)]
+    EllipsoidInverseFlattening(EllipsoidInverseFlattening),
+    #[serde(untagged)]
+    EllipsoidSemiMinorAxis(EllipsoidSemiMinorAxis),
+    #[serde(untagged)]
     Sphere(Sphere),
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
-pub struct Ellipsoid {
+pub struct EllipsoidInverseFlattening {
     pub semi_major_axis: f64,
     pub inverse_flattening: f64,
 }
 
-#[derive(Deserialize, Debug)]
-struct EllipsoidSemiMinor {
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[wasm_bindgen]
+pub struct EllipsoidSemiMinorAxis {
     pub semi_major_axis: f64,
     pub semi_minor_axis: f64,
 }
 
-impl From<EllipsoidSemiMinor> for Ellipsoid {
-    fn from(val: EllipsoidSemiMinor) -> Ellipsoid {
+impl From<EllipsoidSemiMinorAxis> for EllipsoidInverseFlattening {
+    fn from(val: EllipsoidSemiMinorAxis) -> EllipsoidInverseFlattening {
         let a = val.semi_major_axis;
         let b = val.semi_minor_axis;
 
-        Ellipsoid {
+        EllipsoidInverseFlattening {
             semi_major_axis: a,
             inverse_flattening: a / (a - b),
         }
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
 pub struct Sphere {
     pub radius: f64,
@@ -46,8 +51,6 @@ pub struct Sphere {
 
 #[wasm_bindgen(js_name = parseEllipsoid)]
 pub fn parse_ellipsoid(obj: JsValue) -> Result<EllipsoidLike, JsValue> {
-    panic!("received: {obj:?}");
-
     let parsed = from_value(obj)?;
 
     Ok(parsed)
@@ -56,9 +59,17 @@ pub fn parse_ellipsoid(obj: JsValue) -> Result<EllipsoidLike, JsValue> {
 impl EllipsoidLike {
     pub fn into_ellipsoid(self) -> RustEllipsoid {
         match self {
-            Self::Ellipsoid(ell) => {
+            Self::EllipsoidInverseFlattening(ell) => {
                 let ellipsoid =
                     GeodesyEllipsoid::new(ell.semi_major_axis, 1.0f64 / ell.inverse_flattening);
+
+                RustEllipsoid::Ellipsoid(ReferenceEllipsoid::new(ellipsoid))
+            }
+            Self::EllipsoidSemiMinorAxis(ell) => {
+                let a = ell.semi_major_axis;
+                let b = ell.semi_minor_axis;
+                let flattening = (a - b) / a;
+                let ellipsoid = GeodesyEllipsoid::new(a, flattening);
 
                 RustEllipsoid::Ellipsoid(ReferenceEllipsoid::new(ellipsoid))
             }
@@ -76,6 +87,7 @@ mod tests {
     use super::*;
     use geodesy::prelude::EllipsoidBase;
     use healpix_geo_core::ellipsoid::ReferenceBody;
+    use serde_json::{Value, json};
 
     #[test]
     fn test_ellipsoidlike_to_ellipsoid() {
@@ -83,7 +95,7 @@ mod tests {
         let if_: f64 = 298.257223563;
         let f: f64 = 1.0 / if_;
 
-        let obj = EllipsoidLike::Ellipsoid(Ellipsoid {
+        let obj = EllipsoidLike::EllipsoidInverseFlattening(EllipsoidInverseFlattening {
             semi_major_axis: a,
             inverse_flattening: if_,
         });
@@ -98,6 +110,104 @@ mod tests {
             }
             _ => unreachable!(),
         }
+    }
+
+    #[test]
+    fn test_serialize_ellipsoid() {
+        let a = 6378137.0;
+        let if_ = 298.257223563;
+
+        let ellipsoid = EllipsoidLike::EllipsoidInverseFlattening(EllipsoidInverseFlattening {
+            semi_major_axis: a,
+            inverse_flattening: if_,
+        });
+
+        let serialized = serde_json::to_string(&ellipsoid).unwrap();
+
+        let actual: Value = serde_json::from_str(&serialized).unwrap();
+        let expected = json!({"semi_major_axis": a, "inverse_flattening": if_});
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_deserialize_ellipsoid() {
+        let a = 6378137.0;
+        let if_ = 298.257223563;
+
+        let json = r#"{"name": "WGS84", "semi_major_axis": 6378137.0, "inverse_flattening": 298.257223563}"#;
+
+        let actual: EllipsoidLike = serde_json::from_str(&json).unwrap();
+        let expected = EllipsoidLike::EllipsoidInverseFlattening(EllipsoidInverseFlattening {
+            semi_major_axis: a,
+            inverse_flattening: if_,
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_serialize_ellipsoid_semiminor() {
+        let a = 6378137.0;
+        let b = 6356752.314245179;
+
+        let ellipsoid = EllipsoidLike::EllipsoidSemiMinorAxis(
+            EllipsoidSemiMinorAxis {
+                semi_major_axis: a,
+                semi_minor_axis: b,
+            }
+            .into(),
+        );
+
+        let serialized = serde_json::to_string(&ellipsoid).unwrap();
+
+        let actual: Value = serde_json::from_str(&serialized).unwrap();
+        let expected = json!({"semi_major_axis": a, "semi_minor_axis": b});
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_deserialize_ellipsoid_semiminor() {
+        let a = 6378137.0;
+        let b = 6356752.314245179;
+
+        let json = r#"{"name": "WGS84", "semi_major_axis": 6378137.0, "semi_minor_axis": 6356752.314245179}"#;
+
+        let actual: EllipsoidLike = serde_json::from_str(&json).unwrap();
+        let expected = EllipsoidLike::EllipsoidSemiMinorAxis(
+            EllipsoidSemiMinorAxis {
+                semi_major_axis: a,
+                semi_minor_axis: b,
+            }
+            .into(),
+        );
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_serialize_sphere() {
+        let r = 6370997.0;
+
+        let sphere = EllipsoidLike::Sphere(Sphere { radius: r });
+
+        let serialized = serde_json::to_string(&sphere).unwrap();
+
+        let actual: Value = serde_json::from_str(&serialized).unwrap();
+        let expected = json!({"radius": r});
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_deserialize_sphere() {
+        let json = r#"{"name": "sphere", "radius": 6370997.0}"#;
+
+        let actual: EllipsoidLike = serde_json::from_str(&json).unwrap();
+        let expected = EllipsoidLike::Sphere(Sphere { radius: 6370997.0 });
+
+        assert_eq!(actual, expected);
     }
 }
 
@@ -120,7 +230,7 @@ pub mod tests_wasm32 {
 
         let actual: EllipsoidLike = parse_ellipsoid(obj).map_err(JsValue::from).unwrap();
         match actual {
-            EllipsoidLike::Ellipsoid(ell) => {
+            EllipsoidLike::EllipsoidInverseFlattening(ell) => {
                 assert_eq!(ell.semi_major_axis, a);
                 assert_eq!(ell.inverse_flattening, if_);
             }

@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_healpix_to_lonlat_ellipsoid() {
-        use crate::ellipsoid::{Ellipsoid, EllipsoidLike, Sphere};
+        use crate::ellipsoid::{EllipsoidInverseFlattening, EllipsoidLike, Sphere};
 
         let depth: u8 = 0;
         // a base pixel whose center sits at a mid latitude (~41.8 deg), where the
@@ -132,7 +132,7 @@ mod tests {
 
         // WGS84: the geographic latitude differs measurably from the authalic
         // (spherical) latitude, while the longitude is unaffected
-        let wgs84 = EllipsoidLike::Ellipsoid(Ellipsoid {
+        let wgs84 = EllipsoidLike::EllipsoidInverseFlattening(EllipsoidInverseFlattening {
             semi_major_axis: 6378137.0,
             inverse_flattening: 298.257223563,
         });
