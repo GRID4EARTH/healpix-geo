@@ -2,7 +2,7 @@ use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 use healpix_geo_core::ellipsoid::{
     Ellipsoid as RustEllipsoid, ReferenceEllipsoid, ReferenceSphere,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 
@@ -87,7 +87,6 @@ mod tests {
     use super::*;
     use geodesy::prelude::EllipsoidBase;
     use healpix_geo_core::ellipsoid::ReferenceBody;
-    use serde_json::{Value, json};
 
     #[test]
     fn test_ellipsoidlike_to_ellipsoid() {
@@ -119,7 +118,7 @@ mod tests {
 
         let json = r#"{"name": "WGS84", "semi_major_axis": 6378137.0, "inverse_flattening": 298.257223563}"#;
 
-        let actual: EllipsoidLike = serde_json::from_str(&json).unwrap();
+        let actual: EllipsoidLike = serde_json::from_str(json).unwrap();
         let expected = EllipsoidLike::EllipsoidInverseFlattening(EllipsoidInverseFlattening {
             semi_major_axis: a,
             inverse_flattening: if_,
@@ -135,14 +134,11 @@ mod tests {
 
         let json = r#"{"name": "WGS84", "semi_major_axis": 6378137.0, "semi_minor_axis": 6356752.314245179}"#;
 
-        let actual: EllipsoidLike = serde_json::from_str(&json).unwrap();
-        let expected = EllipsoidLike::EllipsoidSemiMinorAxis(
-            EllipsoidSemiMinorAxis {
-                semi_major_axis: a,
-                semi_minor_axis: b,
-            }
-            .into(),
-        );
+        let actual: EllipsoidLike = serde_json::from_str(json).unwrap();
+        let expected = EllipsoidLike::EllipsoidSemiMinorAxis(EllipsoidSemiMinorAxis {
+            semi_major_axis: a,
+            semi_minor_axis: b,
+        });
 
         assert_eq!(actual, expected);
     }
@@ -151,7 +147,7 @@ mod tests {
     fn test_deserialize_sphere() {
         let json = r#"{"name": "sphere", "radius": 6370997.0}"#;
 
-        let actual: EllipsoidLike = serde_json::from_str(&json).unwrap();
+        let actual: EllipsoidLike = serde_json::from_str(json).unwrap();
         let expected = EllipsoidLike::Sphere(Sphere { radius: 6370997.0 });
 
         assert_eq!(actual, expected);
