@@ -46,7 +46,7 @@ pub struct Sphere {
 
 #[wasm_bindgen(js_name = parseEllipsoid)]
 pub fn parse_ellipsoid(obj: JsValue) -> Result<EllipsoidLike, JsValue> {
-    println!("received: {obj:?}");
+    panic!("received: {obj:?}");
 
     let parsed = from_value(obj)?;
 
@@ -116,9 +116,9 @@ pub mod tests_wasm32 {
         let if_: f64 = 298.257223563;
 
         let data = json!({"name": "WGS84", "semi_major_axis": a, "inverse_flattening": if_});
-        let obj = to_value(&data).unwrap();
+        let obj = to_value(&data).map_err(JsValue::from).unwrap();
 
-        let actual: EllipsoidLike = parse_ellipsoid(obj).unwrap();
+        let actual: EllipsoidLike = parse_ellipsoid(obj).map_err(JsValue::from).unwrap();
         match actual {
             EllipsoidLike::Ellipsoid(ell) => {
                 assert_eq!(ell.semi_major_axis, a);
