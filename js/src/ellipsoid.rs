@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
 pub enum EllipsoidLike {
     #[serde(untagged)]
@@ -17,14 +17,14 @@ pub enum EllipsoidLike {
     Sphere(Sphere),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
 pub struct EllipsoidInverseFlattening {
     pub semi_major_axis: f64,
     pub inverse_flattening: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
 pub struct EllipsoidSemiMinorAxis {
     pub semi_major_axis: f64,
@@ -43,7 +43,7 @@ impl From<EllipsoidSemiMinorAxis> for EllipsoidInverseFlattening {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[wasm_bindgen]
 pub struct Sphere {
     pub radius: f64,
@@ -113,24 +113,6 @@ mod tests {
     }
 
     #[test]
-    fn test_serialize_ellipsoid() {
-        let a = 6378137.0;
-        let if_ = 298.257223563;
-
-        let ellipsoid = EllipsoidLike::EllipsoidInverseFlattening(EllipsoidInverseFlattening {
-            semi_major_axis: a,
-            inverse_flattening: if_,
-        });
-
-        let serialized = serde_json::to_string(&ellipsoid).unwrap();
-
-        let actual: Value = serde_json::from_str(&serialized).unwrap();
-        let expected = json!({"semi_major_axis": a, "inverse_flattening": if_});
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
     fn test_deserialize_ellipsoid() {
         let a = 6378137.0;
         let if_ = 298.257223563;
@@ -142,27 +124,6 @@ mod tests {
             semi_major_axis: a,
             inverse_flattening: if_,
         });
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn test_serialize_ellipsoid_semiminor() {
-        let a = 6378137.0;
-        let b = 6356752.314245179;
-
-        let ellipsoid = EllipsoidLike::EllipsoidSemiMinorAxis(
-            EllipsoidSemiMinorAxis {
-                semi_major_axis: a,
-                semi_minor_axis: b,
-            }
-            .into(),
-        );
-
-        let serialized = serde_json::to_string(&ellipsoid).unwrap();
-
-        let actual: Value = serde_json::from_str(&serialized).unwrap();
-        let expected = json!({"semi_major_axis": a, "semi_minor_axis": b});
 
         assert_eq!(actual, expected);
     }
@@ -182,20 +143,6 @@ mod tests {
             }
             .into(),
         );
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn test_serialize_sphere() {
-        let r = 6370997.0;
-
-        let sphere = EllipsoidLike::Sphere(Sphere { radius: r });
-
-        let serialized = serde_json::to_string(&sphere).unwrap();
-
-        let actual: Value = serde_json::from_str(&serialized).unwrap();
-        let expected = json!({"radius": r});
 
         assert_eq!(actual, expected);
     }
