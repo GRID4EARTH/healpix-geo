@@ -104,33 +104,20 @@ mod tests {
 #[cfg(all(test, target_arch = "wasm32"))]
 pub mod tests_wasm32 {
     use super::*;
-    use serde::{Deserialize, Serialize};
+    use serde_json::json;
     use serde_wasm_bindgen::to_value;
     use std::collections::HashMap;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    #[derive(Serialize, Deserialize, PartialEq, Debug)]
-    enum Value {
-        #[serde(untagged)]
-        String(String),
-        #[serde(untagged)]
-        Float(f64),
-    }
-
     #[wasm_bindgen_test]
     fn test_parse_ellipsoid_ellipsoid() {
-        let mut map = HashMap::new();
         let a: f64 = 6378137.0;
         let if_: f64 = 298.257223563;
-        let name = "WGS84".to_string();
 
-        map.insert("name".to_string(), Value::String(name));
-        map.insert("semi_major_axis".to_string(), Value::Float(a));
-        map.insert("inverse_flattening".to_string(), Value::Float(if_));
-
-        let obj = to_value(&map).unwrap();
+        let data = json!({"name": "WGS84", "semi_major_axis": a, "inverse_flattening": if_});
+        let obj = to_value(&data).unwrap();
 
         let actual: EllipsoidLike = parse_ellipsoid(obj).unwrap();
         match actual {
