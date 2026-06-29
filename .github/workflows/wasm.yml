@@ -31,6 +31,8 @@ jobs:
           persist-credentials: false
 
       - name: Create rust cache
+        if: github.event_name != 'release'
+        # zizmor: ignore[cache-poisoning] # not used for releases
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           prefix-key: wasm32
