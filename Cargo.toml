@@ -19,5 +19,5 @@ cdshealpix = { git = "https://github.com/cds-astro/cds-healpix-rust.git", rev = 
 moc = "0.19.1"
 rayon = "1.12.0"
 geodesy = "0.15.0"
-itertools = "0.14.0"
+itertools = "0.15.0"
 healpix-geo-core = { path = "rust/healpix-geo-core" }
