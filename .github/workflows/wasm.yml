@@ -43,6 +43,7 @@ jobs:
           wasm-pack test --headless --chrome
 
   build-bundle:
+    name: build
     needs: tests
     runs-on: ubuntu-latest
     if: |
@@ -117,6 +118,7 @@ jobs:
           if-no-files-found: "error"
 
   release:
+    name: publish
     runs-on: ubuntu-latest
     needs: build-bundle
     if: |
