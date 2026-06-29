@@ -15,7 +15,7 @@ repository = "https://github.com/GRID4EARTH/healpix-geo"
 categories = ["science::geo"]
 
 [workspace.dependencies]
-cdshealpix = { git = "https://github.com/cds-astro/cds-healpix-rust.git", rev = "0c76809be71e248ed137b9d68f10746d0418d413" }
+cdshealpix = { git = "https://github.com/cds-astro/cds-healpix-rust.git", rev = "d9d017cda85a097b65d200e3c4cccefc54665915" }
 moc = "0.19.2"
 rayon = "1.12.0"
 geodesy = "0.15.0"
