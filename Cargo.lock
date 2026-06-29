@@ -455,17 +455,19 @@ dependencies = [
 
 [[package]]
 name = "geodesy"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c1778eaef1f258c89d8d3f0fadb42ef70f4c714d237714fede0936285661c20"
+checksum = "2ef2bd803c1d8af10b606c25679c045abc04f36256955edc26f5952018b6afb7"
 dependencies = [
  "anyhow",
+ "byteorder",
  "clap",
  "clap-verbosity-flag",
  "dirs",
  "env_logger",
  "float_eq",
  "log",
+ "memmap2",
  "thiserror 1.0.69",
  "uuid",
  "wasm-bindgen",
