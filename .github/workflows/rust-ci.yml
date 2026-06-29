@@ -67,12 +67,12 @@ jobs:
           cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
 
       - name: setup environment
-        uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # 0.9.6
+        uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # v0.9.6
         with:
           environments: "${{ matrix.env }}"
 
       - name: Create rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # 2.9.1
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
 
       - name: Help finding installed libraries
         run: |
@@ -129,12 +129,12 @@ jobs:
           cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
 
       - name: setup environment
-        uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # 0.9.6
+        uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # v0.9.6
         with:
           environments: "${{ matrix.env }}"
 
       - name: Create rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # 2.9.1
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
 
       - name: Help finding installed libraries
         run: |
