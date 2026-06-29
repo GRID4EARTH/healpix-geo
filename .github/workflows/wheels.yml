@@ -59,6 +59,7 @@ jobs:
           fi
 
   linux:
+    name: linux ${{ matrix.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -109,6 +110,7 @@ jobs:
           path: dist
 
   musllinux:
+    name: musllinux ${{ matrix.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -153,6 +155,7 @@ jobs:
           path: dist
 
   windows:
+    name: windows ${{ matrix.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -193,6 +196,7 @@ jobs:
           path: dist
 
   macos:
+    name: macos ${{ matrix.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -248,8 +252,9 @@ jobs:
   #         path: dist
 
   release:
-    runs-on: ubuntu-latest
     name: Release
+    runs-on: ubuntu-latest
+
     environment:
       name: pypi
       url: https://pypi.org/p/healpix-geo
