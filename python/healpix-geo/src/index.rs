@@ -103,7 +103,7 @@ impl<'py> IndexKind<'py> {
 ///
 /// Only works with cell ids following the "nested" scheme.
 #[derive(PartialEq, Debug, Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 #[pyo3(module = "healpix_geo.nested")]
 pub struct RangeMOCIndex {
     region: CellRegion,

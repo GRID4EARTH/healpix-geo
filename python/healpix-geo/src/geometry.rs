@@ -13,7 +13,7 @@ use crate::traits::Unzip3;
 
 /// bounding box
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 #[pyo3(module = "healpix_geo.geometry", frozen)]
 pub struct Bbox {
     #[pyo3(get)]
