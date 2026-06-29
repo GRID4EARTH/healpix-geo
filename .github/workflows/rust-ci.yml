@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   cache-pixi-lock:
+    name: cache pixi.lock
     if: github.repository == 'GRID4EARTH/healpix-geo'
     runs-on: ubuntu-slim
     outputs:
@@ -76,7 +77,7 @@ jobs:
 
       - name: Help finding installed libraries
         run: |
-          export CONDA_PREFIX=$(pixi run -e "${{ matrix.env }}" --frozen 'echo $CONDA_PREFIX')
+          export CONDA_PREFIX=$(pixi run -e $ENV --frozen 'echo $CONDA_PREFIX')
           if [[ -z "$CONDA_PREFIX" ]]; then
             echo "CONDA_PREFIX is unset!"
             exit 1
@@ -90,7 +91,7 @@ jobs:
       - name: Help the linker on macos
         if: runner.os == 'MacOS'
         run: |
-          export CONDA_PREFIX=$(pixi run -e "${{ matrix.env }}" --frozen 'echo $CONDA_PREFIX')
+          export CONDA_PREFIX=$(pixi run -e $ENV --frozen 'echo $CONDA_PREFIX')
 
           if [ ! -d target/debug/deps ]; then
               mkdir -p target/debug/deps
@@ -99,15 +100,12 @@ jobs:
 
       - name: Cargo clippy
         run: |
-          pixi run -e "${{ matrix.env }}" lint-rust
+          pixi run -e $ENV lint-rust
 
   tests:
     name: Rust tests
     needs: cache-pixi-lock
     runs-on: ${{ matrix.os }}
-
-    env:
-      FORCE_COLOR: 3
 
     strategy:
       matrix:
@@ -117,6 +115,10 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+
+    env:
+      FORCE_COLOR: 3
+      ENV: ${{ matrix.env }}
 
     steps:
       - name: Checkout
@@ -138,7 +140,7 @@ jobs:
 
       - name: Help finding installed libraries
         run: |
-          export CONDA_PREFIX=$(pixi run -e "${{ matrix.env }}" --frozen 'echo $CONDA_PREFIX')
+          export CONDA_PREFIX=$(pixi run -e $ENV --frozen 'echo $CONDA_PREFIX')
           if [[ -z "$CONDA_PREFIX" ]]; then
             echo "CONDA_PREFIX is unset!"
             exit 1
@@ -152,7 +154,7 @@ jobs:
       - name: Help the linker on macos
         if: runner.os == 'MacOS'
         run: |
-          export CONDA_PREFIX=$(pixi run -e "${{ matrix.env }}" --frozen 'echo $CONDA_PREFIX')
+          export CONDA_PREFIX=$(pixi run -e $ENV --frozen 'echo $CONDA_PREFIX')
 
           if [ ! -d target/debug/deps ]; then
               mkdir -p target/debug/deps
@@ -161,4 +163,4 @@ jobs:
 
       - name: Cargo clippy
         run: |
-          pixi run -e "${{ matrix.env }}" rust-tests
+          pixi run -e $ENV rust-tests

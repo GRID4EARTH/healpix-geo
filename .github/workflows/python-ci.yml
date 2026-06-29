@@ -36,6 +36,7 @@ jobs:
           keyword: "[skip-ci]"
 
   cache-pixi-lock:
+    name: cache pixi.lock
     runs-on: ubuntu-slim
     needs: detect-ci-trigger
     if: |
@@ -140,14 +141,13 @@ jobs:
 
       - name: Run tests
         run: |
-          pixi run -e '${{ matrix.env }}' --frozen tests
+          pixi run -e $ENV --frozen tests
 
   doctests:
     name: doctests | ubuntu-latest | ${{ matrix.env }}
     needs: cache-pixi-lock
     runs-on: ubuntu-latest
-    env:
-      FORCE_COLOR: 3
+
     defaults:
       run:
         shell: bash -l {0}
@@ -155,6 +155,11 @@ jobs:
     strategy:
       matrix:
         env: ["ci-py313"]
+
+    env:
+      FORCE_COLOR: 3
+      ENV: ${{ matrix.env }}
+      RUNNER_OS: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -185,7 +190,7 @@ jobs:
 
       - name: Help finding installed libraries
         run: |
-          export CONDA_PREFIX=$(pixi run --frozen -e '${{ matrix.env }}' 'echo $CONDA_PREFIX')
+          export CONDA_PREFIX=$(pixi run --frozen -e $ENV 'echo $CONDA_PREFIX')
           if [[ -z "$CONDA_PREFIX" ]]; then
             echo "CONDA_PREFIX is unset!"
             exit 1
@@ -199,7 +204,7 @@ jobs:
       - name: Help the linker on macos
         if: runner.os == 'MacOS'
         run: |
-          export CONDA_PREFIX=$(pixi run --frozen -e '${{ matrix.env }}' 'echo $CONDA_PREFIX')
+          export CONDA_PREFIX=$(pixi run --frozen -e $ENV 'echo $CONDA_PREFIX')
 
           if [ ! -d target/debug/deps ]; then
               mkdir -p target/debug/deps
@@ -209,10 +214,10 @@ jobs:
       - name: Check imports
         run: |
           pixi run \
-              -e '${{ matrix.env }}' \
+              -e $ENV \
               --frozen \
               python -c 'import healpix_geo'
 
       - name: Run tests
         run: |
-          pixi run -e '${{ matrix.env }}' --frozen doctests
+          pixi run -e $ENV --frozen doctests
