@@ -45,6 +45,12 @@ jobs:
   build-bundle:
     needs: tests
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'release'
+      || (
+        github.event_name == 'pull_request'
+        && contains(github.event.pull_request.labels.*.name, 'release')
+      )
 
     defaults:
       run:
