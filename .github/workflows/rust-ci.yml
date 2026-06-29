@@ -40,9 +40,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: cache-pixi-lock
 
-    env:
-      FORCE_COLOR: 3
-
     strategy:
       matrix:
         env: ["ci-py313"]
@@ -50,6 +47,10 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+
+    env:
+      FORCE_COLOR: 3
+      ENV: ${{ matrix.env }}
 
     steps:
       - name: Checkout
