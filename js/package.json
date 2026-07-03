@@ -3,5 +3,14 @@
   "version": "0.1.3",
   "license": "Apache-2.0",
   "author": "Justus Magin <keewis@posteo.de>",
-  "repository": "https://github.com/GRID4EARTH/healpix-geo"
+  "repository": "https://github.com/GRID4EARTH/healpix-geo",
+  "scripts": {
+    "build": "wasm-pack build --node",
+    "test:wasm": "wasm-pack test --headless --firefox",
+    "test:js": "jest",
+    "test": "npm run test:wasm && npm run build && npm run test:js"
+  },
+  "dependencies": {
+    "jest": "^30.4.2"
+  }
 }
