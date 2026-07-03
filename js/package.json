@@ -1,16 +1,16 @@
 {
   "name": "healpix-geo",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "author": "Justus Magin <keewis@posteo.de>",
   "repository": "https://github.com/GRID4EARTH/healpix-geo",
   "scripts": {
-    "build": "wasm-pack build --node",
+    "build": "rm -rf pkg; wasm-pack build --target nodejs --out-name index",
     "test:wasm": "wasm-pack test --headless --firefox",
-    "test:js": "jest",
+    "test:js": "vitest",
     "test": "npm run test:wasm && npm run build && npm run test:js"
   },
-  "dependencies": {
-    "jest": "^30.4.2"
+  "devDependencies": {
+    "vitest": "^4.1.9"
   }
 }
