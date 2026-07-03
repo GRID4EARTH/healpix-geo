@@ -5,7 +5,7 @@
   "author": "Justus Magin <keewis@posteo.de>",
   "repository": "https://github.com/GRID4EARTH/healpix-geo",
   "scripts": {
-    "build": "rm -rf pkg; wasm-pack build --target nodejs --out-name index",
+    "build": "rm -rf pkg; wasm-pack build --dev --target nodejs --out-name index",
     "test:wasm": "wasm-pack test --headless --firefox",
     "test:js": "vitest",
     "test": "npm run test:wasm && npm run build && npm run test:js"
