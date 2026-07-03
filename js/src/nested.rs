@@ -11,17 +11,15 @@ use crate::geometry::spherical_vertex;
 ///
 /// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
 /// numbering within a base-resolution pixel — into the cell index at `depth`.
-/// Note the parameter order: the function takes `(depth, j, i)` but interleaves
-/// them as `ij2h(i, j)`.
-#[wasm_bindgen(js_name = bitCombineNested)]
-pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
+#[wasm_bindgen(js_name = bitCombine, js_namespace = "nested")]
+pub fn bit_combine(depth: u8, i: u32, j: u32) -> u64 {
     let zoc = healpix::nested::zordercurve::get_zoc(depth);
 
     zoc.ij2h(i, j)
 }
 
 /// Center coordinates for the given cell
-#[wasm_bindgen(js_name = healpixToLonLatNested)]
+#[wasm_bindgen(js_name = healpixToLonLat, js_namespace = "nested")]
 pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
     let layer = healpix::nested::get(depth);
 
@@ -33,7 +31,7 @@ pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<EllipsoidLike>)
 }
 
 /// Project the given coordinate to the healpix grid
-#[wasm_bindgen(js_name = lonLatToHealpixNested)]
+#[wasm_bindgen(js_name = lonLatToHealpix, js_namespace = "nested")]
 pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> u64 {
     let layer = healpix::nested::get(depth);
     let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
@@ -44,7 +42,7 @@ pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<Ellips
 /// Single vertex of the given cell
 ///
 /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
-#[wasm_bindgen(js_name = vertexNested)]
+#[wasm_bindgen(js_namespace = "nested")]
 pub fn vertex(
     hash: u64,
     depth: u8,

@@ -13,7 +13,7 @@ use crate::geometry::spherical_vertex;
 /// numbering within a base-resolution pixel — into the nested cell index at
 /// `depth`, then converts it to the ring scheme. Note the parameter order: the
 /// function takes `(depth, j, i)` but interleaves them as `ij2h(i, j)`.
-#[wasm_bindgen(js_name = bitCombineRing)]
+#[wasm_bindgen(js_name = bitCombine, js_namespace = "ring")]
 pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
     let layer = healpix::nested::get(depth);
     let zoc = healpix::nested::zordercurve::get_zoc(depth);
@@ -23,7 +23,7 @@ pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
 }
 
 /// Center coordinates for the given cell
-#[wasm_bindgen(js_name = healpixToLonLatRing)]
+#[wasm_bindgen(js_name = healpixToLonLat, js_namespace = "ring")]
 pub fn healpix_to_lonlat(hash: u64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
     let layer = healpix::nested::get(depth);
     let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
@@ -35,7 +35,7 @@ pub fn healpix_to_lonlat(hash: u64, depth: u8, ellipsoid: Option<EllipsoidLike>)
 }
 
 /// Project the given coordinate to the healpix grid
-#[wasm_bindgen(js_name = lonLatToHealpixRing)]
+#[wasm_bindgen(js_name = lonLatToHealpix, js_namespace = "ring")]
 pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> u64 {
     let layer = healpix::nested::get(depth);
     let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
@@ -46,7 +46,7 @@ pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<Ellips
 /// Single vertex of the given cell
 ///
 /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
-#[wasm_bindgen(js_name = vertexRing)]
+#[wasm_bindgen(js_name = vertex, js_namespace = "ring")]
 pub fn vertex(
     hash: u64,
     depth: u8,
