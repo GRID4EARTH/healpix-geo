@@ -49,11 +49,20 @@ pub struct Sphere {
     pub radius: f64,
 }
 
+impl Default for Sphere {
+    fn default() -> Sphere {
+        Sphere { radius: 6370997.0 }
+    }
+}
+
 #[wasm_bindgen(js_name = parseEllipsoid)]
 pub fn parse_ellipsoid(obj: JsValue) -> Result<EllipsoidLike, JsValue> {
-    let parsed = from_value(obj)?;
-
-    Ok(parsed)
+    let ellipsoid_like = if obj.is_null() {
+        EllipsoidLike::Sphere(Sphere::default())
+    } else {
+        from_value(obj)?
+    };
+    Ok(ellipsoid_like)
 }
 
 impl EllipsoidLike {
