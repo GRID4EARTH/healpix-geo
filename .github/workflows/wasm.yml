@@ -49,7 +49,7 @@ jobs:
 
       - name: run tests
         run: |
-          npm run build
+          npm run build:node
           npm run test:js
           npm run test:wasm-firefox
           npm run test:wasm-chrome
@@ -88,23 +88,13 @@ jobs:
       #     mkdir -p build/esm
       #     wasm-pack build --release --target web --out-name index --out-dir build/esm
 
-      - name: build bundler bundle
+      - name: build esm bundle
         run: |
-          mkdir -p build/bundler
-          wasm-pack build --release --target bundler --out-name index --out-dir build/bundler
-
-      - name: modify package contents
-        run: |
-          mkdir pkg
-          cp build/bundler/index* pkg/
-          jq '.files = ["*"] | .module = ["index.js"] | .types = ["index.d.ts"] | .name = "healpix-geo" | .repository.url = "git+https://github.com/GRID4EARTH/healpix-geo.git"' build/bundler/package.json > pkg/package.json
+          bash scripts/build.sh --mode release web
 
       - name: pack the package
         run: |
           wasm-pack pack pkg
-
-          jq '.name = "healpix-geo"' pkg/package.json > package.json.tmp
-          mv package.json.tmp pkg/package.json
 
       # - name: assemble package
       #   run: |
