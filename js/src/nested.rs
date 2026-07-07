@@ -14,8 +14,8 @@ pub struct Nested;
 impl Nested {
     /// Nested index of the cell at the given z-order coordinates
     ///
-    /// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
-    /// numbering within a base-resolution pixel — into the cell index at `depth`.
+    /// Interleaves the bits of `i` and `j` (the two axes of the nested z-order
+    /// numbering within a base-resolution pixel) into the cell index at `depth`.
     #[wasm_bindgen(js_name = bitCombine)]
     pub fn bit_combine(depth: u8, i: u32, j: u32) -> u64 {
         let zoc = healpix::nested::zordercurve::get_zoc(depth);

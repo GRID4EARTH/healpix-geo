@@ -14,12 +14,11 @@ pub struct Ring;
 impl Ring {
     /// Ring index of the cell at the given z-order coordinates
     ///
-    /// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
-    /// numbering within a base-resolution pixel — into the nested cell index at
-    /// `depth`, then converts it to the ring scheme. Note the parameter order: the
-    /// function takes `(depth, j, i)` but interleaves them as `ij2h(i, j)`.
+    /// Interleaves the bits of `i` and `j` (the two axes of the nested z-order
+    /// numbering within a base-resolution pixel) into the nested cell index at
+    /// `depth`, then converts it to the ring scheme.
     #[wasm_bindgen(js_name = bitCombine)]
-    pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
+    pub fn bit_combine(depth: u8, i: u32, j: u32) -> u64 {
         let layer = healpix::nested::get(depth);
         let zoc = healpix::nested::zordercurve::get_zoc(depth);
         let hash = zoc.ij2h(i, j);
