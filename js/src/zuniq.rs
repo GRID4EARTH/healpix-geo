@@ -118,7 +118,7 @@ mod tests {
         let j = 1;
         let depth = 1;
 
-        let hash = Zuniq::bit_combine(depth, j, i);
+        let hash = Zuniq::bit_combine(depth, i, j);
 
         assert_eq!(hash, 360287970189639680);
     }

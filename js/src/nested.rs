@@ -123,7 +123,7 @@ mod tests {
         let j = 1;
         let depth = 1;
 
-        let hash = Nested::bit_combine(depth, j, i);
+        let hash = Nested::bit_combine(depth, i, j);
 
         assert_eq!(hash, 2);
     }

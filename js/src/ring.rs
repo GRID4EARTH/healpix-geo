@@ -126,7 +126,7 @@ mod tests {
         let j = 1;
         let depth = 1;
 
-        let hash = Ring::bit_combine(depth, j, i);
+        let hash = Ring::bit_combine(depth, i, j);
 
         assert_eq!(hash, 4);
     }
