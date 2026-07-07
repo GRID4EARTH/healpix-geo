@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-options=$(getopt -o 'h' --long 'help,mode:' -n "$0" -- "$@")
+options=$(getopt -o 'ho:' --long 'help,mode:,root:' -n "$0" -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 eval set -- "$options"
 unset options
 
-help=$(cat <<EOF
+help=$(
+cat <<EOF
 Usage: $0 [--mode TYPE] target
 
 Build the js/wasm artifact.
@@ -17,9 +18,11 @@ Arguments
 
 Options
   --mode    The optimization step. Can be either "dev" or "release". Defaults to "release".
+  --root    The output directory. Defaults to "pkg".
 EOF
 );
 
+root="pkg"
 mode="release"
 while true; do
     case "$1" in
@@ -30,6 +33,11 @@ while true; do
 
         --mode)
             mode="$2"
+            shift 2
+            ;;
+
+        -o|--root)
+            root="$2"
             shift 2
             ;;
 
@@ -50,7 +58,7 @@ target="$1"
 
 [ -d pkg ] && rm -rf pkg
 
-opts=("--out-name" "index" "--target" "$target")
+opts=("--out-name" "index" "--target" "$target" "--out-dir" "$root")
 if [[ "$mode" == "dev" ]]; then
    opts+=("--dev")
 fi
