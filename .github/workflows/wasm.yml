@@ -43,9 +43,10 @@ jobs:
         with:
           prefix-key: wasm32
 
-      - name: setup rust
+      - name: setup
         run: |
           cargo install wasm-pack@0.15.0
+          npm install
 
       - name: run tests
         run: |
