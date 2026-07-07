@@ -78,7 +78,6 @@ impl Ring {
 
 #[cfg(test)]
 mod tests {
-    use super::Ring::*;
     use super::*;
 
     #[test]
@@ -99,7 +98,7 @@ mod tests {
 
         let values = uv
             .into_iter()
-            .map(|(u, v)| vertex(hash, depth, u, v, None))
+            .map(|(u, v)| Ring::vertex(hash, depth, u, v, None))
             .collect::<Vec<_>>();
         let expected: Vec<Coordinate> = vec![
             (45.0, 0.0),
@@ -127,7 +126,7 @@ mod tests {
         let j = 1;
         let depth = 1;
 
-        let hash = bit_combine(depth, j, i);
+        let hash = Ring::bit_combine(depth, j, i);
 
         assert_eq!(hash, 4);
     }

@@ -95,7 +95,7 @@ mod tests {
 
         let values = uv
             .into_iter()
-            .map(|(u, v)| vertex(hash, depth, u, v, None))
+            .map(|(u, v)| Nested::vertex(hash, depth, u, v, None))
             .collect::<Vec<_>>();
         let expected: Vec<Coordinate> = vec![
             (45.0, 0.0),
@@ -123,7 +123,7 @@ mod tests {
         let j = 1;
         let depth = 1;
 
-        let hash = bit_combine(depth, j, i);
+        let hash = Nested::bit_combine(depth, j, i);
 
         assert_eq!(hash, 2);
     }
@@ -137,7 +137,7 @@ mod tests {
         // authalic -> geographic conversion produces a measurable difference
         let ipix: u64 = 0;
 
-        let sphere_default = healpix_to_lonlat(ipix, depth, None);
+        let sphere_default = Nested::healpix_to_lonlat(ipix, depth, None);
 
         // WGS84: the geographic latitude differs measurably from the authalic
         // (spherical) latitude, while the longitude is unaffected
@@ -145,7 +145,7 @@ mod tests {
             semi_major_axis: 6378137.0,
             inverse_flattening: 298.257223563,
         });
-        let ellipsoidal = healpix_to_lonlat(ipix, depth, Some(wgs84));
+        let ellipsoidal = Nested::healpix_to_lonlat(ipix, depth, Some(wgs84));
 
         assert!((sphere_default.lon - ellipsoidal.lon).abs() < 1e-9);
         assert!((sphere_default.lat - ellipsoidal.lat).abs() > 1e-3);
@@ -154,7 +154,7 @@ mod tests {
         let sphere = EllipsoidLike::Sphere(Sphere {
             radius: 6_371_000.0,
         });
-        let explicit_sphere = healpix_to_lonlat(ipix, depth, Some(sphere));
+        let explicit_sphere = Nested::healpix_to_lonlat(ipix, depth, Some(sphere));
 
         assert!((sphere_default.lon - explicit_sphere.lon).abs() < 1e-9);
         assert!((sphere_default.lat - explicit_sphere.lat).abs() < 1e-9);

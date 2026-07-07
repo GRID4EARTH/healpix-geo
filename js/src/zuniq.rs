@@ -90,7 +90,7 @@ mod tests {
 
         let values = uv
             .into_iter()
-            .map(|(u, v)| vertex(hash, u, v, None))
+            .map(|(u, v)| Zuniq::vertex(hash, u, v, None))
             .collect::<Vec<_>>();
         let expected: Vec<Coordinate> = vec![
             (45.0, 0.0),
@@ -118,7 +118,7 @@ mod tests {
         let j = 1;
         let depth = 1;
 
-        let hash = bit_combine(depth, j, i);
+        let hash = Zuniq::bit_combine(depth, j, i);
 
         assert_eq!(hash, 360287970189639680);
     }
