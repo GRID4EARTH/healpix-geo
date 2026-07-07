@@ -7,55 +7,66 @@ use crate::coordinates::Coordinate;
 use crate::ellipsoid::EllipsoidLike;
 use crate::geometry::spherical_vertex;
 
-/// `zuniq` index of the cell at the given z-order coordinates
-///
-/// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
-/// numbering within a base-resolution pixel — into the nested cell index at
-/// `depth`, then converts it to the `zuniq` scheme. Note the parameter order:
-/// the function takes `(depth, j, i)` but interleaves them as `ij2h(i, j)`.
-#[wasm_bindgen(js_name = bitCombine, js_namespace = "zuniq")]
-pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
-    let zoc = healpix::nested::zordercurve::get_zoc(depth);
+#[wasm_bindgen(js_name = zuniq)]
+pub struct Zuniq;
 
-    let hash = zoc.ij2h(i, j);
+#[wasm_bindgen(js_class = zuniq)]
+impl Zuniq {
+    /// `zuniq` index of the cell at the given z-order coordinates
+    ///
+    /// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
+    /// numbering within a base-resolution pixel — into the nested cell index at
+    /// `depth`, then converts it to the `zuniq` scheme. Note the parameter order:
+    /// the function takes `(depth, j, i)` but interleaves them as `ij2h(i, j)`.
+    #[wasm_bindgen(js_name = bitCombine)]
+    pub fn bit_combine(depth: u8, j: u32, i: u32) -> u64 {
+        let zoc = healpix::nested::zordercurve::get_zoc(depth);
 
-    healpix::nested::to_zuniq(depth, hash)
-}
+        let hash = zoc.ij2h(i, j);
 
-/// Center coordinates for the given cell
-#[wasm_bindgen(js_name = healpixToLonLat, js_namespace = "zuniq")]
-pub fn healpix_to_lonlat(hash: u64, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
-    let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        healpix::nested::to_zuniq(depth, hash)
+    }
 
-    let (lon, lat) = scalar::healpix_to_lonlat(&hash, &ellipsoid_);
+    /// Center coordinates for the given cell
+    #[wasm_bindgen(js_name = healpixToLonLat)]
+    pub fn healpix_to_lonlat(hash: u64, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
+        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
-    Coordinate { lon, lat }
-}
+        let (lon, lat) = scalar::healpix_to_lonlat(&hash, &ellipsoid_);
 
-/// Project the given coordinate to the healpix grid
-#[wasm_bindgen(js_name = lonLatToHealpix, js_namespace = "zuniq")]
-pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> u64 {
-    let layer = healpix::nested::get(depth);
-    let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        Coordinate { lon, lat }
+    }
 
-    scalar::lonlat_to_healpix(&lon, &lat, layer, &ellipsoid_)
-}
+    /// Project the given coordinate to the healpix grid
+    #[wasm_bindgen(js_name = lonLatToHealpix)]
+    pub fn lonlat_to_healpix(
+        lon: f64,
+        lat: f64,
+        depth: u8,
+        ellipsoid: Option<EllipsoidLike>,
+    ) -> u64 {
+        let layer = healpix::nested::get(depth);
+        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
-/// Single vertex of the given cell
-///
-/// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
-#[wasm_bindgen(js_name = vertex, js_namespace = "zuniq")]
-pub fn vertex(hash: u64, u: f64, v: f64, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
-    let (depth, nested) = healpix::nested::from_zuniq(hash);
-    let layer = healpix::nested::get(depth);
-    let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        scalar::lonlat_to_healpix(&lon, &lat, layer, &ellipsoid_)
+    }
 
-    let center = layer.center_of_projected_cell(nested);
-    let (lon, lat) = spherical_vertex(center, depth, (u, v));
+    /// Single vertex of the given cell
+    ///
+    /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
+    #[wasm_bindgen(js_name = vertex)]
+    pub fn vertex(hash: u64, u: f64, v: f64, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
+        let (depth, nested) = healpix::nested::from_zuniq(hash);
+        let layer = healpix::nested::get(depth);
+        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
-    Coordinate {
-        lon: lon.to_degrees().rem_euclid(360.0),
-        lat: ellipsoid_.latitude_authalic_to_geographic(lat).to_degrees(),
+        let center = layer.center_of_projected_cell(nested);
+        let (lon, lat) = spherical_vertex(center, depth, (u, v));
+
+        Coordinate {
+            lon: lon.to_degrees().rem_euclid(360.0),
+            lat: ellipsoid_.latitude_authalic_to_geographic(lat).to_degrees(),
+        }
     }
 }
 

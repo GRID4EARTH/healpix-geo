@@ -7,58 +7,69 @@ use crate::coordinates::Coordinate;
 use crate::ellipsoid::EllipsoidLike;
 use crate::geometry::spherical_vertex;
 
-/// Nested index of the cell at the given z-order coordinates
-///
-/// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
-/// numbering within a base-resolution pixel — into the cell index at `depth`.
-#[wasm_bindgen(js_name = bitCombine, js_namespace = "nested")]
-pub fn bit_combine(depth: u8, i: u32, j: u32) -> u64 {
-    let zoc = healpix::nested::zordercurve::get_zoc(depth);
+#[wasm_bindgen(js_name = nested)]
+pub struct Nested;
 
-    zoc.ij2h(i, j)
-}
+#[wasm_bindgen(js_class = nested)]
+impl Nested {
+    /// Nested index of the cell at the given z-order coordinates
+    ///
+    /// Interleaves the bits of `i` and `j` — the two axes of the nested z-order
+    /// numbering within a base-resolution pixel — into the cell index at `depth`.
+    #[wasm_bindgen(js_name = bitCombine)]
+    pub fn bit_combine(depth: u8, i: u32, j: u32) -> u64 {
+        let zoc = healpix::nested::zordercurve::get_zoc(depth);
 
-/// Center coordinates for the given cell
-#[wasm_bindgen(js_name = healpixToLonLat, js_namespace = "nested")]
-pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
-    let layer = healpix::nested::get(depth);
+        zoc.ij2h(i, j)
+    }
 
-    let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+    /// Center coordinates for the given cell
+    #[wasm_bindgen(js_name = healpixToLonLat)]
+    pub fn healpix_to_lonlat(ipix: u64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
+        let layer = healpix::nested::get(depth);
 
-    let (lon, lat) = scalar::healpix_to_lonlat(&ipix, layer, &ellipsoid_);
+        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
-    Coordinate { lon, lat }
-}
+        let (lon, lat) = scalar::healpix_to_lonlat(&ipix, layer, &ellipsoid_);
 
-/// Project the given coordinate to the healpix grid
-#[wasm_bindgen(js_name = lonLatToHealpix, js_namespace = "nested")]
-pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> u64 {
-    let layer = healpix::nested::get(depth);
-    let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        Coordinate { lon, lat }
+    }
 
-    scalar::lonlat_to_healpix(&lon, &lat, layer, &ellipsoid_)
-}
+    /// Project the given coordinate to the healpix grid
+    #[wasm_bindgen(js_name = lonLatToHealpix)]
+    pub fn lonlat_to_healpix(
+        lon: f64,
+        lat: f64,
+        depth: u8,
+        ellipsoid: Option<EllipsoidLike>,
+    ) -> u64 {
+        let layer = healpix::nested::get(depth);
+        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
-/// Single vertex of the given cell
-///
-/// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
-#[wasm_bindgen(js_namespace = "nested")]
-pub fn vertex(
-    hash: u64,
-    depth: u8,
-    u: f64,
-    v: f64,
-    ellipsoid: Option<EllipsoidLike>,
-) -> Coordinate {
-    let layer = healpix::nested::get(depth);
-    let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        scalar::lonlat_to_healpix(&lon, &lat, layer, &ellipsoid_)
+    }
 
-    let center = layer.center_of_projected_cell(hash);
-    let (lon, lat) = spherical_vertex(center, depth, (u, v));
+    /// Single vertex of the given cell
+    ///
+    /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
+    #[wasm_bindgen(js_name = vertex)]
+    pub fn vertex(
+        hash: u64,
+        depth: u8,
+        u: f64,
+        v: f64,
+        ellipsoid: Option<EllipsoidLike>,
+    ) -> Coordinate {
+        let layer = healpix::nested::get(depth);
+        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
 
-    Coordinate {
-        lon: lon.to_degrees().rem_euclid(360.0),
-        lat: ellipsoid_.latitude_authalic_to_geographic(lat).to_degrees(),
+        let center = layer.center_of_projected_cell(hash);
+        let (lon, lat) = spherical_vertex(center, depth, (u, v));
+
+        Coordinate {
+            lon: lon.to_degrees().rem_euclid(360.0),
+            lat: ellipsoid_.latitude_authalic_to_geographic(lat).to_degrees(),
+        }
     }
 }
 
