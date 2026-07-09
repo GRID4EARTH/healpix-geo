@@ -96,7 +96,6 @@ jobs:
       - name: copy informational files
         run: |
           cp README.md pkg/
-          cp ../LICENSE pkg/
 
       - name: pack the package
         run: |
