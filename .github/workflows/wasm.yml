@@ -93,10 +93,6 @@ jobs:
         run: |
           bash scripts/build.sh --mode release bundler
 
-      - name: copy informational files
-        run: |
-          cp README.md pkg/
-
       - name: pack the package
         run: |
           wasm-pack pack pkg
