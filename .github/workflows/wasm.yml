@@ -91,7 +91,7 @@ jobs:
 
       - name: build esm bundle
         run: |
-          bash scripts/build.sh --mode release web
+          bash scripts/build.sh --mode release bundler
 
       - name: pack the package
         run: |
