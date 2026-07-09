@@ -1,2 +1,5 @@
 # npm package cache
 node_modules/
+
+# package build cache
+pkg/
