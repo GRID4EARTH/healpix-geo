@@ -1,5 +1,22 @@
 use cdshealpix as healpix;
 
+pub fn kth_neighbours(hash: &u64, nside: &u32, ring: &u32) -> Vec<i64> {
+    let layer = healpix::nested::get(healpix::depth(*nside));
+    let hash_nested = layer.from_ring(*hash);
+    let r = *ring;
+
+    let mut result = layer
+        .kth_neighbours(hash_nested, r)
+        .into_iter()
+        .map(|v| v as i64)
+        .collect::<Vec<i64>>();
+
+    // 4 sides with each 2 r + 1 values, minus 4 joints: 4 * (2r + 1) - 4
+    result.resize(8 * (r as usize), -1i64);
+
+    result
+}
+
 pub fn kth_neighbourhood(hash: &u64, nside: &u32, ring: &u32) -> Vec<i64> {
     let layer = healpix::nested::get(healpix::depth(*nside));
 
