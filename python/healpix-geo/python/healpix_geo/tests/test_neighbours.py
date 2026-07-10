@@ -201,3 +201,122 @@ def test_kth_neighbourhood(depth, cell_ids, ring, indexing_scheme, expected):
     func = funcs[indexing_scheme]
     actual = func(cell_ids)
     np.testing.assert_equal(actual, expected)
+
+
+@pytest.mark.parametrize(
+    ["depth", "cell_ids", "indexing_scheme", "ring", "expected"],
+    (
+        pytest.param(
+            1,
+            np.array([7, 8, 23, 45], dtype="uint64"),
+            "nested",
+            1,
+            np.array(
+                [
+                    [4, 5, 10, 6, 11, 1, 3, 15],
+                    [43, 30, 31, 25, 9, 27, 10, 11],
+                    [20, 21, 4, 22, 6, 0, 1, -1],
+                    [32, 34, 44, 16, 46, 47, 18, -1],
+                ],
+                dtype="int64",
+            ),
+        ),
+        pytest.param(
+            5,
+            np.array([92, 109], dtype="uint64"),
+            "ring",
+            2,
+            np.array(
+                [
+                    [
+                        119,
+                        90,
+                        65,
+                        44,
+                        27,
+                        234,
+                        192,
+                        154,
+                        120,
+                        28,
+                        46,
+                        68,
+                        94,
+                        123,
+                        156,
+                        193,
+                    ],
+                    [
+                        259,
+                        215,
+                        175,
+                        139,
+                        107,
+                        80,
+                        57,
+                        38,
+                        23,
+                        39,
+                        59,
+                        83,
+                        111,
+                        142,
+                        177,
+                        216,
+                    ],
+                ],
+                dtype="int64",
+            ),
+        ),
+        pytest.param(
+            8,
+            np.array([1460288880640], dtype="uint64"),
+            "zuniq",
+            3,
+            np.array(
+                [
+                    [
+                        2497997561114132480,
+                        2497997629833609216,
+                        2497997835992039424,
+                        2497997904711516160,
+                        2498000859649015808,
+                        2498000928368492544,
+                        2498001134526922752,
+                        2498001237606137856,
+                        2498001271965876224,
+                        2497997698553085952,
+                        2497997664193347584,
+                        4690104287232,
+                        4724464025600,
+                        4827543240704,
+                        4861902979072,
+                        4655744548864,
+                        4587025072128,
+                        1632087572480,
+                        1563368095744,
+                        1357209665536,
+                        1288490188800,
+                        1254130450432,
+                        1151051235328,
+                        1116691496960,
+                    ]
+                ],
+                dtype="int64",
+            ),
+        ),
+    ),
+)
+def test_kth_neighbours(depth, cell_ids, ring, indexing_scheme, expected):
+    funcs = {
+        "ring": lambda cell_ids: healpix_geo.ring.kth_neighbours(cell_ids, depth, ring),
+        "nested": lambda cell_ids: healpix_geo.nested.kth_neighbours(
+            cell_ids, depth, ring
+        ),
+        "zuniq": lambda cell_ids: healpix_geo.zuniq.kth_neighbours(cell_ids, ring),
+    }
+
+    func = funcs[indexing_scheme]
+    actual = func(cell_ids)
+    print(repr(actual))
+    np.testing.assert_equal(actual, expected)
