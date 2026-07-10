@@ -396,7 +396,7 @@ def kth_neighbours(ipix, depth, ring, num_threads=0):
         The depth of the HEALPix cells.
     ring : int
         The number of rings. `ring=0` returns just the input cell ids, `ring=1` returns the 8 (or 7) immediate
-        neighbours, `ring=2` returns the 8 (or 7) immediate neighbours plus their immediate neighbours (a total of 24 cells), and so on.
+        neighbours, `ring=2` returns the 16 neighbours of the immediate neighbours, and so on.
     num_threads : int, optional
         Specifies the number of threads to use for the computation. Default to 0 means
         it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
@@ -421,18 +421,12 @@ def kth_neighbours(ipix, depth, ring, num_threads=0):
     >>> ring = 3
     >>> neighbours = kth_neighbours(ipix, depth, ring)
     >>> neighbours
-    array([[67108829, 67108831, 67108853, 67108855, 67108861, 67108863,
-            50331647, 33554414, 33554431, 33554430, 33554427, 33554426,
-            33554415, 16777164, 16777166, 16777188, 16777190, 16777196,
-            16777198, 16777181, 16777180, 16777177, 16777176, 16777165],
-           [16777179, 16777201, 16777203, 16777209, 16777211, 16777183,
-            16777182, 67108854, 67108860, 67108862, 67108855, 50331640,
-            50331642, 50331645, 50331644, 50331641, 33554405, 33554407,
-            33554413, 33554415, 33554421, 33554420, 33554417, 33554416],
-           [50331611, 50331633, 50331635, 50331641, 50331643, 50331615,
-            50331614, 33554422, 33554428, 33554430, 33554423, 16777208,
-            16777210, 16777213, 16777212, 16777209, 67108837, 67108839,
-            67108845, 67108847, 67108853, 67108852, 67108849, 67108848]])
+    array([[ 83,  59,  39,  23,  11,   3,   2,  66,   1,   6,  15,  28,  45,
+            225, 184, 147, 114,  85,  60,  65,  89, 117, 149, 185],
+           [ 88,  63,  42,  25,  12,  44,  64,  38,  22,  10,  23,  51,  32,
+              9,  19,  33, 123,  93,  67,  45,  31,  48,  69,  94],
+           [102,  75,  52,  33,  18,  54,  76,  30,  16,   6,  17,  41,  24,
+              5,  13,  25, 139, 107,  79,  55,  39,  58,  81, 108]])
     """
     _check_depth(depth)
     ipix = np.atleast_1d(ipix)

@@ -412,7 +412,7 @@ def kth_neighbours(ipix, depth, ring, num_threads=0):
         The depth of the HEALPix cells.
     ring : int
         The number of rings. `ring=0` returns just the input cell ids, `ring=1` returns the 8 (or 7) immediate
-        neighbours, `ring=2` returns the 8 (or 7) immediate neighbours plus their immediate neighbours (a total of 24 cells), and so on.
+        neighbours, `ring=2` returns the 16 neighbours of the immediate neighbours, and so on.
     num_threads : int, optional
         Specifies the number of threads to use for the computation. Default to 0 means
         it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
