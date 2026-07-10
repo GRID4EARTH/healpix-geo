@@ -38,6 +38,7 @@ Hierarchy and neighbourhood
 .. autosummary::
    :toctree: ../generated/
 
+   kth_neighbours
    kth_neighbourhood
 
 Coverage requests

@@ -569,8 +569,140 @@ def test_bilinear_interpolation(grid, lon, lat, expected_cell_ids, expected_weig
         ),
     ),
 )
-def test_kth_neighbours(grid, cell_ids, ring, expected):
+def test_kth_neighbourhood(grid, cell_ids, ring, expected):
     actual = auto.kth_neighbourhood(cell_ids, grid, ring=ring)
+
+    np.testing.assert_equal(actual, expected)
+
+
+@pytest.mark.parametrize(
+    ["grid", "cell_ids", "ring", "expected"],
+    (
+        pytest.param(
+            auto.Grid(level=2, indexing_scheme="nested", ellipsoid="sphere"),
+            np.array([3, 54], dtype="uint64"),
+            1,
+            np.array(
+                [
+                    [0, 1, 4, 2, 6, 8, 9, 12],
+                    [49, 52, 53, 51, 55, 57, 60, 61],
+                ],
+                dtype="int64",
+            ),
+            id="nested",
+        ),
+        pytest.param(
+            auto.Grid(level=1, indexing_scheme="ring", ellipsoid="sphere"),
+            np.array([12, 31, 39], dtype="uint64"),
+            2,
+            np.array(
+                [
+                    [
+                        43,
+                        35,
+                        26,
+                        18,
+                        10,
+                        3,
+                        0,
+                        5,
+                        14,
+                        21,
+                        29,
+                        36,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                    ],
+                    [
+                        47,
+                        44,
+                        37,
+                        21,
+                        14,
+                        6,
+                        1,
+                        7,
+                        16,
+                        24,
+                        40,
+                        46,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                    ],
+                    [
+                        42,
+                        47,
+                        44,
+                        37,
+                        30,
+                        22,
+                        15,
+                        7,
+                        16,
+                        24,
+                        33,
+                        41,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                    ],
+                ]
+            ),
+            id="ring",
+        ),
+        pytest.param(
+            auto.Grid(level=None, indexing_scheme="zuniq", ellipsoid="sphere"),
+            np.array(
+                [1963569437533536256, 824158731808800768, 5116089176692883456],
+                dtype="uint64",
+            ),
+            1,
+            np.array(
+                [
+                    [
+                        1783425452438716416,
+                        1891511843495608320,
+                        1927540640514572288,
+                        1855483046476644352,
+                        1999598234552500224,
+                        2071655828590428160,
+                        2179742219647320064,
+                        2215771016666284032,
+                    ],
+                    [
+                        797137134044577792,
+                        806144333299318784,
+                        833165931063541760,
+                        815151532554059776,
+                        851180329573023744,
+                        1013309916158361600,
+                        1022317115413102592,
+                        1049338713177325568,
+                    ],
+                    [
+                        4683743612465315840,
+                        4827858800541171712,
+                        2954361355555045376,
+                        4971973988617027584,
+                        3242591731706757120,
+                        2377900603251621888,
+                        2522015791327477760,
+                        72057594037927936,
+                    ],
+                ],
+                dtype="int64",
+            ),
+            id="zuniq",
+        ),
+    ),
+)
+def test_kth_neighbours(grid, cell_ids, ring, expected):
+    actual = auto.kth_neighbours(cell_ids, grid, ring=ring)
 
     np.testing.assert_equal(actual, expected)
 

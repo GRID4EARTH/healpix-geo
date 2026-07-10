@@ -441,6 +441,66 @@ def bilinear_interpolation(
     )
 
 
+def kth_neighbours(
+    ipix: npt.NDArray[np.uint64], grid: Grid, *, ring: int, num_threads: int = 0
+) -> npt.NDArray[np.int64]:
+    """Get the kth ring neighbouring cells of some HEALPix cells.
+
+    This method returns a :math:`N` x :math:`8 k` `np.uint64` numpy array containing the neighbours of each cell of the :math:`N` sized `ipix` array.
+    This method is wrapped around the `kth_neighbours <https://docs.rs/cdshealpix/0.9.1/cdshealpix/nested/struct.Layer.html#method.kth_neighbours>`__
+    method of the `cdshealpix Rust crate <https://crates.io/crates/cdshealpix>`__.
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    grid : Grid
+        The definition of the HEALPix grid.
+    ring : int
+        The number of rings. `ring=0` returns just the input cell ids, `ring=1` returns the 8 (or 7) immediate
+        neighbours, `ring=2` returns the 16 neighbours of the immediate neighbours, and so on.
+    num_threads : int, default: 0
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    neighbours : `numpy.ndarray`
+        A :math:`N` x :math:`8 k` `np.int64` numpy array containing the kth ring neighbours of each cell.
+
+    Examples
+    --------
+    >>> import healpix_geo.auto as hg
+    >>> import numpy as np
+    >>> ipix = np.array([42, 6, 10])
+    >>> grid = hg.Grid(level=12, indexing_scheme="nested", ellipsoid="sphere")
+    >>> grid
+    Grid(level=12, indexing_scheme='nested', ellipsoid='sphere')
+    >>> ring = 3
+    >>> neighbours = hg.kth_neighbours(ipix, grid, ring=ring)
+    >>> neighbours
+    array([[ 72701297,  72701299,  72701305,  72701307,  72701393,  72701395,
+             72701401,  72701404,  72701405,  72701301,  72701300,       136,
+                  137,       140,       141,       135,       133,        47,
+                   45,        39,        37,        36,        33,        32],
+           [150994941, 150994943,  72701269,  72701271,  72701277,  72701279,
+             72701301,  95070907,  95070905,  95070904,  95070893,  95070892,
+             95070889,  95070888,        32,        33,        36,        37,
+                   48,        49,        27,        25,        19,        17],
+           [ 72701265,  72701267,  72701273,  72701275,  72701297,  72701299,
+             72701305,  72701308,  72701309,  72701269,  72701268,        40,
+                   41,        44,        45,        39,        37,        15,
+                   13,         7,         5,         4,         1,         0]])
+    """
+    module = _dispatch_module(grid.indexing_scheme)
+    params = {}
+    if grid.indexing_scheme != "zuniq":
+        params["depth"] = grid.level
+
+    return module.kth_neighbours(ipix, ring=ring, num_threads=num_threads, **params)
+
+
 def kth_neighbourhood(
     ipix: npt.NDArray[np.uint64], grid: Grid, *, ring: int, num_threads: int = 0
 ) -> npt.NDArray[np.int64]:
