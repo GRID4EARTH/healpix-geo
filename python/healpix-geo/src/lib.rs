@@ -16,8 +16,8 @@ mod nested {
     use crate::indexing_schemes::nested::{
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
         cone_coverage, elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat,
-        internal_boundary, kth_neighbourhood, lonlat_to_healpix, polygon_coverage, siblings,
-        vertices, zone_coverage, zoom_to,
+        internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage,
+        siblings, vertices, zone_coverage, zoom_to,
     };
 }
 
@@ -27,7 +27,8 @@ mod ring {
     use crate::indexing_schemes::ring::{
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
         cone_coverage, elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat,
-        kth_neighbourhood, lonlat_to_healpix, polygon_coverage, vertices, zone_coverage,
+        kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, vertices,
+        zone_coverage,
     };
 }
 
@@ -37,7 +38,8 @@ mod zuniq {
     use crate::indexing_schemes::zuniq::{
         bilinear_interpolation, box_coverage, cartesian_to_healpix, cone_coverage,
         elliptical_cone_coverage, from_nested, healpix_to_cartesian, healpix_to_lonlat,
-        kth_neighbourhood, lonlat_to_healpix, polygon_coverage, to_nested, vertices, zone_coverage,
+        kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, to_nested,
+        vertices, zone_coverage,
     };
 }
 

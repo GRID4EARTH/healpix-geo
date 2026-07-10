@@ -11,4 +11,4 @@ pub(crate) use self::coordinates::{
 pub(crate) use self::coverage::{
     box_coverage, cone_coverage, elliptical_cone_coverage, polygon_coverage, zone_coverage,
 };
-pub(crate) use self::hierarchy::kth_neighbourhood;
+pub(crate) use self::hierarchy::{kth_neighbourhood, kth_neighbours};
