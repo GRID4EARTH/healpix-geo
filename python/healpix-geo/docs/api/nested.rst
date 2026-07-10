@@ -40,6 +40,7 @@ Navigation in the hierarchical structure of HEALPix.
 .. autosummary::
    :toctree: ../generated/
 
+   kth_neighbours
    kth_neighbourhood
    zoom_to
    siblings
