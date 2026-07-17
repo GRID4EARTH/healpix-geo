@@ -22,14 +22,17 @@
 //! The functionality here requires each indexing scheme to implement a function that, given a cell id,
 //! computes the vertex ids (possibly shared by converting to `(nested, depth)` or `(face, x, y, depth)` first).
 //!
-//! For example: vertex_hashes(hash: u64) -> [u64; 4]
+//! For example: vertex_hashes(hash: u64) -> CellVertices
 //!
 //! Other functions:
 //! - vertex_indices: deduplicate the vertex ids and construct the mesh connectivity
 //! - vertex coordinates: given a vertex id, compute the vertex coordinates
 
+type CellVertices = (u64, u64, u64, u64);
+type CellIndices = (usize, usize, usize, usize);
+
 /// Deduplicate and sort the given vertex ids
-pub fn vertex_indices(ipix: &[[u64; 4]]) -> (Vec<u64>, Vec<[usize; 4]>) {}
+pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
 
 /// Convert a vertex id to coordinates
 pub fn vertex_coordinates(hash: u64) -> (f64, f64) {}
