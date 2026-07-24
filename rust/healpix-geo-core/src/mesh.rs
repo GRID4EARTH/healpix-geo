@@ -44,22 +44,8 @@ const fn triangular_number_x4(n: u64) -> u64 {
 }
 
 #[inline]
-const fn polar_cap_vertices(nside: u32) -> u64 {
-    triangular_number_x4(nside as u64 - 1) + 1
-}
-
-#[inline]
 fn ring(y: f64, nside: u32) -> u64 {
     ((y + 2.0) * nside as f64).floor() as u64
-}
-
-#[inline]
-fn first_node_in_ring(ring: u64, nside: u64) -> f64 {
-    if ring < nside || (nside >= 2 * nside && nside < 3 * nside) {
-        1.0 - ring.rem_euclid(nside) as f64 / nside as f64
-    } else {
-        ring.rem_euclid(nside) as f64 / nside as f64
-    }
 }
 
 #[inline]
@@ -84,25 +70,17 @@ fn in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
 }
 
 #[inline]
-const fn equatorial_vertices(nside: u32) -> u64 {
-    let nside = nside as u64;
-    let rings = 2 * nside + 1;
-
-    rings * 4 * nside
-}
-
-#[inline]
 fn ring_offset(ring: u64, nside: u64) -> u64 {
     let pole_distance = ring.min(4 * nside - ring);
 
     if ring == 0 {
         0
     } else if ring < nside {
-        1 + 2 * pole_distance * (pole_distance - 1)
+        1 + triangular_number_x4(pole_distance - 1)
     } else if ring > 3 * nside {
-        12 * nside.pow(2) + 1 - 2 * (pole_distance + 1) * pole_distance
+        12 * nside.pow(2) + 1 - triangular_number_x4(pole_distance)
     } else {
-        1 + 2 * nside * (nside - 1) + 4 * nside * (ring - nside)
+        1 + triangular_number_x4(nside - 1) + 4 * nside * (ring - nside)
     }
 }
 
@@ -142,30 +120,6 @@ fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_polar_cap_vertices() {
-        let actual = polar_cap_vertices(1);
-        assert_eq!(actual, 1);
-
-        let actual = polar_cap_vertices(2);
-        assert_eq!(actual, 5);
-
-        let actual = polar_cap_vertices(4);
-        assert_eq!(actual, 25);
-    }
-
-    #[test]
-    fn test_equatorial_vertices() {
-        let actual = equatorial_vertices(1);
-        assert_eq!(actual, 12);
-
-        let actual = equatorial_vertices(2);
-        assert_eq!(actual, 40);
-
-        let actual = equatorial_vertices(4);
-        assert_eq!(actual, 144);
-    }
 
     #[test]
     fn test_in_ring_position_nside_1_polar_caps() {
