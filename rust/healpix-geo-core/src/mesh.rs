@@ -44,11 +44,6 @@ const fn triangular_number_x4(n: u64) -> u64 {
 }
 
 #[inline]
-fn ring(y: f64, nside: u32) -> u64 {
-    ((y + 2.0) * nside as f64).floor() as u64
-}
-
-#[inline]
 fn encode_in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
     let pole_distance = ring.min(4 * nside - ring);
 
@@ -108,6 +103,21 @@ fn ring_offset(ring: u64, nside: u64) -> u64 {
     }
 }
 
+#[inline]
+fn extract_ring(vertex_id: u64, nside: u64, n_vertices: u64, triangular_number: u64) -> u64 {
+    if vertex_id == 0 {
+        0
+    } else if vertex_id == n_vertices - 1 {
+        4 * nside
+    } else if vertex_id < triangular_number + 1 {
+        ((1 + (2 * vertex_id - 1).isqrt()) as f64 / 2.0).ceil() as u64
+    } else if vertex_id > n_vertices - triangular_number - 1 {
+        4 * nside - (3 + (2 * (n_vertices - vertex_id) - 1).isqrt()) / 2
+    } else {
+        nside + (vertex_id - triangular_number - 1) / (4 * nside)
+    }
+}
+
 fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
     let nside = healpix::nside(depth) as u64;
 
@@ -115,19 +125,36 @@ fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
         VertexIdScheme::Ring => {
             let ring = (nside as f64 * (2.0 - y)).floor() as u64;
 
-            println!(
-                "ring: {ring}, ({} + {}) ({nside})",
-                ring_offset(ring, nside),
-                encode_in_ring_position(x, ring, nside)
-            );
-
             ring_offset(ring, nside) + encode_in_ring_position(x, ring, nside)
         }
         VertexIdScheme::ZOrder => todo!(),
     }
 }
 
-// fn decode_vertex(vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64) {}
+fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64) {
+    let nside = healpix::nside(depth) as u64;
+
+    match scheme {
+        VertexIdScheme::Ring => {
+            let n_vertices = 12 * nside * nside + 2;
+            if vertex_id == 0 {
+                (1.0, 2.0)
+            } else if vertex_id == n_vertices - 1 {
+                (1.0, -2.0)
+            } else {
+                let triangular_number = triangular_number_x4(nside - 1);
+                let ring = extract_ring(vertex_id, nside, n_vertices, triangular_number);
+
+                let in_ring_offset = vertex_id - ring_offset(ring, nside);
+                let x = decode_in_ring_position(in_ring_offset, ring, nside);
+                let y = 2.0 - ring as f64 / nside as f64;
+
+                (x, y)
+            }
+        }
+        VertexIdScheme::ZOrder => todo!(),
+    }
+}
 
 // /// Deduplicate and sort the given vertex ids
 // pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
@@ -471,11 +498,35 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_ring() {
+        assert_eq!(extract_ring(0, 1, 14, 0), 0);
+        assert_eq!(extract_ring(1, 1, 14, 0), 1);
+        assert_eq!(extract_ring(6, 1, 14, 0), 2);
+        assert_eq!(extract_ring(13, 2, 50, 4), 3);
+    }
+
+    #[test]
     fn test_encode_vertex() {
         // north polar cap
         assert_eq!(encode_vertex(0, 0.0, 1.0, VertexIdScheme::Ring), 1);
         assert_eq!(encode_vertex(1, 0.5, 1.5, VertexIdScheme::Ring), 1);
         assert_eq!(encode_vertex(2, 2.75, 1.75, VertexIdScheme::Ring), 2);
         assert_eq!(encode_vertex(2, 1.0, 1.5, VertexIdScheme::Ring), 6);
+    }
+
+    #[test]
+    fn test_decode_vertex() {
+        assert_eq!(decode_vertex(0, 0, VertexIdScheme::Ring), (1.0, 2.0));
+        assert_eq!(decode_vertex(0, 13, VertexIdScheme::Ring), (1.0, -2.0));
+        // north polar cap
+        assert_eq!(decode_vertex(0, 1, VertexIdScheme::Ring), (0.0, 1.0));
+        assert_eq!(decode_vertex(1, 1, VertexIdScheme::Ring), (0.5, 1.5));
+        assert_eq!(decode_vertex(2, 2, VertexIdScheme::Ring), (2.75, 1.75));
+        assert_eq!(decode_vertex(2, 6, VertexIdScheme::Ring), (1.0, 1.5));
+
+        // equator
+        assert_eq!(decode_vertex(1, 5, VertexIdScheme::Ring), (0.0, 1.0));
+        assert_eq!(decode_vertex(2, 25, VertexIdScheme::Ring), (0.0, 1.0));
+        assert_eq!(decode_vertex(2, 41, VertexIdScheme::Ring), (0.25, 0.75));
     }
 }
