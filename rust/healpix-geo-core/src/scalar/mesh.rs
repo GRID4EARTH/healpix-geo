@@ -27,6 +27,7 @@
 //! Other functions:
 //! - vertex_indices: deduplicate the vertex ids and construct the mesh connectivity
 //! - vertex coordinates: given a vertex id, compute the vertex coordinates
+use crate::ellipsoid::{Ellipsoid, ReferenceBody};
 use cdshealpix as healpix;
 use cdshealpix::unproj;
 
@@ -181,7 +182,7 @@ fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64
 // pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
 
 /// Convert a vertex id to coordinates
-pub fn vertex_coordinates(depth: u8, hash: &u64) -> (f64, f64) {
+pub fn vertex_coordinates(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f64, f64) {
     // convert vertex hash to (face, x, y)
     // - convert the vertex id into (face, x, y, depth, corner-kind)
     // - from there, convert to (x, y) healpix plane coordinates (offset from the healpix
@@ -195,7 +196,10 @@ pub fn vertex_coordinates(depth: u8, hash: &u64) -> (f64, f64) {
     } else {
         let (lon, lat) = unproj(x, y);
 
-        (lon.to_degrees(), lat.to_degrees())
+        (
+            lon.to_degrees().rem_euclid(360.0),
+            ellipsoid.latitude_authalic_to_geographic(lat).to_degrees(),
+        )
     }
 }
 
