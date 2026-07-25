@@ -5,3 +5,4 @@ pub mod ring;
 pub mod zuniq;
 
 pub mod geometry;
+pub mod mesh;
