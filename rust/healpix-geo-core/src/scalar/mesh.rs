@@ -132,7 +132,7 @@ fn extract_ring(vertex_id: u64, nside: u64, n_vertices: u64, triangular_number: 
     } else if vertex_id == n_vertices - 1 {
         4 * nside
     } else if vertex_id < triangular_number + 1 {
-        ((1 + (2 * vertex_id - 1).isqrt()) as f64 / 2.0).ceil() as u64
+        ((1 + (2 * vertex_id - 1).isqrt()) as f64 / 2.0).floor() as u64
     } else if vertex_id > n_vertices - triangular_number - 1 {
         4 * nside - (3 + (2 * (n_vertices - vertex_id) - 1).isqrt()) / 2
     } else {
@@ -206,6 +206,8 @@ pub fn vertex_coordinates(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f64,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ellipsoid::{ReferenceEllipsoid, ReferenceSphere};
+    use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 
     #[test]
     fn test_encode_in_ring_position_nside_1_polar_cap() {
@@ -538,6 +540,7 @@ mod tests {
         assert_eq!(extract_ring(1, 1, 14, 0), 1);
         assert_eq!(extract_ring(6, 1, 14, 0), 2);
         assert_eq!(extract_ring(13, 2, 50, 4), 3);
+        assert_eq!(extract_ring(21, 8, 768, 84), 3);
     }
 
     #[test]
@@ -567,16 +570,33 @@ mod tests {
 
     #[test]
     fn test_vertex_coordinates() {
-        assert_eq!(vertex_coordinates(0, &0), (0.0, 90.0));
-        assert_eq!(vertex_coordinates(0, &13), (0.0, -90.0));
+        let sphere = Ellipsoid::Sphere(ReferenceSphere::new(
+            GeodesyEllipsoid::named("sphere").unwrap(),
+        ));
+        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+            GeodesyEllipsoid::named("WGS84").unwrap(),
+        ));
+
+        assert_eq!(vertex_coordinates(0, &0, &sphere), (0.0, 90.0));
+        assert_eq!(vertex_coordinates(0, &13, &sphere), (0.0, -90.0));
         assert_eq!(
-            vertex_coordinates(0, &1),
+            vertex_coordinates(0, &1, &sphere),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
         );
 
         assert_eq!(
-            vertex_coordinates(3, &113),
+            vertex_coordinates(3, &113, &sphere),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
+        );
+
+        assert_eq!(vertex_coordinates(0, &5, &ellipsoid), (45.0, 0.0));
+        assert_eq!(
+            vertex_coordinates(2, &87, &ellipsoid),
+            (326.25, 9.636338620241146)
+        );
+        assert_eq!(
+            vertex_coordinates(3, &21, &ellipsoid),
+            (239.99999999999997, 72.46140571909436)
         );
     }
 }
