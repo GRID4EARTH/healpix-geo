@@ -33,9 +33,8 @@ use cdshealpix::unproj;
 // type CellVertices = (u64, u64, u64, u64);
 // type CellIndices = (usize, usize, usize, usize);
 
-enum VertexIdScheme {
+pub(crate) enum VertexIdScheme {
     Ring,
-    ZOrder,
 }
 
 #[inline]
@@ -118,7 +117,8 @@ fn extract_ring(vertex_id: u64, nside: u64, n_vertices: u64, triangular_number: 
     }
 }
 
-fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
+#[inline]
+pub(crate) fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
     let nside = healpix::nside(depth) as u64;
 
     match scheme {
@@ -127,10 +127,10 @@ fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
 
             ring_offset(ring, nside) + encode_in_ring_position(x, ring, nside)
         }
-        VertexIdScheme::ZOrder => todo!(),
     }
 }
 
+#[inline]
 fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64) {
     let nside = healpix::nside(depth) as u64;
 
@@ -152,21 +152,7 @@ fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64
                 (x, y)
             }
         }
-        VertexIdScheme::ZOrder => todo!(),
     }
-}
-
-pub fn vertex_indices(depth: u8, hash: u64) -> (u64, u64, u64, u64) {
-    let layer = healpix::nested::get(depth);
-
-    let [(x_s, y_s), (x_e, y_e), (x_n, y_n), (x_w, y_w)] = layer.projected_vertices(hash);
-
-    (
-        encode_vertex(depth, x_s, y_s, VertexIdScheme::Ring),
-        encode_vertex(depth, x_e, y_e, VertexIdScheme::Ring),
-        encode_vertex(depth, x_n, y_n, VertexIdScheme::Ring),
-        encode_vertex(depth, x_w, y_w, VertexIdScheme::Ring),
-    )
 }
 
 // /// Deduplicate and sort the given vertex ids
@@ -566,13 +552,5 @@ mod tests {
             vertex_coordinates(3, 113),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
         );
-    }
-
-    #[test]
-    fn test_vertex_indices() {
-        assert_eq!(vertex_indices(0, 0), (5, 2, 0, 1));
-        assert_eq!(vertex_indices(0, 1), (6, 3, 0, 2));
-
-        assert_eq!(vertex_indices(1, 7), (8, 3, 0, 2));
     }
 }
