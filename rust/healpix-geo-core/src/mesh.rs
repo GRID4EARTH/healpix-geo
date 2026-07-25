@@ -49,7 +49,7 @@ fn ring(y: f64, nside: u32) -> u64 {
 }
 
 #[inline]
-fn in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
+fn encode_in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
     let pole_distance = ring.min(4 * nside - ring);
 
     if pole_distance == 0 {
@@ -61,11 +61,37 @@ fn in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
 
         (nside as f64 / 2.0 * reduced_x.rem_euclid(collapsed_size)).floor() as u64
     } else {
-        let phase = if nside == 1 { 0 } else { ring.rem_euclid(2) };
+        let phase = if nside == 1 {
+            (ring + 1).rem_euclid(2)
+        } else {
+            ring.rem_euclid(2)
+        };
         let reduced_x = x - phase as f64 / nside as f64;
 
-        let collapsed_ring_size = 8.0 - phase as f64 / nside as f64;
-        (nside as f64 / 2.0 * reduced_x.rem_euclid(collapsed_ring_size)).floor() as u64
+        let collapsed_size = 8.0 - phase as f64 / nside as f64;
+        (nside as f64 / 2.0 * reduced_x.rem_euclid(collapsed_size)).floor() as u64
+    }
+}
+
+#[inline]
+fn decode_in_ring_position(position: u64, ring: u64, nside: u64) -> f64 {
+    let pole_distance = ring.min(4 * nside - ring);
+
+    if pole_distance == 0 {
+        1.0
+    } else if pole_distance < nside {
+        let gap = 1.0 - pole_distance as f64 / nside as f64;
+        let completed_blocks = 2 * (position as f64 / pole_distance as f64).floor() as u64 + 1;
+
+        2.0 / nside as f64 * position as f64 + gap * completed_blocks as f64
+    } else {
+        let phase = if nside == 1 {
+            (ring + 1).rem_euclid(2)
+        } else {
+            ring.rem_euclid(2)
+        };
+
+        (2.0 * position as f64 + phase as f64) / nside as f64
     }
 }
 
@@ -94,10 +120,10 @@ fn encode_vertex(depth: u8, x: f64, y: f64, scheme: VertexIdScheme) -> u64 {
             println!(
                 "ring: {ring}, ({} + {}) ({nside})",
                 ring_offset(ring, nside),
-                in_ring_position(x, ring, nside)
+                encode_in_ring_position(x, ring, nside)
             );
 
-            ring_offset(ring, nside) + in_ring_position(x, ring, nside)
+            ring_offset(ring, nside) + encode_in_ring_position(x, ring, nside)
         }
         VertexIdScheme::ZOrder => todo!(),
     }
@@ -122,159 +148,307 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_in_ring_position_nside_1_polar_caps() {
+    fn test_encode_in_ring_position_nside_1_polar_cap() {
         // pole
-        assert_eq!(in_ring_position(1.0, 0, 1), 0);
-        assert_eq!(in_ring_position(3.0, 0, 1), 0);
-        assert_eq!(in_ring_position(5.0, 0, 1), 0);
-        assert_eq!(in_ring_position(7.0, 0, 1), 0);
+        assert_eq!(encode_in_ring_position(1.0, 0, 1), 0);
+        assert_eq!(encode_in_ring_position(3.0, 0, 1), 0);
+        assert_eq!(encode_in_ring_position(5.0, 0, 1), 0);
+        assert_eq!(encode_in_ring_position(7.0, 0, 1), 0);
 
-        assert_eq!(in_ring_position(1.0, 4, 1), 0);
+        assert_eq!(encode_in_ring_position(1.0, 4, 1), 0);
     }
 
     #[test]
-    fn test_in_ring_position_nside_1_equatorial_region() {
+    fn test_decode_in_ring_position_nside_1_polar_cap() {
+        assert_eq!(decode_in_ring_position(0, 0, 1), 1.0);
+
+        assert_eq!(decode_in_ring_position(0, 4, 1), 1.0);
+    }
+
+    #[test]
+    fn test_encode_in_ring_position_nside_1_equatorial_region() {
         // equatorial region
-        assert_eq!(in_ring_position(0.0, 1, 1), 0);
-        assert_eq!(in_ring_position(4.0, 1, 1), 2);
-        assert_eq!(in_ring_position(8.0, 1, 1), 0);
+        assert_eq!(encode_in_ring_position(0.0, 1, 1), 0);
+        assert_eq!(encode_in_ring_position(4.0, 1, 1), 2);
+        assert_eq!(encode_in_ring_position(8.0, 1, 1), 0);
 
-        assert_eq!(in_ring_position(1.0, 2, 1), 0);
-        assert_eq!(in_ring_position(7.0, 2, 1), 3);
+        assert_eq!(encode_in_ring_position(1.0, 2, 1), 0);
+        assert_eq!(encode_in_ring_position(7.0, 2, 1), 3);
     }
 
     #[test]
-    fn test_in_ring_position_nside_2_polar_cap() {
+    fn test_decode_in_ring_position_nside_1_equatorial_region() {
+        // equatorial region
+        assert_eq!(decode_in_ring_position(0, 1, 1), 0.0);
+        assert_eq!(decode_in_ring_position(2, 1, 1), 4.0);
+        // assert_eq!(decode_in_ring_position(0, 1, 1), 8.0);
+
+        assert_eq!(decode_in_ring_position(0, 2, 1), 1.0);
+        assert_eq!(decode_in_ring_position(3, 2, 1), 7.0);
+        assert_eq!(decode_in_ring_position(0, 3, 1), 0.0);
+    }
+
+    #[test]
+    fn test_encode_in_ring_position_nside_2_polar_cap() {
         // pole
-        assert_eq!(in_ring_position(1.0, 0, 2), 0);
+        assert_eq!(encode_in_ring_position(1.0, 0, 2), 0);
         // polar cap
-        assert_eq!(in_ring_position(0.5, 1, 2), 0);
-        assert_eq!(in_ring_position(1.5, 1, 2), 1);
-        assert_eq!(in_ring_position(2.5, 1, 2), 1);
-        assert_eq!(in_ring_position(3.5, 1, 2), 2);
-        assert_eq!(in_ring_position(4.5, 1, 2), 2);
-        assert_eq!(in_ring_position(5.5, 1, 2), 3);
-        assert_eq!(in_ring_position(6.5, 1, 2), 3);
-        assert_eq!(in_ring_position(7.5, 1, 2), 0);
+        assert_eq!(encode_in_ring_position(0.5, 1, 2), 0);
+        assert_eq!(encode_in_ring_position(1.5, 1, 2), 1);
+        assert_eq!(encode_in_ring_position(2.5, 1, 2), 1);
+        assert_eq!(encode_in_ring_position(3.5, 1, 2), 2);
+        assert_eq!(encode_in_ring_position(4.5, 1, 2), 2);
+        assert_eq!(encode_in_ring_position(5.5, 1, 2), 3);
+        assert_eq!(encode_in_ring_position(6.5, 1, 2), 3);
+        assert_eq!(encode_in_ring_position(7.5, 1, 2), 0);
     }
 
     #[test]
-    fn test_in_ring_position_nside_2_equatorial_region() {
-        // equatorial region
-        assert_eq!(in_ring_position(0.0, 2, 2), 0);
-        assert_eq!(in_ring_position(1.0, 2, 2), 1);
-        assert_eq!(in_ring_position(2.0, 2, 2), 2);
-        assert_eq!(in_ring_position(3.0, 2, 2), 3);
-        assert_eq!(in_ring_position(4.0, 2, 2), 4);
-        assert_eq!(in_ring_position(5.0, 2, 2), 5);
-        assert_eq!(in_ring_position(6.0, 2, 2), 6);
-        assert_eq!(in_ring_position(7.0, 2, 2), 7);
-        assert_eq!(in_ring_position(8.0, 2, 2), 0);
-    }
-
-    #[test]
-    fn test_in_ring_position_nside_4_polar_cap() {
-        assert_eq!(in_ring_position(0.75, 1, 4), 0);
-        assert_eq!(in_ring_position(1.25, 1, 4), 1);
-        assert_eq!(in_ring_position(2.75, 1, 4), 1);
-        assert_eq!(in_ring_position(3.25, 1, 4), 2);
-        assert_eq!(in_ring_position(4.75, 1, 4), 2);
-        assert_eq!(in_ring_position(5.25, 1, 4), 3);
-        assert_eq!(in_ring_position(6.75, 1, 4), 3);
-        assert_eq!(in_ring_position(7.25, 1, 4), 0);
-
-        assert_eq!(in_ring_position(0.25, 3, 4), 0);
-        assert_eq!(in_ring_position(0.75, 3, 4), 1);
-        assert_eq!(in_ring_position(1.25, 3, 4), 2);
-        assert_eq!(in_ring_position(1.75, 3, 4), 3);
-        assert_eq!(in_ring_position(2.25, 3, 4), 3);
-        assert_eq!(in_ring_position(2.75, 3, 4), 4);
-        assert_eq!(in_ring_position(3.25, 3, 4), 5);
-        assert_eq!(in_ring_position(3.75, 3, 4), 6);
-        assert_eq!(in_ring_position(4.25, 3, 4), 6);
-        assert_eq!(in_ring_position(4.75, 3, 4), 7);
-        assert_eq!(in_ring_position(5.25, 3, 4), 8);
-        assert_eq!(in_ring_position(5.75, 3, 4), 9);
-        assert_eq!(in_ring_position(6.25, 3, 4), 9);
-        assert_eq!(in_ring_position(6.75, 3, 4), 10);
-        assert_eq!(in_ring_position(7.25, 3, 4), 11);
-        assert_eq!(in_ring_position(7.75, 3, 4), 0);
-    }
-
-    #[test]
-    fn test_in_ring_position_nside_4_equatorial_region() {
-        assert_eq!(in_ring_position(0.0, 4, 4), 0);
-        assert_eq!(in_ring_position(0.5, 4, 4), 1);
-        assert_eq!(in_ring_position(1.0, 4, 4), 2);
-        assert_eq!(in_ring_position(1.5, 4, 4), 3);
-        assert_eq!(in_ring_position(2.0, 4, 4), 4);
-        assert_eq!(in_ring_position(2.5, 4, 4), 5);
-        assert_eq!(in_ring_position(3.0, 4, 4), 6);
-        assert_eq!(in_ring_position(3.5, 4, 4), 7);
-        assert_eq!(in_ring_position(4.0, 4, 4), 8);
-        assert_eq!(in_ring_position(4.5, 4, 4), 9);
-        assert_eq!(in_ring_position(5.0, 4, 4), 10);
-        assert_eq!(in_ring_position(5.5, 4, 4), 11);
-        assert_eq!(in_ring_position(6.0, 4, 4), 12);
-        assert_eq!(in_ring_position(6.5, 4, 4), 13);
-        assert_eq!(in_ring_position(7.0, 4, 4), 14);
-        assert_eq!(in_ring_position(7.5, 4, 4), 15);
-        assert_eq!(in_ring_position(8.0, 4, 4), 0);
-
-        assert_eq!(in_ring_position(0.25, 5, 4), 0);
-        assert_eq!(in_ring_position(0.75, 5, 4), 1);
-        assert_eq!(in_ring_position(1.25, 5, 4), 2);
-        assert_eq!(in_ring_position(1.75, 5, 4), 3);
-        assert_eq!(in_ring_position(2.25, 5, 4), 4);
-        assert_eq!(in_ring_position(2.75, 5, 4), 5);
-        assert_eq!(in_ring_position(3.25, 5, 4), 6);
-        assert_eq!(in_ring_position(3.75, 5, 4), 7);
-        assert_eq!(in_ring_position(4.25, 5, 4), 8);
-        assert_eq!(in_ring_position(4.75, 5, 4), 9);
-        assert_eq!(in_ring_position(5.25, 5, 4), 10);
-        assert_eq!(in_ring_position(5.75, 5, 4), 11);
-        assert_eq!(in_ring_position(6.25, 5, 4), 12);
-        assert_eq!(in_ring_position(6.75, 5, 4), 13);
-        assert_eq!(in_ring_position(7.25, 5, 4), 14);
-        assert_eq!(in_ring_position(7.75, 5, 4), 15);
-    }
-
-    #[test]
-    fn test_in_ring_position_nside_8_polar_caps() {
+    fn test_decode_in_ring_position_nside_2_polar_cap() {
+        // pole
+        assert_eq!(decode_in_ring_position(0, 0, 2), 1.0);
         // polar cap
-        assert_eq!(in_ring_position(0.875, 1, 8), 0);
-        assert_eq!(in_ring_position(2.875, 1, 8), 1);
-        assert_eq!(in_ring_position(4.875, 1, 8), 2);
-        assert_eq!(in_ring_position(6.875, 1, 8), 3);
-
-        assert_eq!(in_ring_position(0.125, 7, 8), 0);
-        assert_eq!(in_ring_position(0.375, 7, 8), 1);
-        assert_eq!(in_ring_position(0.875, 7, 8), 3);
-        assert_eq!(in_ring_position(1.875, 7, 8), 7);
-        assert_eq!(in_ring_position(2.125, 7, 8), 7);
-        assert_eq!(in_ring_position(3.125, 7, 8), 11);
-        assert_eq!(in_ring_position(3.875, 7, 8), 14);
-        assert_eq!(in_ring_position(5.125, 7, 8), 18);
-        assert_eq!(in_ring_position(6.125, 7, 8), 21);
-        assert_eq!(in_ring_position(7.125, 7, 8), 25);
-        assert_eq!(in_ring_position(7.875, 7, 8), 0);
+        assert_eq!(decode_in_ring_position(0, 1, 2), 0.5);
+        assert_eq!(decode_in_ring_position(1, 1, 2), 2.5);
+        assert_eq!(decode_in_ring_position(2, 1, 2), 4.5);
+        assert_eq!(decode_in_ring_position(3, 1, 2), 6.5);
     }
 
     #[test]
-    fn test_in_ring_position_nside_8_equatorial_region() {
+    fn test_encode_in_ring_position_nside_2_equatorial_region() {
         // equatorial region
-        assert_eq!(in_ring_position(0.00, 8, 8), 0);
-        assert_eq!(in_ring_position(0.25, 8, 8), 1);
-        assert_eq!(in_ring_position(1.00, 8, 8), 4);
-        assert_eq!(in_ring_position(2.00, 8, 8), 8);
-        assert_eq!(in_ring_position(4.00, 8, 8), 16);
-        assert_eq!(in_ring_position(7.75, 8, 8), 31);
-        assert_eq!(in_ring_position(0.125, 9, 8), 0);
-        assert_eq!(in_ring_position(0.375, 9, 8), 1);
-        assert_eq!(in_ring_position(1.125, 9, 8), 4);
-        assert_eq!(in_ring_position(2.125, 9, 8), 8);
-        assert_eq!(in_ring_position(4.125, 9, 8), 16);
-        assert_eq!(in_ring_position(7.875, 9, 8), 31);
+        assert_eq!(encode_in_ring_position(0.0, 2, 2), 0);
+        assert_eq!(encode_in_ring_position(1.0, 2, 2), 1);
+        assert_eq!(encode_in_ring_position(2.0, 2, 2), 2);
+        assert_eq!(encode_in_ring_position(3.0, 2, 2), 3);
+        assert_eq!(encode_in_ring_position(4.0, 2, 2), 4);
+        assert_eq!(encode_in_ring_position(5.0, 2, 2), 5);
+        assert_eq!(encode_in_ring_position(6.0, 2, 2), 6);
+        assert_eq!(encode_in_ring_position(7.0, 2, 2), 7);
+        assert_eq!(encode_in_ring_position(8.0, 2, 2), 0);
+    }
+
+    #[test]
+    fn test_decode_in_ring_position_nside_2_equatorial_region() {
+        // equatorial region
+        assert_eq!(decode_in_ring_position(0, 2, 2), 0.0);
+        assert_eq!(decode_in_ring_position(1, 2, 2), 1.0);
+        assert_eq!(decode_in_ring_position(2, 2, 2), 2.0);
+        assert_eq!(decode_in_ring_position(3, 2, 2), 3.0);
+        assert_eq!(decode_in_ring_position(4, 2, 2), 4.0);
+        assert_eq!(decode_in_ring_position(5, 2, 2), 5.0);
+        assert_eq!(decode_in_ring_position(6, 2, 2), 6.0);
+        assert_eq!(decode_in_ring_position(7, 2, 2), 7.0);
+    }
+
+    #[test]
+    fn test_encode_in_ring_position_nside_4_polar_cap() {
+        assert_eq!(encode_in_ring_position(0.75, 1, 4), 0);
+        assert_eq!(encode_in_ring_position(1.25, 1, 4), 1);
+        assert_eq!(encode_in_ring_position(2.75, 1, 4), 1);
+        assert_eq!(encode_in_ring_position(3.25, 1, 4), 2);
+        assert_eq!(encode_in_ring_position(4.75, 1, 4), 2);
+        assert_eq!(encode_in_ring_position(5.25, 1, 4), 3);
+        assert_eq!(encode_in_ring_position(6.75, 1, 4), 3);
+        assert_eq!(encode_in_ring_position(7.25, 1, 4), 0);
+
+        assert_eq!(encode_in_ring_position(0.25, 3, 4), 0);
+        assert_eq!(encode_in_ring_position(0.75, 3, 4), 1);
+        assert_eq!(encode_in_ring_position(1.25, 3, 4), 2);
+        assert_eq!(encode_in_ring_position(1.75, 3, 4), 3);
+        assert_eq!(encode_in_ring_position(2.25, 3, 4), 3);
+        assert_eq!(encode_in_ring_position(2.75, 3, 4), 4);
+        assert_eq!(encode_in_ring_position(3.25, 3, 4), 5);
+        assert_eq!(encode_in_ring_position(3.75, 3, 4), 6);
+        assert_eq!(encode_in_ring_position(4.25, 3, 4), 6);
+        assert_eq!(encode_in_ring_position(4.75, 3, 4), 7);
+        assert_eq!(encode_in_ring_position(5.25, 3, 4), 8);
+        assert_eq!(encode_in_ring_position(5.75, 3, 4), 9);
+        assert_eq!(encode_in_ring_position(6.25, 3, 4), 9);
+        assert_eq!(encode_in_ring_position(6.75, 3, 4), 10);
+        assert_eq!(encode_in_ring_position(7.25, 3, 4), 11);
+        assert_eq!(encode_in_ring_position(7.75, 3, 4), 0);
+    }
+
+    #[test]
+    fn test_decode_in_ring_position_nside_4_polar_cap() {
+        assert_eq!(decode_in_ring_position(0, 1, 4), 0.75);
+        assert_eq!(decode_in_ring_position(1, 1, 4), 2.75);
+        assert_eq!(decode_in_ring_position(2, 1, 4), 4.75);
+        assert_eq!(decode_in_ring_position(3, 1, 4), 6.75);
+
+        assert_eq!(decode_in_ring_position(0, 2, 4), 0.5);
+        assert_eq!(decode_in_ring_position(1, 2, 4), 1.0);
+        assert_eq!(decode_in_ring_position(2, 2, 4), 2.5);
+
+        assert_eq!(decode_in_ring_position(0, 3, 4), 0.25);
+        assert_eq!(decode_in_ring_position(1, 3, 4), 0.75);
+        assert_eq!(decode_in_ring_position(2, 3, 4), 1.25);
+        // assert_eq!(decode_in_ring_position(3, 3, 4), 1.75);
+        assert_eq!(decode_in_ring_position(3, 3, 4), 2.25);
+        assert_eq!(decode_in_ring_position(4, 3, 4), 2.75);
+        assert_eq!(decode_in_ring_position(5, 3, 4), 3.25);
+        // assert_eq!(decode_in_ring_position(6, 3, 4), 3.75);
+        assert_eq!(decode_in_ring_position(6, 3, 4), 4.25);
+        assert_eq!(decode_in_ring_position(7, 3, 4), 4.75);
+        assert_eq!(decode_in_ring_position(8, 3, 4), 5.25);
+        // assert_eq!(decode_in_ring_position(9, 3, 4), 5.75);
+        assert_eq!(decode_in_ring_position(9, 3, 4), 6.25);
+        assert_eq!(decode_in_ring_position(10, 3, 4), 6.75);
+        assert_eq!(decode_in_ring_position(11, 3, 4), 7.25);
+    }
+
+    #[test]
+    fn test_encode_in_ring_position_nside_4_equatorial_region() {
+        assert_eq!(encode_in_ring_position(0.0, 4, 4), 0);
+        assert_eq!(encode_in_ring_position(0.5, 4, 4), 1);
+        assert_eq!(encode_in_ring_position(1.0, 4, 4), 2);
+        assert_eq!(encode_in_ring_position(1.5, 4, 4), 3);
+        assert_eq!(encode_in_ring_position(2.0, 4, 4), 4);
+        assert_eq!(encode_in_ring_position(2.5, 4, 4), 5);
+        assert_eq!(encode_in_ring_position(3.0, 4, 4), 6);
+        assert_eq!(encode_in_ring_position(3.5, 4, 4), 7);
+        assert_eq!(encode_in_ring_position(4.0, 4, 4), 8);
+        assert_eq!(encode_in_ring_position(4.5, 4, 4), 9);
+        assert_eq!(encode_in_ring_position(5.0, 4, 4), 10);
+        assert_eq!(encode_in_ring_position(5.5, 4, 4), 11);
+        assert_eq!(encode_in_ring_position(6.0, 4, 4), 12);
+        assert_eq!(encode_in_ring_position(6.5, 4, 4), 13);
+        assert_eq!(encode_in_ring_position(7.0, 4, 4), 14);
+        assert_eq!(encode_in_ring_position(7.5, 4, 4), 15);
+        assert_eq!(encode_in_ring_position(8.0, 4, 4), 0);
+
+        assert_eq!(encode_in_ring_position(0.25, 5, 4), 0);
+        assert_eq!(encode_in_ring_position(0.75, 5, 4), 1);
+        assert_eq!(encode_in_ring_position(1.25, 5, 4), 2);
+        assert_eq!(encode_in_ring_position(1.75, 5, 4), 3);
+        assert_eq!(encode_in_ring_position(2.25, 5, 4), 4);
+        assert_eq!(encode_in_ring_position(2.75, 5, 4), 5);
+        assert_eq!(encode_in_ring_position(3.25, 5, 4), 6);
+        assert_eq!(encode_in_ring_position(3.75, 5, 4), 7);
+        assert_eq!(encode_in_ring_position(4.25, 5, 4), 8);
+        assert_eq!(encode_in_ring_position(4.75, 5, 4), 9);
+        assert_eq!(encode_in_ring_position(5.25, 5, 4), 10);
+        assert_eq!(encode_in_ring_position(5.75, 5, 4), 11);
+        assert_eq!(encode_in_ring_position(6.25, 5, 4), 12);
+        assert_eq!(encode_in_ring_position(6.75, 5, 4), 13);
+        assert_eq!(encode_in_ring_position(7.25, 5, 4), 14);
+        assert_eq!(encode_in_ring_position(7.75, 5, 4), 15);
+    }
+
+    #[test]
+    fn test_decode_in_ring_position_nside_4_equatorial_region() {
+        assert_eq!(decode_in_ring_position(0, 4, 4), 0.0);
+        assert_eq!(decode_in_ring_position(1, 4, 4), 0.5);
+        assert_eq!(decode_in_ring_position(2, 4, 4), 1.0);
+        assert_eq!(decode_in_ring_position(3, 4, 4), 1.5);
+        assert_eq!(decode_in_ring_position(4, 4, 4), 2.0);
+        assert_eq!(decode_in_ring_position(5, 4, 4), 2.5);
+        assert_eq!(decode_in_ring_position(6, 4, 4), 3.0);
+        assert_eq!(decode_in_ring_position(7, 4, 4), 3.5);
+        assert_eq!(decode_in_ring_position(8, 4, 4), 4.0);
+        assert_eq!(decode_in_ring_position(9, 4, 4), 4.5);
+        assert_eq!(decode_in_ring_position(10, 4, 4), 5.0);
+        assert_eq!(decode_in_ring_position(11, 4, 4), 5.5);
+        assert_eq!(decode_in_ring_position(12, 4, 4), 6.0);
+        assert_eq!(decode_in_ring_position(13, 4, 4), 6.5);
+        assert_eq!(decode_in_ring_position(14, 4, 4), 7.0);
+        assert_eq!(decode_in_ring_position(15, 4, 4), 7.5);
+        // assert_eq!(decode_in_ring_position(0, 4, 4), 8.0);
+
+        assert_eq!(decode_in_ring_position(0, 5, 4), 0.25);
+        assert_eq!(decode_in_ring_position(1, 5, 4), 0.75);
+        assert_eq!(decode_in_ring_position(2, 5, 4), 1.25);
+        assert_eq!(decode_in_ring_position(3, 5, 4), 1.75);
+        assert_eq!(decode_in_ring_position(4, 5, 4), 2.25);
+        assert_eq!(decode_in_ring_position(5, 5, 4), 2.75);
+        assert_eq!(decode_in_ring_position(6, 5, 4), 3.25);
+        assert_eq!(decode_in_ring_position(7, 5, 4), 3.75);
+        assert_eq!(decode_in_ring_position(8, 5, 4), 4.25);
+        assert_eq!(decode_in_ring_position(9, 5, 4), 4.75);
+        assert_eq!(decode_in_ring_position(10, 5, 4), 5.25);
+        assert_eq!(decode_in_ring_position(11, 5, 4), 5.75);
+        assert_eq!(decode_in_ring_position(12, 5, 4), 6.25);
+        assert_eq!(decode_in_ring_position(13, 5, 4), 6.75);
+        assert_eq!(decode_in_ring_position(14, 5, 4), 7.25);
+        assert_eq!(decode_in_ring_position(15, 5, 4), 7.75);
+    }
+
+    #[test]
+    fn test_encode_in_ring_position_nside_8_polar_cap() {
+        // polar cap
+        assert_eq!(encode_in_ring_position(0.875, 1, 8), 0);
+        assert_eq!(encode_in_ring_position(2.875, 1, 8), 1);
+        assert_eq!(encode_in_ring_position(4.875, 1, 8), 2);
+        assert_eq!(encode_in_ring_position(6.875, 1, 8), 3);
+
+        assert_eq!(encode_in_ring_position(0.125, 7, 8), 0);
+        assert_eq!(encode_in_ring_position(0.375, 7, 8), 1);
+        assert_eq!(encode_in_ring_position(0.875, 7, 8), 3);
+        assert_eq!(encode_in_ring_position(1.875, 7, 8), 7);
+        assert_eq!(encode_in_ring_position(2.125, 7, 8), 7);
+        assert_eq!(encode_in_ring_position(3.125, 7, 8), 11);
+        assert_eq!(encode_in_ring_position(3.875, 7, 8), 14);
+        assert_eq!(encode_in_ring_position(5.125, 7, 8), 18);
+        assert_eq!(encode_in_ring_position(6.125, 7, 8), 21);
+        assert_eq!(encode_in_ring_position(7.125, 7, 8), 25);
+        assert_eq!(encode_in_ring_position(7.875, 7, 8), 0);
+    }
+
+    #[test]
+    fn test_decode_in_ring_position_nside_8_polar_cap() {
+        // polar cap
+        assert_eq!(decode_in_ring_position(0, 1, 8), 0.875);
+        assert_eq!(decode_in_ring_position(1, 1, 8), 2.875);
+        assert_eq!(decode_in_ring_position(2, 1, 8), 4.875);
+        assert_eq!(decode_in_ring_position(3, 1, 8), 6.875);
+
+        assert_eq!(decode_in_ring_position(0, 7, 8), 0.125);
+        assert_eq!(decode_in_ring_position(1, 7, 8), 0.375);
+        assert_eq!(decode_in_ring_position(3, 7, 8), 0.875);
+        // assert_eq!(decode_in_ring_position(7, 7, 8), 1.875);
+        assert_eq!(decode_in_ring_position(7, 7, 8), 2.125);
+        assert_eq!(decode_in_ring_position(11, 7, 8), 3.125);
+        //assert_eq!(decode_in_ring_position(14, 7, 8), 3.875);
+        assert_eq!(decode_in_ring_position(14, 7, 8), 4.125);
+        assert_eq!(decode_in_ring_position(18, 7, 8), 5.125);
+        assert_eq!(decode_in_ring_position(21, 7, 8), 6.125);
+        assert_eq!(decode_in_ring_position(25, 7, 8), 7.125);
+        // assert_eq!(decode_in_ring_position(0, 7, 8), 7.875);
+    }
+
+    #[test]
+    fn test_encode_in_ring_position_nside_8_equatorial_region() {
+        // equatorial region
+        assert_eq!(encode_in_ring_position(0.00, 8, 8), 0);
+        assert_eq!(encode_in_ring_position(0.25, 8, 8), 1);
+        assert_eq!(encode_in_ring_position(1.00, 8, 8), 4);
+        assert_eq!(encode_in_ring_position(2.00, 8, 8), 8);
+        assert_eq!(encode_in_ring_position(4.00, 8, 8), 16);
+        assert_eq!(encode_in_ring_position(7.75, 8, 8), 31);
+        assert_eq!(encode_in_ring_position(0.125, 9, 8), 0);
+        assert_eq!(encode_in_ring_position(0.375, 9, 8), 1);
+        assert_eq!(encode_in_ring_position(1.125, 9, 8), 4);
+        assert_eq!(encode_in_ring_position(2.125, 9, 8), 8);
+        assert_eq!(encode_in_ring_position(4.125, 9, 8), 16);
+        assert_eq!(encode_in_ring_position(7.875, 9, 8), 31);
+    }
+
+    #[test]
+    fn test_decode_in_ring_position_nside_8_equatorial_region() {
+        // equatorial region
+        assert_eq!(decode_in_ring_position(0, 8, 8), 0.00);
+        assert_eq!(decode_in_ring_position(1, 8, 8), 0.25);
+        assert_eq!(decode_in_ring_position(4, 8, 8), 1.00);
+        assert_eq!(decode_in_ring_position(8, 8, 8), 2.00);
+        assert_eq!(decode_in_ring_position(16, 8, 8), 4.00);
+        assert_eq!(decode_in_ring_position(31, 8, 8), 7.75);
+        assert_eq!(decode_in_ring_position(0, 9, 8), 0.125);
+        assert_eq!(decode_in_ring_position(1, 9, 8), 0.375);
+        assert_eq!(decode_in_ring_position(4, 9, 8), 1.125);
+        assert_eq!(decode_in_ring_position(8, 9, 8), 2.125);
+        assert_eq!(decode_in_ring_position(16, 9, 8), 4.125);
+        assert_eq!(decode_in_ring_position(31, 9, 8), 7.875);
     }
 
     #[test]
