@@ -28,7 +28,7 @@
 //! - vertex_indices: deduplicate the vertex ids and construct the mesh connectivity
 //! - vertex coordinates: given a vertex id, compute the vertex coordinates
 use cdshealpix as healpix;
-// use cdshealpix::unproj;
+use cdshealpix::unproj;
 
 // type CellVertices = (u64, u64, u64, u64);
 // type CellIndices = (usize, usize, usize, usize);
@@ -156,17 +156,40 @@ fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64
     }
 }
 
+pub fn vertex_indices(depth: u8, hash: u64) -> (u64, u64, u64, u64) {
+    let layer = healpix::nested::get(depth);
+
+    let [(x_s, y_s), (x_e, y_e), (x_n, y_n), (x_w, y_w)] = layer.projected_vertices(hash);
+
+    (
+        encode_vertex(depth, x_s, y_s, VertexIdScheme::Ring),
+        encode_vertex(depth, x_e, y_e, VertexIdScheme::Ring),
+        encode_vertex(depth, x_n, y_n, VertexIdScheme::Ring),
+        encode_vertex(depth, x_w, y_w, VertexIdScheme::Ring),
+    )
+}
+
 // /// Deduplicate and sort the given vertex ids
 // pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
 
-// /// Convert a vertex id to coordinates
-// pub fn vertex_coordinates(hash: u64) -> (f64, f64) {
-//     // convert vertex hash to (face, x, y)
-//     // - convert the vertex id into (face, x, y, depth, corner-kind)
-//     // - from there, convert to (x, y) healpix plane coordinates (offset from the healpix
-//     //   center coordinate is 1 / 2**depth)
-//     // - use `unproj` to compute the geographic coordinates
-// }
+/// Convert a vertex id to coordinates
+pub fn vertex_coordinates(depth: u8, hash: u64) -> (f64, f64) {
+    // convert vertex hash to (face, x, y)
+    // - convert the vertex id into (face, x, y, depth, corner-kind)
+    // - from there, convert to (x, y) healpix plane coordinates (offset from the healpix
+    //   center coordinate is 1 / 2**depth)
+    // - use `unproj` to compute the geographic coordinates
+    let (x, y) = decode_vertex(depth, hash, VertexIdScheme::Ring);
+    if y == 2.0 {
+        (0.0, 90.0)
+    } else if y == -2.0 {
+        (0.0, -90.0)
+    } else {
+        let (lon, lat) = unproj(x, y);
+
+        (lon.to_degrees(), lat.to_degrees())
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -528,5 +551,28 @@ mod tests {
         assert_eq!(decode_vertex(1, 5, VertexIdScheme::Ring), (0.0, 1.0));
         assert_eq!(decode_vertex(2, 25, VertexIdScheme::Ring), (0.0, 1.0));
         assert_eq!(decode_vertex(2, 41, VertexIdScheme::Ring), (0.25, 0.75));
+    }
+
+    #[test]
+    fn test_vertex_coordinates() {
+        assert_eq!(vertex_coordinates(0, 0), (0.0, 90.0));
+        assert_eq!(vertex_coordinates(0, 13), (0.0, -90.0));
+        assert_eq!(
+            vertex_coordinates(0, 1),
+            (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
+        );
+
+        assert_eq!(
+            vertex_coordinates(3, 113),
+            (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
+        );
+    }
+
+    #[test]
+    fn test_vertex_indices() {
+        assert_eq!(vertex_indices(0, 0), (5, 2, 0, 1));
+        assert_eq!(vertex_indices(0, 1), (6, 3, 0, 2));
+
+        assert_eq!(vertex_indices(1, 7), (8, 3, 0, 2));
     }
 }
