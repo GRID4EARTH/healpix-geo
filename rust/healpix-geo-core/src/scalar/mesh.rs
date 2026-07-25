@@ -49,6 +49,11 @@ fn encode_in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
     if pole_distance == 0 {
         0
     } else if pole_distance < nside {
+        // original formula:
+        //   i = N / 2 * ( (x - (1 - d / N) (2 floor(x/2) + 1)) mod (8d / N) )
+        // floating-point optimized formula (uses only integer math)
+        //   m = Nx
+        //   i = ((m - (N - d) (2 (m/(2N)) + 1)) mod 4d) / 2
         let discretized_x = (nside as f64 * x) as u64;
         // integer division, the parens are significant
         let n_gaps = 2 * (discretized_x / (2 * nside)) + 1;
@@ -56,6 +61,11 @@ fn encode_in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
 
         reduced_x.rem_euclid(8 * pole_distance) / 2
     } else {
+        // original formula
+        //   p = (r + 1) mod 2 if N = 1, else r mod 2
+        //   i = N / 2 ((x - p / N) mod (8 - p / N))
+        // optimized formula (all integer arithmetic)
+        //   i = ((N x - p) mod (8N - p)) / 2
         let phase = if nside == 1 {
             (ring + 1).rem_euclid(2)
         } else {
@@ -75,12 +85,21 @@ fn decode_in_ring_position(position: u64, ring: u64, nside: u64) -> f64 {
     if pole_distance == 0 {
         1.0
     } else if pole_distance < nside {
+        // original formula:
+        //   x = 2 / N i + (1 - d / N) (2 floor(i / d) + 1)
+        // optimized formula (integer arithmetic except for the last division)
+        //   x = (2i + (N - d) (2 (i / d) + 1)) / N
+
         let gap = nside - pole_distance;
         // integer division, the parens are significant
         let completed_blocks = 2 * (position / pole_distance) + 1;
 
         (2 * position + gap * completed_blocks) as f64 / nside as f64
     } else {
+        // original formula:
+        //   x = 2/N i + p / N
+        // optimized formula (division is floating point):
+        //   x = (2 i + p) / N
         let phase = (if nside == 1 { ring + 1 } else { ring }).rem_euclid(2);
 
         (2 * position + phase) as f64 / nside as f64
@@ -94,10 +113,13 @@ fn ring_offset(ring: u64, nside: u64) -> u64 {
     if ring == 0 {
         0
     } else if ring < nside {
+        // i_r = 1 + 2(r-1)(r-2)
         1 + triangular_number_x4(pole_distance - 1)
     } else if ring > 3 * nside {
+        // i_r = 12N² + 2 - 1 - 2r(r-1)
         12 * nside.pow(2) + 1 - triangular_number_x4(pole_distance)
     } else {
+        // i_r = 1 + 2(N-1)(N-2) + 4N * (r - N)
         1 + triangular_number_x4(nside - 1) + 4 * nside * (ring - nside)
     }
 }
