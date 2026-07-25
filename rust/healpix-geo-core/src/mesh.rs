@@ -55,21 +55,22 @@ fn encode_in_ring_position(x: f64, ring: u64, nside: u64) -> u64 {
     if pole_distance == 0 {
         0
     } else if pole_distance < nside {
-        let occupied = pole_distance as f64 / nside as f64;
-        let reduced_x = x - (1.0 - occupied) * (2.0 * (x / 2.0).floor() + 1.0);
-        let collapsed_size = 8.0 * pole_distance as f64 / nside as f64;
+        let discretized_x = (nside as f64 * x) as u64;
+        // integer division, the parens are significant
+        let n_gaps = 2 * (discretized_x / (2 * nside)) + 1;
+        let reduced_x = discretized_x - (nside - pole_distance) * n_gaps;
 
-        (nside as f64 / 2.0 * reduced_x.rem_euclid(collapsed_size)).floor() as u64
+        reduced_x.rem_euclid(8 * pole_distance) / 2
     } else {
         let phase = if nside == 1 {
             (ring + 1).rem_euclid(2)
         } else {
             ring.rem_euclid(2)
         };
-        let reduced_x = x - phase as f64 / nside as f64;
 
-        let collapsed_size = 8.0 - phase as f64 / nside as f64;
-        (nside as f64 / 2.0 * reduced_x.rem_euclid(collapsed_size)).floor() as u64
+        let discretized_x = (nside as f64 * x) as u64;
+
+        (discretized_x - phase).rem_euclid(8 * nside - phase) / 2
     }
 }
 
@@ -80,18 +81,15 @@ fn decode_in_ring_position(position: u64, ring: u64, nside: u64) -> f64 {
     if pole_distance == 0 {
         1.0
     } else if pole_distance < nside {
-        let gap = 1.0 - pole_distance as f64 / nside as f64;
-        let completed_blocks = 2 * (position as f64 / pole_distance as f64).floor() as u64 + 1;
+        let gap = nside - pole_distance;
+        // integer division, the parens are significant
+        let completed_blocks = 2 * (position / pole_distance) + 1;
 
-        2.0 / nside as f64 * position as f64 + gap * completed_blocks as f64
+        (2 * position + gap * completed_blocks) as f64 / nside as f64
     } else {
-        let phase = if nside == 1 {
-            (ring + 1).rem_euclid(2)
-        } else {
-            ring.rem_euclid(2)
-        };
+        let phase = (if nside == 1 { ring + 1 } else { ring }).rem_euclid(2);
 
-        (2.0 * position as f64 + phase as f64) / nside as f64
+        (2 * position + phase) as f64 / nside as f64
     }
 }
 
