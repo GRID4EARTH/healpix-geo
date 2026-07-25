@@ -181,13 +181,13 @@ fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64
 // pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
 
 /// Convert a vertex id to coordinates
-pub fn vertex_coordinates(depth: u8, hash: u64) -> (f64, f64) {
+pub fn vertex_coordinates(depth: u8, hash: &u64) -> (f64, f64) {
     // convert vertex hash to (face, x, y)
     // - convert the vertex id into (face, x, y, depth, corner-kind)
     // - from there, convert to (x, y) healpix plane coordinates (offset from the healpix
     //   center coordinate is 1 / 2**depth)
     // - use `unproj` to compute the geographic coordinates
-    let (x, y) = decode_vertex(depth, hash, VertexIdScheme::Ring);
+    let (x, y) = decode_vertex(depth, *hash, VertexIdScheme::Ring);
     if y == 2.0 {
         (0.0, 90.0)
     } else if y == -2.0 {
@@ -563,15 +563,15 @@ mod tests {
 
     #[test]
     fn test_vertex_coordinates() {
-        assert_eq!(vertex_coordinates(0, 0), (0.0, 90.0));
-        assert_eq!(vertex_coordinates(0, 13), (0.0, -90.0));
+        assert_eq!(vertex_coordinates(0, &0), (0.0, 90.0));
+        assert_eq!(vertex_coordinates(0, &13), (0.0, -90.0));
         assert_eq!(
-            vertex_coordinates(0, 1),
+            vertex_coordinates(0, &1),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
         );
 
         assert_eq!(
-            vertex_coordinates(3, 113),
+            vertex_coordinates(3, &113),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
         );
     }
