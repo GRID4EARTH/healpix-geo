@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import marray
 import numpy as np
 
 from healpix_geo import healpix_geo
 from healpix_geo.utils import _check_depth, _check_ipixels, _check_ring
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 RangeMOCIndex = healpix_geo.nested.RangeMOCIndex
 internal_boundary = healpix_geo.nested.internal_boundary
@@ -305,6 +312,62 @@ def vertices(ipix, depth, ellipsoid="sphere", step=1, num_threads=0):
     num_threads = np.uint16(num_threads)
 
     return healpix_geo.nested.vertices(depth, ipix, ellipsoid, step, num_threads)
+
+
+def vertex_indices(
+    ipix: npt.NDArray[np.uint64],
+    depth: int,
+    *,
+    num_threads: int = 0,
+) -> npt.NDArray[np.uint64]:
+    """Get the indices of the 4 vertices of the given cells.
+
+    Parameters
+    ----------
+    ipix : array-like of numpy.uint64
+        The HEALPix cell indexes.
+    depth : int
+        The depth of the HEALPix cells.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    vertex_ids : array-like of numpy.uint64
+        The identifiers of vertices of the given cells.
+
+    Raises
+    ------
+    ValueError
+        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth})`.
+
+    See Also
+    --------
+    healpix_geo.vertex_to_geographic
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import vertex_indices
+    >>> import numpy as np
+
+    >>> ipix = np.array([42, 6, 10])
+    >>> depth = 12
+
+    >>> vertex_ids = vertex_indices(ipix, depth)
+    >>> vertex_ids
+    array([[100542461, 100526078, 100509693, 100526077],
+           [100608001, 100591618, 100575233, 100591617],
+           [100607999, 100591616, 100575231, 100591615]], dtype=uint64)
+    """
+    _check_depth(depth)
+    depth = int(depth)
+    ipix = np.atleast_1d(ipix)
+    _check_ipixels(data=ipix, depth=depth)
+    ipix = np.astype(ipix, np.uint64)
+
+    return healpix_geo.nested.vertex_indices(depth, ipix, num_threads)
 
 
 def bilinear_interpolation(

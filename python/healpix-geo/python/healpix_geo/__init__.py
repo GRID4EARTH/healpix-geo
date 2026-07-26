@@ -98,4 +98,6 @@ __all__ = [
     "slices",
     "geometry",
     "Bbox",
+    "lonlat_to_cartesian",
+    "cartesian_to_lonlat",
 ]
