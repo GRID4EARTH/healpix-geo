@@ -182,7 +182,7 @@ fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64
 // pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
 
 /// Convert a vertex id to coordinates
-pub fn vertex_coordinates(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f64, f64) {
+pub fn vertex_to_geographic(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f64, f64) {
     // convert vertex hash to (face, x, y)
     // - convert the vertex id into (face, x, y, depth, corner-kind)
     // - from there, convert to (x, y) healpix plane coordinates (offset from the healpix
@@ -569,7 +569,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vertex_coordinates() {
+    fn test_vertex_to_geographic() {
         let sphere = Ellipsoid::Sphere(ReferenceSphere::new(
             GeodesyEllipsoid::named("sphere").unwrap(),
         ));
@@ -577,25 +577,25 @@ mod tests {
             GeodesyEllipsoid::named("WGS84").unwrap(),
         ));
 
-        assert_eq!(vertex_coordinates(0, &0, &sphere), (0.0, 90.0));
-        assert_eq!(vertex_coordinates(0, &13, &sphere), (0.0, -90.0));
+        assert_eq!(vertex_to_geographic(0, &0, &sphere), (0.0, 90.0));
+        assert_eq!(vertex_to_geographic(0, &13, &sphere), (0.0, -90.0));
         assert_eq!(
-            vertex_coordinates(0, &1, &sphere),
+            vertex_to_geographic(0, &1, &sphere),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
         );
 
         assert_eq!(
-            vertex_coordinates(3, &113, &sphere),
+            vertex_to_geographic(3, &113, &sphere),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
         );
 
-        assert_eq!(vertex_coordinates(0, &5, &ellipsoid), (45.0, 0.0));
+        assert_eq!(vertex_to_geographic(0, &5, &ellipsoid), (45.0, 0.0));
         assert_eq!(
-            vertex_coordinates(2, &87, &ellipsoid),
+            vertex_to_geographic(2, &87, &ellipsoid),
             (326.25, 9.636338620241146)
         );
         assert_eq!(
-            vertex_coordinates(3, &21, &ellipsoid),
+            vertex_to_geographic(3, &21, &ellipsoid),
             (239.99999999999997, 72.46140571909436)
         );
     }
