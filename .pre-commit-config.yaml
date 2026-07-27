@@ -6,7 +6,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-docstring-first
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.5
+    rev: v3.9.6
     hooks:
       - id: prettier
         args: ["--cache-location=.prettier_cache/cache"]
@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
+    rev: v0.16.0
     hooks:
       - id: ruff
         args: ["--fix", "--show-fixes"]
@@ -53,7 +53,7 @@ repos:
     hooks:
       - id: action-validator
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.26.1
+    rev: v1.28.0
     hooks:
       - id: zizmor
   - repo: local
