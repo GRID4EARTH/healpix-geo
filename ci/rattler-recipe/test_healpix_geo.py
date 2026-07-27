@@ -1,6 +1,5 @@
-import numpy as np
-
 import healpix_geo
+import numpy as np
 
 
 def test_nested_lonlat_to_healpix():
