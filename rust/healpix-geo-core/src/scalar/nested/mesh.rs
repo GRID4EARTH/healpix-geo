@@ -7,10 +7,10 @@ pub fn vertex_indices(depth: u8, hash: &u64) -> (u64, u64, u64, u64) {
     let [(x_s, y_s), (x_e, y_e), (x_n, y_n), (x_w, y_w)] = layer.projected_vertices(*hash);
 
     (
-        encode_vertex(depth, x_s, y_s, VertexIdScheme::Ring),
-        encode_vertex(depth, x_e, y_e, VertexIdScheme::Ring),
-        encode_vertex(depth, x_n, y_n, VertexIdScheme::Ring),
-        encode_vertex(depth, x_w, y_w, VertexIdScheme::Ring),
+        encode_vertex(depth, x_s.rem_euclid(8.0), y_s, VertexIdScheme::Ring),
+        encode_vertex(depth, x_e.rem_euclid(8.0), y_e, VertexIdScheme::Ring),
+        encode_vertex(depth, x_n.rem_euclid(8.0), y_n, VertexIdScheme::Ring),
+        encode_vertex(depth, x_w.rem_euclid(8.0), y_w, VertexIdScheme::Ring),
     )
 }
 
