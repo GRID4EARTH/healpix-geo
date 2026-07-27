@@ -134,7 +134,7 @@ fn extract_ring(vertex_id: u64, nside: u64, n_vertices: u64, triangular_number: 
     } else if vertex_id < triangular_number + 1 {
         ((1 + (2 * vertex_id - 1).isqrt()) as f64 / 2.0).floor() as u64
     } else if vertex_id > n_vertices - triangular_number - 1 {
-        4 * nside - (3 + (2 * (n_vertices - vertex_id) - 1).isqrt()) / 2
+        4 * nside + 1 - (3 + (2 * (n_vertices - vertex_id) - 1).isqrt()) / 2
     } else {
         nside + (vertex_id - triangular_number - 1) / (4 * nside)
     }
@@ -564,6 +564,10 @@ mod tests {
         assert_eq!(decode_vertex(2, 2, VertexIdScheme::Ring), (2.75, 1.75));
         assert_eq!(decode_vertex(2, 6, VertexIdScheme::Ring), (1.0, 1.5));
 
+        // south polar cap
+        assert_eq!(decode_vertex(0, 12, VertexIdScheme::Ring), (6.0, -1.0));
+        assert_eq!(decode_vertex(1, 46, VertexIdScheme::Ring), (2.5, -1.5));
+
         // equator
         assert_eq!(decode_vertex(1, 5, VertexIdScheme::Ring), (0.0, 1.0));
         assert_eq!(decode_vertex(1, 7, VertexIdScheme::Ring), (2.0, 1.0));
@@ -594,6 +598,10 @@ mod tests {
         assert_eq!(
             vertex_to_geographic(1, &36, &sphere),
             (337.5, -19.47122063449069)
+        );
+        assert_eq!(
+            vertex_to_geographic(1, &46, &sphere),
+            (90.0, -66.44353569089878),
         );
 
         assert_eq!(
