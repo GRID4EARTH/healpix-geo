@@ -24,5 +24,6 @@ mod tests {
         assert_eq!(vertex_indices(0, &1), (6, 3, 0, 2));
 
         assert_eq!(vertex_indices(1, &7), (8, 3, 0, 2));
+        assert_eq!(vertex_indices(1, &16), (37, 29, 21, 36));
     }
 }

@@ -14,3 +14,17 @@ pub fn vertex_indices(hash: &u64) -> (u64, u64, u64, u64) {
         encode_vertex(depth, x_w, y_w, VertexIdScheme::Ring),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vertex_indices() {
+        assert_eq!(vertex_indices(&288230376151711744), (5, 2, 0, 1));
+        assert_eq!(vertex_indices(&864691128455135232), (6, 3, 0, 2));
+
+        assert_eq!(vertex_indices(&1080863910568919040), (8, 3, 0, 2));
+        assert_eq!(vertex_indices(&2377900603251621888), (37, 29, 21, 36));
+    }
+}
