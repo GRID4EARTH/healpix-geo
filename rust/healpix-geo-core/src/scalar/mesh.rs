@@ -540,6 +540,7 @@ mod tests {
         assert_eq!(extract_ring(1, 1, 14, 0), 1);
         assert_eq!(extract_ring(6, 1, 14, 0), 2);
         assert_eq!(extract_ring(13, 2, 50, 4), 3);
+        assert_eq!(extract_ring(32, 2, 50, 4), 5);
         assert_eq!(extract_ring(21, 8, 768, 84), 3);
     }
 
@@ -559,12 +560,15 @@ mod tests {
         // north polar cap
         assert_eq!(decode_vertex(0, 1, VertexIdScheme::Ring), (0.0, 1.0));
         assert_eq!(decode_vertex(1, 1, VertexIdScheme::Ring), (0.5, 1.5));
+        assert_eq!(decode_vertex(1, 3, VertexIdScheme::Ring), (4.5, 1.5));
         assert_eq!(decode_vertex(2, 2, VertexIdScheme::Ring), (2.75, 1.75));
         assert_eq!(decode_vertex(2, 6, VertexIdScheme::Ring), (1.0, 1.5));
 
         // equator
         assert_eq!(decode_vertex(1, 5, VertexIdScheme::Ring), (0.0, 1.0));
+        assert_eq!(decode_vertex(1, 7, VertexIdScheme::Ring), (2.0, 1.0));
         assert_eq!(decode_vertex(2, 25, VertexIdScheme::Ring), (0.0, 1.0));
+        assert_eq!(decode_vertex(2, 32, VertexIdScheme::Ring), (3.5, 1.0));
         assert_eq!(decode_vertex(2, 41, VertexIdScheme::Ring), (0.25, 0.75));
     }
 
@@ -582,6 +586,14 @@ mod tests {
         assert_eq!(
             vertex_to_geographic(0, &1, &sphere),
             (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
+        );
+        assert_eq!(
+            vertex_to_geographic(1, &29, &sphere),
+            (22.5, -19.47122063449069)
+        );
+        assert_eq!(
+            vertex_to_geographic(1, &36, &sphere),
+            (337.5, -19.47122063449069)
         );
 
         assert_eq!(
