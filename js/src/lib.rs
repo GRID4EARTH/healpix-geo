@@ -9,7 +9,7 @@ pub mod zuniq;
 use wasm_bindgen::prelude::*;
 
 pub use crate::coordinates::Coordinate;
-pub use crate::ellipsoid::EllipsoidLike;
+pub use crate::ellipsoid::{Ellipsoid, EllipsoidLike};
 
 pub use crate::nested::Nested;
 pub use crate::ring::Ring;

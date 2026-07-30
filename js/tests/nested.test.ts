@@ -1,12 +1,12 @@
 import init, * as healpixGeo from "../pkg/index.js";
-import { Coordinate, TEllipsoid } from "../pkg/index.js";
+import { Coordinate, Ellipsoid } from "../pkg/index.js";
 import { describe, expect, test } from "vitest";
 
 describe("nested bitcombine", () => {
   test("level 0 south", () => {
-    const depth: Number = 3;
-    const i: Number = 0.0;
-    const j: Number = 0.0;
+    const depth: number = 3;
+    const i: number = 0.0;
+    const j: number = 0.0;
 
     expect(healpixGeo.nested.bitCombine(depth, i, j)).to.equal(0n);
   });
@@ -14,13 +14,17 @@ describe("nested bitcombine", () => {
 
 describe("nested healpixToLonLat", () => {
   test("default-ellipsoid", () => {
-    const actual: Coordinate = healpixGeo.nested.healpixToLonLat(164n, 4, null);
+    const actual: Coordinate = healpixGeo.nested.healpixToLonLat(
+      164n,
+      4,
+      Ellipsoid.from(null),
+    );
     expect(actual).to.have.a.property("lon", 16.875);
     expect(actual).to.have.a.property("lat", 38.68218745348944);
   });
 
   test("sphere", () => {
-    const sphere: TEllipsoid = healpixGeo.parseEllipsoid({ radius: 6371000 });
+    const sphere: Ellipsoid = Ellipsoid.from({ radius: 6371000 });
     const actual: Coordinate = healpixGeo.nested.healpixToLonLat(
       164n,
       4,
@@ -30,7 +34,7 @@ describe("nested healpixToLonLat", () => {
     expect(actual).to.have.a.property("lat", 38.68218745348944);
   });
   test("ellipsoid", () => {
-    const ellipsoid: TEllipsoid = healpixGeo.parseEllipsoid({
+    const ellipsoid: Ellipsoid = Ellipsoid.from({
       semi_major_axis: 6378137.0,
       inverse_flattening: 298.257223563,
     });
@@ -47,7 +51,7 @@ describe("nested healpixToLonLat", () => {
 describe("nested vertex", () => {
   test("default ellipsoid northern", () => {
     const cellId: bigint = 4n;
-    const ellipsoid: TEllipsoid = null;
+    const ellipsoid: Ellipsoid = Ellipsoid.from(null);
     const actual: Coordinate = healpixGeo.nested.vertex(
       cellId,
       0,
@@ -62,7 +66,7 @@ describe("nested vertex", () => {
   test("sphere eastern", () => {
     const cellId: bigint = 4n;
     const depth: number = 0;
-    const ellipsoid: TEllipsoid = healpixGeo.parseEllipsoid({
+    const ellipsoid: Ellipsoid = Ellipsoid.from({
       radius: 6371000,
     });
 
@@ -79,7 +83,7 @@ describe("nested vertex", () => {
   test("ellipsoid western", () => {
     const cellId: bigint = 4n;
     const depth: number = 0;
-    const ellipsoid: TEllipsoid = healpixGeo.parseEllipsoid({
+    const ellipsoid: Ellipsoid = Ellipsoid.from({
       semi_major_axis: 6378137.0,
       inverse_flattening: 298.257223563,
     });

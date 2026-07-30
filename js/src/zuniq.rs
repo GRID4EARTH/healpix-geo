@@ -4,7 +4,7 @@ use healpix_geo_core::scalar::zuniq::coordinates as scalar;
 use wasm_bindgen::prelude::*;
 
 use crate::coordinates::Coordinate;
-use crate::ellipsoid::EllipsoidLike;
+use crate::ellipsoid::Ellipsoid;
 use crate::geometry::spherical_vertex;
 
 #[wasm_bindgen(js_name = zuniq)]
@@ -28,36 +28,31 @@ impl Zuniq {
 
     /// Center coordinates for the given cell
     #[wasm_bindgen(js_name = healpixToLonLat)]
-    pub fn healpix_to_lonlat(hash: u64, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
-        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+    pub fn healpix_to_lonlat(hash: u64, ellipsoid: &Ellipsoid) -> Coordinate {
+        let ellipsoid_ = &ellipsoid.inner;
 
-        let (lon, lat) = scalar::healpix_to_lonlat(&hash, &ellipsoid_);
+        let (lon, lat) = scalar::healpix_to_lonlat(&hash, ellipsoid_);
 
         Coordinate { lon, lat }
     }
 
     /// Project the given coordinate to the healpix grid
     #[wasm_bindgen(js_name = lonLatToHealpix)]
-    pub fn lonlat_to_healpix(
-        lon: f64,
-        lat: f64,
-        depth: u8,
-        ellipsoid: Option<EllipsoidLike>,
-    ) -> u64 {
+    pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: &Ellipsoid) -> u64 {
         let layer = healpix::nested::get(depth);
-        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        let ellipsoid_ = &ellipsoid.inner;
 
-        scalar::lonlat_to_healpix(&lon, &lat, layer, &ellipsoid_)
+        scalar::lonlat_to_healpix(&lon, &lat, layer, ellipsoid_)
     }
 
     /// Single vertex of the given cell
     ///
     /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
     #[wasm_bindgen(js_name = vertex)]
-    pub fn vertex(hash: u64, u: f64, v: f64, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
+    pub fn vertex(hash: u64, u: f64, v: f64, ellipsoid: &Ellipsoid) -> Coordinate {
         let (depth, nested) = healpix::nested::from_zuniq(hash);
         let layer = healpix::nested::get(depth);
-        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        let ellipsoid_ = &ellipsoid.inner;
 
         let center = layer.center_of_projected_cell(nested);
         let (lon, lat) = spherical_vertex(center, depth, (u, v));
@@ -72,7 +67,6 @@ impl Zuniq {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_vertex() {
         let hash: u64 = 288230376151711744;
@@ -90,7 +84,7 @@ mod tests {
 
         let values = uv
             .into_iter()
-            .map(|(u, v)| Zuniq::vertex(hash, u, v, None))
+            .map(|(u, v)| Zuniq::vertex(hash, u, v, &Ellipsoid::default()))
             .collect::<Vec<_>>();
         let expected: Vec<Coordinate> = vec![
             (45.0, 0.0),

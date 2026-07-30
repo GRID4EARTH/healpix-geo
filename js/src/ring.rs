@@ -4,7 +4,7 @@ use healpix_geo_core::scalar::nested::coordinates as scalar;
 use wasm_bindgen::prelude::*;
 
 use crate::coordinates::Coordinate;
-use crate::ellipsoid::EllipsoidLike;
+use crate::ellipsoid::Ellipsoid;
 use crate::geometry::spherical_vertex;
 
 #[wasm_bindgen(js_name = ring)]
@@ -28,43 +28,32 @@ impl Ring {
 
     /// Center coordinates for the given cell
     #[wasm_bindgen(js_name = healpixToLonLat)]
-    pub fn healpix_to_lonlat(hash: u64, depth: u8, ellipsoid: Option<EllipsoidLike>) -> Coordinate {
+    pub fn healpix_to_lonlat(hash: u64, depth: u8, ellipsoid: &Ellipsoid) -> Coordinate {
         let layer = healpix::nested::get(depth);
-        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        let ellipsoid_ = &ellipsoid.inner;
         let hash_ = layer.from_ring(hash);
 
-        let (lon, lat) = scalar::healpix_to_lonlat(&hash_, layer, &ellipsoid_);
+        let (lon, lat) = scalar::healpix_to_lonlat(&hash_, layer, ellipsoid_);
 
         Coordinate { lon, lat }
     }
 
     /// Project the given coordinate to the healpix grid
     #[wasm_bindgen(js_name = lonLatToHealpix)]
-    pub fn lonlat_to_healpix(
-        lon: f64,
-        lat: f64,
-        depth: u8,
-        ellipsoid: Option<EllipsoidLike>,
-    ) -> u64 {
+    pub fn lonlat_to_healpix(lon: f64, lat: f64, depth: u8, ellipsoid: &Ellipsoid) -> u64 {
         let layer = healpix::nested::get(depth);
-        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        let ellipsoid_ = &ellipsoid.inner;
 
-        layer.to_ring(scalar::lonlat_to_healpix(&lon, &lat, layer, &ellipsoid_))
+        layer.to_ring(scalar::lonlat_to_healpix(&lon, &lat, layer, ellipsoid_))
     }
 
     /// Single vertex of the given cell
     ///
     /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
     #[wasm_bindgen(js_name = vertex)]
-    pub fn vertex(
-        hash: u64,
-        depth: u8,
-        u: f64,
-        v: f64,
-        ellipsoid: Option<EllipsoidLike>,
-    ) -> Coordinate {
+    pub fn vertex(hash: u64, depth: u8, u: f64, v: f64, ellipsoid: &Ellipsoid) -> Coordinate {
         let layer = healpix::nested::get(depth);
-        let ellipsoid_ = ellipsoid.map(|e| e.into_ellipsoid()).unwrap_or_default();
+        let ellipsoid_ = &ellipsoid.inner;
 
         let center = layer.center_of_projected_cell(layer.from_ring(hash));
         let (lon, lat) = spherical_vertex(center, depth, (u, v));
@@ -79,7 +68,6 @@ impl Ring {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_vertex() {
         let hash: u64 = 0;
@@ -98,7 +86,7 @@ mod tests {
 
         let values = uv
             .into_iter()
-            .map(|(u, v)| Ring::vertex(hash, depth, u, v, None))
+            .map(|(u, v)| Ring::vertex(hash, depth, u, v, &Ellipsoid::default()))
             .collect::<Vec<_>>();
         let expected: Vec<Coordinate> = vec![
             (45.0, 0.0),
