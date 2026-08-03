@@ -207,7 +207,9 @@ pub fn vertex_to_geographic(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f6
 mod tests {
     use super::*;
     use crate::ellipsoid::{ReferenceEllipsoid, ReferenceSphere};
+    use assertables::assert_approx_eq;
     use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
+    use rstest::rstest;
 
     #[test]
     fn test_encode_in_ring_position_nside_1_polar_cap() {
@@ -576,47 +578,53 @@ mod tests {
         assert_eq!(decode_vertex(2, 41, VertexIdScheme::Ring), (0.25, 0.75));
     }
 
-    #[test]
-    fn test_vertex_to_geographic() {
-        let sphere = Ellipsoid::Sphere(ReferenceSphere::new(
-            GeodesyEllipsoid::named("sphere").unwrap(),
-        ));
-        let ellipsoid = Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
-            GeodesyEllipsoid::named("WGS84").unwrap(),
-        ));
+    enum TestEllipsoid {
+        Sphere,
+        Ellipsoid,
+    }
 
-        assert_eq!(vertex_to_geographic(0, &0, &sphere), (0.0, 90.0));
-        assert_eq!(vertex_to_geographic(0, &13, &sphere), (0.0, -90.0));
-        assert_eq!(
-            vertex_to_geographic(0, &1, &sphere),
-            (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
-        );
-        assert_eq!(
-            vertex_to_geographic(1, &29, &sphere),
-            (22.5, -19.47122063449069)
-        );
-        assert_eq!(
-            vertex_to_geographic(1, &36, &sphere),
-            (337.5, -19.47122063449069)
-        );
-        assert_eq!(
-            vertex_to_geographic(1, &46, &sphere),
-            (90.0, -66.44353569089878),
-        );
+    #[rstest]
+    #[case(0, 0, TestEllipsoid::Sphere, (0.0, 90.0))]
+    #[case(0, 13, TestEllipsoid::Sphere, (0.0, -90.0))]
+    #[case(
+        0, 1, TestEllipsoid::Sphere,
+        (0.0, healpix::TRANSITION_LATITUDE.to_degrees()))]
+    #[case(
+            1, 29, TestEllipsoid::Sphere,
+            (22.5, -19.47122063449069))]
+    #[case(
+        1, 36, TestEllipsoid::Sphere,
+        (337.5, -19.47122063449069))]
+    #[case(
+        1, 46, TestEllipsoid::Sphere,
+        (90.0, -66.44353569089878))]
+    #[case(
+        3, 113, TestEllipsoid::Sphere,
+        (0.0, healpix::TRANSITION_LATITUDE.to_degrees()))]
+    #[case(0, 5, TestEllipsoid::Ellipsoid, (45.0, 0.0))]
+    #[case(
+        2, 87, TestEllipsoid::Ellipsoid,
+        (326.25, 9.636338620241146))]
+    #[case(
+        3, 21, TestEllipsoid::Ellipsoid,
+        (239.99999999999997, 72.46140571909436))]
+    fn test_vertex_to_geographic(
+        #[case] level: u8,
+        #[case] vertex_id: u64,
+        #[case] ellipsoid_kind: TestEllipsoid,
+        #[case] expected: (f64, f64),
+    ) {
+        let ellipsoid = match ellipsoid_kind {
+            TestEllipsoid::Sphere => Ellipsoid::Sphere(ReferenceSphere::new(
+                GeodesyEllipsoid::named("sphere").unwrap(),
+            )),
+            TestEllipsoid::Ellipsoid => Ellipsoid::Ellipsoid(ReferenceEllipsoid::new(
+                GeodesyEllipsoid::named("WGS84").unwrap(),
+            )),
+        };
 
-        assert_eq!(
-            vertex_to_geographic(3, &113, &sphere),
-            (0.0, healpix::TRANSITION_LATITUDE.to_degrees())
-        );
-
-        assert_eq!(vertex_to_geographic(0, &5, &ellipsoid), (45.0, 0.0));
-        assert_eq!(
-            vertex_to_geographic(2, &87, &ellipsoid),
-            (326.25, 9.636338620241146)
-        );
-        assert_eq!(
-            vertex_to_geographic(3, &21, &ellipsoid),
-            (239.99999999999997, 72.46140571909436)
-        );
+        let actual = vertex_to_geographic(level, &vertex_id, &ellipsoid);
+        assert_approx_eq!(actual.0, expected.0);
+        assert_approx_eq!(actual.1, expected.1);
     }
 }
