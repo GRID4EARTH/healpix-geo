@@ -5,8 +5,9 @@ import sys
 print("starting to run script")
 print(sys.version, flush=True)
 
-import healpix_geo
 import numpy as np
+
+import healpix_geo
 
 level = 2
 cell_ids = np.arange(12 * 4**level)
