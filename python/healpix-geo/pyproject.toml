@@ -35,9 +35,11 @@ line-length = 100
 
 [tool.ruff.lint]
 ignore = [
-  "E402", # E402: module level import not at top of file
-  "E501", # E501: line too long - let black worry about that
-  "E731", # E731: do not assign a lambda expression, use a def
+  "E402",   # E402: module level import not at top of file
+  "E501",   # E501: line too long - let black worry about that
+  "E731",   # E731: do not assign a lambda expression, use a def
+  "FLY002", # FLY002: str.join is not really replaced by f-strings
+  "EXE001", # EXE001: shebangs are required by certain tools
 ]
 select = [
   "F",   # Pyflakes
