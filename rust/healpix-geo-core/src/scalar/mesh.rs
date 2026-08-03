@@ -584,28 +584,28 @@ mod tests {
     }
 
     #[rstest]
-    #[case(0, 0, TestEllipsoid::Sphere, (0.0, 90.0))]
-    #[case(0, 13, TestEllipsoid::Sphere, (0.0, -90.0))]
-    #[case(
+    #[case::l0_sphere_north_pole(0, 0, TestEllipsoid::Sphere, (0.0, 90.0))]
+    #[case::l0_sphere_south_pole(0, 13, TestEllipsoid::Sphere, (0.0, -90.0))]
+    #[case::l0_sphere_transition_vertex(
         0, 1, TestEllipsoid::Sphere,
         (0.0, healpix::TRANSITION_LATITUDE.to_degrees()))]
-    #[case(
+    #[case::l1_sphere_equatorial1(
             1, 29, TestEllipsoid::Sphere,
             (22.5, -19.47122063449069))]
-    #[case(
+    #[case::l1_sphere_equatorial2(
         1, 36, TestEllipsoid::Sphere,
         (337.5, -19.47122063449069))]
-    #[case(
+    #[case::l1_sphere_south_polar_cap(
         1, 46, TestEllipsoid::Sphere,
         (90.0, -66.44353569089878))]
-    #[case(
+    #[case::l3_sphere_transition_vertex(
         3, 113, TestEllipsoid::Sphere,
         (0.0, healpix::TRANSITION_LATITUDE.to_degrees()))]
-    #[case(0, 5, TestEllipsoid::Ellipsoid, (45.0, 0.0))]
-    #[case(
+    #[case::l0_ellipsoid_equatorial(0, 5, TestEllipsoid::Ellipsoid, (45.0, 0.0))]
+    #[case::l2_ellipsoid_equatorial(
         2, 87, TestEllipsoid::Ellipsoid,
         (326.25, 9.636338620241146))]
-    #[case(
+    #[case::l3_ellipsoid_north_polar_cap(
         3, 21, TestEllipsoid::Ellipsoid,
         (239.99999999999997, 72.46140571909436))]
     fn test_vertex_to_geographic(
