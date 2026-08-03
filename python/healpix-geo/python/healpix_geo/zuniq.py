@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import marray
 import numpy as np
 
 from healpix_geo import healpix_geo
 from healpix_geo.utils import _check_depth, _check_ipixels
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 def from_nested(ipix, depth, num_threads=0):
@@ -367,6 +374,57 @@ def vertices(ipix, ellipsoid, step=1, num_threads=0):
     num_threads = np.uint16(num_threads)
 
     return healpix_geo.zuniq.vertices(ipix, ellipsoid, step, num_threads)
+
+
+def vertex_indices(
+    ipix: npt.NDArray[np.uint64],
+    *,
+    num_threads: int = 0,
+) -> npt.NDArray[np.uint64]:
+    """Get the indices of the 4 vertices of the given cells.
+
+    Parameters
+    ----------
+    ipix : array-like of numpy.uint64
+        The HEALPix cell indexes.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    vertex_ids : array-like of numpy.uint64
+        The identifiers of vertices of the given cells.
+
+    Raises
+    ------
+    ValueError
+        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth})`.
+
+    See Also
+    --------
+    healpix_geo.vertex_to_geographic
+
+    Examples
+    --------
+    >>> from healpix_geo.zuniq import vertex_indices
+    >>> import numpy as np
+
+    >>> ipix = np.array([42, 6, 10])
+
+    >>> vertex_ids = vertex_indices(ipix)
+    >>> vertex_ids
+    array([[1729382249662513151, 1729382247515029504, 1729382245367545855,
+            1729382247515029503],
+           [1729382253957480449, 1729382251809996802, 1729382249662513153,
+            1729382251809996801],
+           [1729382253957480448, 1729382251809996801, 1729382249662513152,
+            1729382251809996800]], dtype=uint64)
+    """
+    ipix = np.astype(np.atleast_1d(ipix), np.uint64)
+
+    return healpix_geo.zuniq.vertex_indices(ipix, num_threads)
 
 
 def bilinear_interpolation(

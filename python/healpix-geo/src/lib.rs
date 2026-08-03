@@ -5,6 +5,7 @@ mod execution;
 mod geometry;
 mod index;
 mod indexing_schemes;
+mod mesh;
 mod traits;
 
 #[pymodule]
@@ -17,7 +18,7 @@ mod nested {
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
         cone_coverage, elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat,
         internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage,
-        siblings, vertices, zone_coverage, zoom_to,
+        siblings, vertex_indices, vertices, zone_coverage, zoom_to,
     };
 }
 
@@ -27,8 +28,8 @@ mod ring {
     use crate::indexing_schemes::ring::{
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
         cone_coverage, elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat,
-        kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, vertices,
-        zone_coverage,
+        kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, vertex_indices,
+        vertices, zone_coverage,
     };
 }
 
@@ -39,7 +40,7 @@ mod zuniq {
         bilinear_interpolation, box_coverage, cartesian_to_healpix, cone_coverage,
         elliptical_cone_coverage, from_nested, healpix_to_cartesian, healpix_to_lonlat,
         kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, to_nested,
-        vertices, zone_coverage,
+        vertex_indices, vertices, zone_coverage,
     };
 }
 
@@ -66,4 +67,6 @@ mod healpix_geo {
 
     #[pymodule_export]
     use crate::geometry::{cartesian_to_lonlat, lonlat_to_cartesian};
+    #[pymodule_export]
+    use crate::mesh::vertex_to_geographic;
 }
