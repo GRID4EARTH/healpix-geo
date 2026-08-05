@@ -4,12 +4,8 @@ use rayon::prelude::*;
 use cdshealpix::nested::Layer;
 
 use crate::maybe_parallelize;
+use crate::scalar::depth::Depth;
 use crate::scalar::nested::conversion as scalar;
-
-enum Depth<'a> {
-    Scalar(&'a u8),
-    Array(&'a [u8]),
-}
 
 pub fn from_zuniq(ipix: &[u64], nthreads: usize) -> Vec<(u64, u8)> {
     let mut result = Vec::<(u64, u8)>::with_capacity(ipix.len());
