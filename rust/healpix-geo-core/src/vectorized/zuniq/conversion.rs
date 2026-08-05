@@ -12,7 +12,7 @@ pub fn from_nested(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     match depth {
         Depth::Scalar(depth) => {
             maybe_parallelize!(nthreads, ipix, result, |hash| scalar::from_nested(
-                hash, &depth
+                hash, depth
             ));
         }
         Depth::Array(depths) => {
@@ -32,7 +32,7 @@ pub fn from_ring(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     match depth {
         Depth::Scalar(depth) => {
             maybe_parallelize!(nthreads, ipix, result, |hash| scalar::from_ring(
-                hash, &depth
+                hash, depth
             ));
         }
         Depth::Array(depths) => {

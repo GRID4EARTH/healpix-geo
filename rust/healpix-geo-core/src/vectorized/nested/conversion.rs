@@ -1,11 +1,9 @@
 #[cfg(not(target_arch = "wasm32"))]
 use rayon::prelude::*;
 
-use cdshealpix::nested::Layer;
-
 use crate::maybe_parallelize;
-use crate::scalar::depth::Depth;
 use crate::scalar::nested::conversion as scalar;
+use crate::vectorized::depth::Depth;
 
 pub fn from_zuniq(ipix: &[u64], nthreads: usize) -> Vec<(u64, u8)> {
     let mut result = Vec::<(u64, u8)>::with_capacity(ipix.len());
@@ -33,7 +31,7 @@ pub fn from_ring(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     result
 }
 
-pub fn to_zuniq(hash: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
+pub fn to_zuniq(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     let mut result = Vec::<u64>::with_capacity(ipix.len());
 
     match depth {
@@ -51,7 +49,7 @@ pub fn to_zuniq(hash: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     result
 }
 
-pub fn to_ring(hash: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
+pub fn to_ring(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     let mut result = Vec::<u64>::with_capacity(ipix.len());
 
     match depth {
