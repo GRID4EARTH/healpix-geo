@@ -97,3 +97,96 @@ class TestZuniq:
 
         np.testing.assert_equal(actual_cell_ids, expected_cell_ids)
         np.testing.assert_equal(actual_depths, expected_depths)
+
+    @pytest.mark.parametrize(
+        ["cell_ids", "depths", "expected"],
+        (
+            (
+                np.array([3, 12, 48]),
+                np.array([0, 1, 2]),
+                np.array(
+                    [2017612633061982208, 2810246167479189504, 4017210867614482432],
+                    dtype="uint64",
+                ),
+            ),
+            (
+                np.array([215, 230, 245]),
+                np.array([4, 4, 4]),
+                np.array(
+                    [2192127118622588928, 269090077735387136, 1658450562779185152],
+                    dtype="uint64",
+                ),
+            ),
+            (
+                np.array([[3], [12], [48]]),
+                np.array([[0], [1], [2]]),
+                np.array(
+                    [
+                        [2017612633061982208],
+                        [2810246167479189504],
+                        [4017210867614482432],
+                    ],
+                    dtype="uint64",
+                ),
+            ),
+            (
+                np.array([[[215, 230, 245]]]),
+                np.array([[[4, 4, 4]]]),
+                np.array(
+                    [[[2192127118622588928, 269090077735387136, 1658450562779185152]]],
+                    dtype="uint64",
+                ),
+            ),
+        ),
+    )
+    def test_from_ring(self, cell_ids, depths, expected):
+        actual = healpix_geo.zuniq.from_ring(cell_ids, depths)
+
+        np.testing.assert_equal(actual, expected)
+
+    @pytest.mark.parametrize(
+        ["cell_ids", "expected_cell_ids", "expected_depths"],
+        (
+            (
+                np.array(
+                    [2017612633061982208, 2810246167479189504, 4017210867614482432],
+                    dtype="uint64",
+                ),
+                np.array([3, 12, 48]),
+                np.array([0, 1, 2]),
+            ),
+            (
+                np.array(
+                    [2192127118622588928, 269090077735387136, 1658450562779185152],
+                    dtype="uint64",
+                ),
+                np.array([215, 230, 245]),
+                np.array([4, 4, 4]),
+            ),
+            (
+                np.array(
+                    [
+                        [2017612633061982208],
+                        [2810246167479189504],
+                        [4017210867614482432],
+                    ],
+                    dtype="uint64",
+                ),
+                np.array([[3], [12], [48]]),
+                np.array([[0], [1], [2]]),
+            ),
+            (
+                np.array(
+                    [[[2192127118622588928, 269090077735387136, 1658450562779185152]]],
+                    dtype="uint64",
+                ),
+                np.array([[[215, 230, 245]]]),
+                np.array([[[4, 4, 4]]]),
+            ),
+        ),
+    )
+    def test_to_ring(self, cell_ids, expected_cell_ids, expected_depths):
+        actual_cell_ids, actual_depths = healpix_geo.zuniq.to_ring(cell_ids)
+
+        np.testing.assert_equal(actual_cell_ids, expected_cell_ids)
+        np.testing.assert_equal(actual_depths, expected_depths)
