@@ -12,7 +12,7 @@ pub(crate) fn from_nested<'py>(
     nthreads: u16,
 ) -> PyResult<Bound<'py, PyArrayDyn<u64>>> {
     let input_shape = nested.shape();
-    let depth_ = depth.into_depth(py)?;
+    let depth_ = depth.as_depth()?;
 
     let flattened = nested.reshape([nested.len()])?;
     let flattened_ = flattened.readonly();

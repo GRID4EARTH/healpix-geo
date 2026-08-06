@@ -55,7 +55,7 @@ pub(crate) fn lonlat_to_healpix<'py>(
         .collect();
 
     let ipix = match depth {
-        DepthLike::Constant(d) => {
+        DepthLike::Scalar(d) => {
             let layer = healpix::nested::get(d);
 
             vectorized::lonlat_to_healpix(&coords, layer, &ellipsoid, nthreads as usize)
