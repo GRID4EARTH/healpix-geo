@@ -68,7 +68,7 @@ pub(crate) fn from_ring<'py>(
     let flattened_ = flattened.readonly();
 
     let depth_ = depth.as_depth()?;
-    let nested = vectorized::to_zuniq(flattened_.as_slice()?, depth_, nthreads as usize);
+    let nested = vectorized::from_ring(flattened_.as_slice()?, depth_, nthreads as usize);
 
     Ok(PyArray1::from_vec(py, nested)
         .reshape(input_shape)?
@@ -90,7 +90,7 @@ pub(crate) fn to_ring<'py>(
     let flattened_ = flattened.readonly();
 
     let depth_ = depth.as_depth()?;
-    let ring = vectorized::to_zuniq(flattened_.as_slice()?, depth_, nthreads as usize);
+    let ring = vectorized::to_ring(flattened_.as_slice()?, depth_, nthreads as usize);
 
     Ok(PyArray1::from_vec(py, ring)
         .reshape(input_shape)?
