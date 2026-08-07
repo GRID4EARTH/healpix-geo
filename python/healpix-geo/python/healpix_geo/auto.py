@@ -27,12 +27,15 @@ def _dispatch_module(indexing_scheme: str) -> ModuleType:
     return module
 
 
+SchemeType = Literal["nested", "ring", "zuniq"]
+
+
 @dataclass(frozen=True)
 class Grid:
     level: int | None
     """The refinement level of the grid."""
 
-    indexing_scheme: Literal["nested", "ring", "zuniq"] = "nested"
+    indexing_scheme: SchemeType = "nested"
     """The indexing scheme of the grid."""
 
     ellipsoid: EllipsoidLike = "sphere"
@@ -44,6 +47,68 @@ class Grid:
             params["depth"] = self.level
 
         return params
+
+
+def convert(
+    ipix: npt.NDArray[np.uint64],
+    grid: Grid,
+    *,
+    to: SchemeType,
+    level: npt.NDArray[np.uint8] | None = None,
+    num_threads: int = 0,
+) -> tuple[npt.NDArray[np.uint64], int | npt.NDArray[np.uint8]]:
+    """Convert the cell ids to a different indexing scheme
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    grid : Grid
+        The definition of the HEALPix grid.
+    to : {"nested", "ring", "zuniq"}
+        The indexing scheme to convert to. If equal to the grid object's
+        indexing scheme the input cell ids will be returned unmodified.
+    level : `numpy.ndarray`, optional
+        The levels in case the cells have a different sizes.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    converted : `numpy.ndarray`
+        The converted cell indexes as a `np.uint64` numpy array.
+    levels : int or `numpy.ndarray`
+        The refinement level of the cell indexes. If the input scheme was
+        ``"nested"`` or ``"ring"`` and `level` was not passed this will be the
+        grid object's refinement level, otherwise an array of refinement levels.
+    """
+    base_indexing_schemes = {"nested", "ring"}
+    if grid.indexing_scheme == to:
+        return ipix
+
+    params = {"num_threads": num_threads}
+    if grid.indexing_scheme not in base_indexing_schemes and level is not None:
+        raise ValueError(
+            f"indexing scheme {grid.indexing_scheme} already contains"
+            " the refinement level in the cell indexes"
+        )
+    elif grid.indexing_scheme in base_indexing_schemes:
+        if level is None:
+            level = grid.level
+        params["depth"] = level
+
+    module = _dispatch_module(grid.indexing_scheme)
+    converter = getattr(module, f"to_{to}", None)
+    if converter is None:
+        raise ValueError(f"unknown indexing scheme: {to!r}")
+
+    result = converter(ipix, **params)
+    if grid.indexing_scheme not in {"nested", "ring"} and to in {"nested", "ring"}:
+        return result
+    else:
+        return result, level
 
 
 def healpix_to_lonlat(

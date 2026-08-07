@@ -32,6 +32,96 @@ def test_dispatch_module_failing(scheme):
 
 
 @pytest.mark.parametrize(
+    ["grid", "cell_ids", "levels", "scheme", "expected", "expected_levels"],
+    (
+        pytest.param(
+            auto.Grid(level=4, indexing_scheme="nested", ellipsoid="sphere"),
+            np.array([48, 312]),
+            None,
+            "ring",
+            np.array([936, 823]),
+            4,
+            id="nested-ring",
+        ),
+        pytest.param(
+            auto.Grid(level=7, indexing_scheme="nested", ellipsoid="sphere"),
+            np.array([956, 761, 3278]),
+            np.array([6, 7, 10]),
+            "zuniq",
+            np.array([134615407611871232, 26792899345645568, 1802374435831808]),
+            np.array([6, 7, 10]),
+            id="nested-zuniq",
+        ),
+        pytest.param(
+            auto.Grid(level=4, indexing_scheme="ring", ellipsoid="sphere"),
+            np.array([72, 81, 64, 15]),
+            None,
+            "nested",
+            np.array([750, 1009, 222, 507]),
+            4,
+            id="ring-nested",
+        ),
+        pytest.param(
+            auto.Grid(level=4, indexing_scheme="ring", ellipsoid="sphere"),
+            np.array([72, 81, 64, 15]),
+            None,
+            "zuniq",
+            np.array(
+                [
+                    1689975760170778624,
+                    2273191911915257856,
+                    501025458544967680,
+                    1142788405445263360,
+                ]
+            ),
+            4,
+            id="ring-zuniq",
+        ),
+        pytest.param(
+            auto.Grid(level=4, indexing_scheme="zuniq", ellipsoid="sphere"),
+            np.array(
+                [
+                    6825768185233408,
+                    47358164831567872,
+                    58617163899994112,
+                    40602765390512128,
+                ]
+            ),
+            None,
+            "nested",
+            np.array([48, 336, 416, 288]),
+            np.array([6, 6, 6, 6]),
+            id="zuniq-nested",
+        ),
+        pytest.param(
+            auto.Grid(level=4, indexing_scheme="zuniq", ellipsoid="sphere"),
+            np.array(
+                [
+                    6825768185233408,
+                    47358164831567872,
+                    58617163899994112,
+                    40602765390512128,
+                ]
+            ),
+            None,
+            "ring",
+            np.array([22176, 17070, 17058, 19110]),
+            np.array([6, 6, 6, 6]),
+            id="zuniq-ring",
+        ),
+    ),
+)
+def test_convert(grid, cell_ids, levels, scheme, expected, expected_levels):
+    params = {}
+    if levels is not None:
+        params["level"] = levels
+    actual, levels = auto.convert(cell_ids, grid, to=scheme, **params)
+
+    np.testing.assert_equal(actual, expected)
+    np.testing.assert_equal(levels, expected_levels)
+
+
+@pytest.mark.parametrize(
     ["grid", "expected"],
     (
         (
