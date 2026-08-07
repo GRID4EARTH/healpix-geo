@@ -22,6 +22,17 @@ Conversions between geographic coordinates and HEALPix indices.
 .. seealso::
    Tutorial complete : :doc:`../tutorials/coordinate_conversion`
 
+Indexing Scheme Conversions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated/
+
+   from_ring
+   from_zuniq
+   to_ring
+   to_zuniq
+
 Interpolation
 ~~~~~~~~~~~~~
 

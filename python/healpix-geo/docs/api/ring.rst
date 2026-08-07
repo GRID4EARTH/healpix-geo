@@ -20,6 +20,17 @@ Coordinates Conversions
    cartesian_to_healpix
    vertices
 
+Indexing Scheme Conversions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated/
+
+   from_nested
+   from_zuniq
+   to_nested
+   to_zuniq
+
 Interpolation
 ~~~~~~~~~~~~~
 

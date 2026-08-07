@@ -32,6 +32,17 @@ Coordinates Conversions
    cartesian_to_healpix
    vertices
 
+Indexing Scheme Conversions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated/
+
+   from_ring
+   from_nested
+   to_ring
+   to_nested
+
 Interpolation
 ~~~~~~~~~~~~~
 

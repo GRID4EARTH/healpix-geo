@@ -23,6 +23,14 @@ Coordinate Conversions
    cartesian_to_healpix
    vertices
 
+Indexing Scheme Conversions
+---------------------------
+
+.. autosummary::
+   :toctree: ../generated/
+
+   convert
+
 Interpolation
 -------------
 Interpolation from HEALPix to geographic coordinates.
