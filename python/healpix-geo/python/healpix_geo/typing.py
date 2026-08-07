@@ -1,5 +1,8 @@
 from typing import Protocol, TypedDict
 
+import numpy as np
+import numpy.typing as npt
+
 
 class SphereDict(TypedDict):
     radius: float
@@ -23,3 +26,5 @@ _SphereLike = SphereDict | SphereType
 _EllipsoidLike = EllipsoidDict | EllipsoidType
 
 EllipsoidLike = str | _SphereLike | _EllipsoidLike
+
+DepthType = int | npt.NDArray[np.uint8]

@@ -11,8 +11,12 @@ from healpix_geo.utils import _check_depth, _check_ipixels, _check_ring
 if TYPE_CHECKING:
     import numpy.typing as npt
 
+    from healpix_geo.typing import DepthType
 
-def from_nested(ipix, depth, num_threads=0):
+
+def from_nested(
+    ipix: npt.NDArray[np.uint64], depth: DepthType, num_threads: int = 0
+) -> npt.NDArray[np.uint64]:
     """Convert from nested to ring
 
     Parameters
@@ -63,7 +67,9 @@ def from_nested(ipix, depth, num_threads=0):
     return healpix_geo.ring.from_nested(ipix, depth, num_threads)
 
 
-def to_nested(ipix, depth, num_threads=0):
+def to_nested(
+    ipix: npt.NDArray[np.uint64], depth: DepthType, num_threads: int = 0
+) -> npt.NDArray[np.uint64]:
     """Convert from ring to nested
 
     Parameters
@@ -116,7 +122,9 @@ def to_nested(ipix, depth, num_threads=0):
     return healpix_geo.ring.to_nested(ipix, depth, num_threads)
 
 
-def from_zuniq(ipix, num_threads=0):
+def from_zuniq(
+    ipix: npt.NDArray[np.uint64], num_threads: int = 0
+) -> tuple[npt.NDArray[np.uint64], DepthType]:
     """Convert from zuniq to nested
 
     Parameters
@@ -161,7 +169,9 @@ def from_zuniq(ipix, num_threads=0):
     return healpix_geo.ring.from_zuniq(ipix, num_threads)
 
 
-def to_zuniq(ipix, depth, num_threads=0):
+def to_zuniq(
+    ipix: npt.NDArray[np.uint64], depth: DepthType, num_threads: int = 0
+) -> npt.NDArray[np.uint64]:
     """Convert from nested to zuniq
 
     Parameters
