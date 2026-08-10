@@ -1,5 +1,5 @@
-import type { EllipsoidInput } from "../pkg/index.js";
-import { Ellipsoid } from "../pkg/index.js";
+import type { EllipsoidInput, GridOptions } from "../pkg/index.js";
+import { Ellipsoid, Grid } from "../pkg/index.js";
 import { describe, expectTypeOf, test } from "vitest";
 
 // The generated `.d.ts` is the API surface TypeScript consumers actually see.
@@ -38,5 +38,32 @@ describe("generated index.d.ts", () => {
       .parameter(0)
       .toEqualTypeOf<EllipsoidInput | null | undefined>();
     expectTypeOf(Ellipsoid.from).returns.toEqualTypeOf<Ellipsoid>();
+  });
+
+  test("the Grid constructor takes typed options, not `any`", () => {
+    expectTypeOf(Grid).constructorParameters.toEqualTypeOf<[GridOptions]>();
+    expectTypeOf<GridOptions["scheme"]>().toEqualTypeOf<
+      "nested" | "ring" | "zuniq"
+    >();
+    expectTypeOf<GridOptions["level"]>().toEqualTypeOf<number>();
+    expectTypeOf<GridOptions["ellipsoid"]>().toEqualTypeOf<
+      EllipsoidInput | null | undefined
+    >();
+  });
+
+  test("the scheme getter is narrowed to the literal union", () => {
+    // widened to `string`, `other.toScheme(cell, grid.scheme)` does not
+    // type-check and `switch (grid.scheme)` gets no exhaustiveness check
+    expectTypeOf<Grid["scheme"]>().toEqualTypeOf<"nested" | "ring" | "zuniq">();
+    expectTypeOf<Grid["level"]>().toEqualTypeOf<number>();
+  });
+
+  test("toScheme narrows its target and takes an optional level", () => {
+    expectTypeOf<Grid["toScheme"]>()
+      .parameter(1)
+      .toEqualTypeOf<"nested" | "ring" | "zuniq">();
+    expectTypeOf<Grid["toScheme"]>()
+      .parameter(2)
+      .toEqualTypeOf<number | null | undefined>();
   });
 });

@@ -94,4 +94,11 @@ describe("ring vertex", () => {
     expect(actual).to.have.a.property("lon", 315);
     expect(actual).to.have.a.property("lat", 0);
   });
+
+  test("rejects offsets outside [0, 1]", () => {
+    const ellipsoid: Ellipsoid = Ellipsoid.from(null);
+    expect(() => healpixGeo.ring.vertex(4n, 0, -0.1, 0, ellipsoid)).to.throw(
+      /\[0, 1\]/,
+    );
+  });
 });

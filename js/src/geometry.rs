@@ -39,14 +39,32 @@ const ONE_OVER_NSIDE: [f64; 30] = [
     one_over_nside(29),
 ];
 
-pub(crate) fn spherical_vertex(center: (f64, f64), depth: u8, delta: (f64, f64)) -> (f64, f64) {
+/// Spherical (authalic-latitude) vertex of a cell, offsets checked.
+///
+/// `u` and `v` are offsets from the southern vertex of the cell, and have to
+/// be in `[0, 1]` (`NaN` fails the range check). The bound is also what keeps
+/// `cdshealpix::unproj` from panicking — an unrecoverable wasm trap — on its
+/// `-2 ≤ y ≤ 2` assertion on the projected coordinate.
+pub(crate) fn spherical_vertex(
+    center: (f64, f64),
+    depth: u8,
+    delta: (f64, f64),
+) -> Result<(f64, f64), String> {
+    let (u, v) = delta;
+    if !(0.0..=1.0).contains(&u) || !(0.0..=1.0).contains(&v) {
+        return Err(format!(
+            "vertex offsets must be in [0, 1], got (u = {}, v = {})",
+            u, v
+        ));
+    }
+
     let one_over_nside = ONE_OVER_NSIDE[depth as usize];
 
-    let dx = delta.0 - delta.1;
-    let dy = delta.0 + delta.1 - 1.0;
+    let dx = u - v;
+    let dy = u + v - 1.0;
 
-    healpix::unproj(
+    Ok(healpix::unproj(
         center.0 + dx * one_over_nside,
         center.1 + dy * one_over_nside,
-    )
+    ))
 }

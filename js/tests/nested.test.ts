@@ -98,4 +98,14 @@ describe("nested vertex", () => {
     expect(actual).to.have.a.property("lon", 315);
     expect(actual).to.have.a.property("lat", 0);
   });
+
+  test("rejects offsets outside [0, 1]", () => {
+    const ellipsoid: Ellipsoid = Ellipsoid.from(null);
+    expect(() => healpixGeo.nested.vertex(4n, 0, 1.5, 0, ellipsoid)).to.throw(
+      /\[0, 1\]/,
+    );
+    expect(() => healpixGeo.nested.vertex(4n, 0, 0, NaN, ellipsoid)).to.throw(
+      /\[0, 1\]/,
+    );
+  });
 });

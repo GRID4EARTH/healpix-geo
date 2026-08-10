@@ -89,4 +89,12 @@ describe("zuniq vertex", () => {
     expect(actual).to.have.a.property("lon", 44.99999983236194);
     expect(actual).to.have.a.property("lat", 1.429345123381056e-7);
   });
+
+  test("rejects offsets outside [0, 1]", () => {
+    const ellipsoid: Ellipsoid = Ellipsoid.from(null);
+    const cellId: bigint = 288230376151711744n;
+    expect(() => healpixGeo.zuniq.vertex(cellId, 2, 0, ellipsoid)).to.throw(
+      /\[0, 1\]/,
+    );
+  });
 });

@@ -49,19 +49,28 @@ impl Ring {
 
     /// Single vertex of the given cell
     ///
-    /// The parameters `u` and `v` represent offsets from the southern vertex of the given cell.
+    /// The parameters `u` and `v` represent offsets from the southern vertex
+    /// of the given cell, in `[0, 1]`; anything else throws a catchable JS
+    /// `Error`.
     #[wasm_bindgen(js_name = vertex)]
-    pub fn vertex(hash: u64, depth: u8, u: f64, v: f64, ellipsoid: &Ellipsoid) -> Coordinate {
+    pub fn vertex(
+        hash: u64,
+        depth: u8,
+        u: f64,
+        v: f64,
+        ellipsoid: &Ellipsoid,
+    ) -> Result<Coordinate, JsValue> {
         let layer = healpix::nested::get(depth);
         let ellipsoid_ = &ellipsoid.inner;
 
         let center = layer.center_of_projected_cell(layer.from_ring(hash));
-        let (lon, lat) = spherical_vertex(center, depth, (u, v));
+        let (lon, lat) = spherical_vertex(center, depth, (u, v))
+            .map_err(|message| JsValue::from(JsError::new(&message)))?;
 
-        Coordinate {
+        Ok(Coordinate {
             lon: lon.to_degrees().rem_euclid(360.0),
             lat: ellipsoid_.latitude_authalic_to_geographic(lat).to_degrees(),
-        }
+        })
     }
 }
 
@@ -86,7 +95,7 @@ mod tests {
 
         let values = uv
             .into_iter()
-            .map(|(u, v)| Ring::vertex(hash, depth, u, v, &Ellipsoid::default()))
+            .map(|(u, v)| Ring::vertex(hash, depth, u, v, &Ellipsoid::default()).unwrap())
             .collect::<Vec<_>>();
         let expected: Vec<Coordinate> = vec![
             (45.0, 0.0),
