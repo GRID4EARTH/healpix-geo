@@ -1,6 +1,7 @@
 use cdshealpix as healpix;
 use geodesy::prelude::EllipsoidBase;
 use healpix_geo_core::ellipsoid::{Ellipsoid as RustEllipsoid, ReferenceBody};
+use healpix_geo_core::scalar::nested::coordinates as scalar;
 use serde::Deserialize;
 use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
@@ -14,6 +15,16 @@ const MAX_LEVEL: u8 = 29;
 /// Number of cells of a full HEALPix grid at `level` (12 · 4^level).
 fn n_cells(level: u8) -> u64 {
     12u64 << (2 * level)
+}
+
+/// Capacity for `n` elements, or an error if that does not fit a `usize`.
+///
+/// `usize` is 32 bits on `wasm32`, and `steps`/`size` are `u32`, so the
+/// element count has to be computed in `u64` and checked — otherwise release
+/// builds get a wrapped capacity hint and debug builds panic on the multiply.
+fn capacity(n: Option<u64>, what: &str) -> Result<usize, String> {
+    n.and_then(|n| usize::try_from(n).ok())
+        .ok_or_else(|| format!("{} is too large: the output array would not fit", what))
 }
 
 /// Decode a `zuniq` cell id.
@@ -311,6 +322,141 @@ impl Grid {
 
         Ok(self.nested_to_scheme(zoc.ij2h(i, j)))
     }
+
+    /// The cell containing `(lon, lat)`, as a nested hash at the grid's level.
+    ///
+    /// `cdshealpix`'s `Layer::hash` asserts `-π/2 ≤ lat ≤ π/2` and traps
+    /// otherwise — including on `NaN`, which fails the comparison. A
+    /// non-finite longitude survives `rem_euclid` as `NaN` and trips the same
+    /// assert, so both are rejected up front.
+    fn lonlat_to_nested(&self, lon: f64, lat: f64) -> Result<u64, String> {
+        if !lon.is_finite() {
+            return Err(format!("longitude must be a finite number, got {}", lon));
+        }
+        if !(-90.0..=90.0).contains(&lat) {
+            return Err(format!("latitude must be in [-90, 90], got {}", lat));
+        }
+
+        let layer = healpix::nested::get(self.level);
+
+        Ok(scalar::lonlat_to_healpix(
+            &lon,
+            &lat,
+            layer,
+            &self.ellipsoid,
+        ))
+    }
+
+    pub(crate) fn vertices_impl(&self, cell: u64, steps: f64) -> Result<Vec<f64>, String> {
+        let steps = to_u32(steps, "steps")?;
+        if steps < 2 {
+            return Err("`steps` must be at least 2".to_string());
+        }
+        let count = capacity(
+            u64::from(steps)
+                .checked_mul(u64::from(steps))
+                .and_then(|n| n.checked_mul(2)),
+            &format!("`steps` = {}", steps),
+        )?;
+
+        let (level, hash) = self.to_nested(cell)?;
+        let layer = healpix::nested::get(level);
+        let center = layer.center_of_projected_cell(hash);
+
+        let mut out = Vec::with_capacity(count);
+
+        let scale = 1.0 / f64::from(steps - 1);
+        for i in 0..steps {
+            let u = f64::from(i) * scale;
+            for j in 0..steps {
+                let v = f64::from(j) * scale;
+
+                // `u` and `v` are generated in `[0, 1]`, so the range check
+                // in `spherical_vertex` cannot fail here
+                let (lon, lat) = spherical_vertex(center, level, (u, v))?;
+
+                out.push(lon.to_degrees().rem_euclid(360.0));
+                out.push(
+                    self.ellipsoid
+                        .latitude_authalic_to_geographic(lat)
+                        .to_degrees(),
+                );
+            }
+        }
+
+        Ok(out)
+    }
+
+    pub(crate) fn lonlat_to_healpix_impl(&self, lonlats: &[f64]) -> Result<Vec<u64>, String> {
+        if !lonlats.len().is_multiple_of(2) {
+            return Err("`lonlats` must be interleaved [lon, lat] pairs (even length)".to_string());
+        }
+
+        let mut out = Vec::with_capacity(lonlats.len() / 2);
+
+        for (index, pair) in lonlats.chunks_exact(2).enumerate() {
+            // one NaN in a million-element buffer used to abort the call with
+            // `RuntimeError: unreachable` — no message and no index
+            let hash = self
+                .lonlat_to_nested(pair[0], pair[1])
+                .map_err(|message| format!("lonlats[{}]: {}", index, message))?;
+
+            out.push(self.nested_to_scheme(hash));
+        }
+
+        Ok(out)
+    }
+
+    pub(crate) fn healpix_to_lonlat_impl(&self, cells: &[u64]) -> Result<Vec<f64>, String> {
+        let mut out = Vec::with_capacity(cells.len() * 2);
+
+        for (index, &cell) in cells.iter().enumerate() {
+            let (level, hash) = self
+                .to_nested(cell)
+                .map_err(|message| format!("cells[{}]: {}", index, message))?;
+            let layer = healpix::nested::get(level);
+            let (lon, lat) = scalar::healpix_to_lonlat(&hash, layer, &self.ellipsoid);
+
+            out.push(lon);
+            out.push(lat);
+        }
+
+        Ok(out)
+    }
+
+    pub(crate) fn bit_combine_table_impl(&self, size: f64) -> Result<Vec<u64>, String> {
+        let size = to_u32(size, "size")?;
+        if !size.is_power_of_two() {
+            return Err(format!("`size` must be a power of two, got {}", size));
+        }
+        let nside = self.nside();
+        if size > nside {
+            return Err(format!(
+                "`size` must be at most `nside` ({}) so that every entry is a cell of this grid, got {}",
+                nside, size
+            ));
+        }
+        let count = capacity(
+            u64::from(size).checked_mul(u64::from(size)),
+            &format!("`size` = {}", size),
+        )?;
+
+        // the z-order (Morton) interleave depends on the size of the block
+        // being unshuffled, not on the level of the grid: deriving it from
+        // `self.level` instead silently truncates (`SmallZOC` indexes its
+        // lookup table with `i as u8`) and, for level 0, degenerates to
+        // cdshealpix's `EMPTY_ZOC`, which returns 0 for every input
+        let zoc = healpix::nested::zordercurve::get_zoc(size.trailing_zeros() as u8);
+
+        let mut out = Vec::with_capacity(count);
+        for row in 0..size {
+            for col in 0..size {
+                out.push(self.nested_to_scheme(zoc.ij2h(col, row)));
+            }
+        }
+
+        Ok(out)
+    }
 }
 
 #[wasm_bindgen]
@@ -406,6 +552,70 @@ impl Grid {
     #[wasm_bindgen(js_name = bitCombine)]
     pub fn bit_combine(&self, i: f64, j: f64) -> Result<u64, JsValue> {
         self.bit_combine_impl(i, j)
+            .map_err(|message| JsError::new(&message).into())
+    }
+
+    /// All vertices of a `steps` × `steps` subdivision of the given cell, in
+    /// one call
+    ///
+    /// Equivalent to looping `vertex(cell, i / (steps - 1), j / (steps - 1))`
+    /// for `i` and `j` in `0..steps` (`i` outer, `j` inner), but the loop
+    /// runs inside WASM and the result comes back as a single typed array.
+    ///
+    /// Returns a `Float64Array` of length `steps * steps * 2`, interleaved as
+    /// `[lon0, lat0, lon1, lat1, ...]`. `steps` has to be an integer of at
+    /// least 2.
+    pub fn vertices(&self, cell: u64, steps: f64) -> Result<Vec<f64>, JsValue> {
+        self.vertices_impl(cell, steps)
+            .map_err(|message| JsError::new(&message).into())
+    }
+
+    /// Center coordinates of the given cells, in one call
+    ///
+    /// Returns a `Float64Array` of length `cells.length * 2`, interleaved as
+    /// `[lon0, lat0, lon1, lat1, ...]`. Rejects the whole batch, naming the
+    /// offending index, if any cell id is invalid for this grid.
+    ///
+    /// For a `zuniq` grid each id is read at the level embedded in it, so
+    /// feeding the result back through `lonLatToHealpix` re-encodes every
+    /// cell at the grid's level (see `lonLatToHealpix`).
+    #[wasm_bindgen(js_name = healpixToLonLat)]
+    pub fn healpix_to_lonlat(&self, cells: &[u64]) -> Result<Vec<f64>, JsValue> {
+        self.healpix_to_lonlat_impl(cells)
+            .map_err(|message| JsError::new(&message).into())
+    }
+
+    /// The cells containing the given coordinates, in one call
+    ///
+    /// `lonlats` is interleaved as `[lon0, lat0, lon1, lat1, ...]`; the
+    /// result is a `BigUint64Array` with one cell id per coordinate pair.
+    /// Rejects the whole batch, naming the offending index, if any longitude
+    /// is not finite or any latitude falls outside `[-90, 90]`.
+    ///
+    /// For a `zuniq` grid this is **not** the exact inverse of
+    /// `healpixToLonLat`: the ids produced here all carry the grid's level,
+    /// while `healpixToLonLat` reads each input id at the level embedded in
+    /// it. A mixed-level batch therefore comes back entirely at the grid's
+    /// level.
+    #[wasm_bindgen(js_name = lonLatToHealpix)]
+    pub fn lonlat_to_healpix(&self, lonlats: &[f64]) -> Result<Vec<u64>, JsValue> {
+        self.lonlat_to_healpix_impl(lonlats)
+            .map_err(|message| JsError::new(&message).into())
+    }
+
+    /// The full `size` × `size` z-order table, in one call
+    ///
+    /// Entry `row * size + col` holds `bitCombine(col, row)` — the layout
+    /// used when unshuffling a z-order-flattened `size` × `size` chunk into
+    /// row-major order.
+    ///
+    /// `size` is the edge length of the block being unshuffled. The z-order
+    /// interleave itself does not depend on the grid's level, but every entry
+    /// has to be a cell of this grid, so `size` must be an integer power of
+    /// two and at most `nside`.
+    #[wasm_bindgen(js_name = bitCombineTable)]
+    pub fn bit_combine_table(&self, size: f64) -> Result<Vec<u64>, JsValue> {
+        self.bit_combine_table_impl(size)
             .map_err(|message| JsError::new(&message).into())
     }
 
@@ -719,5 +929,257 @@ mod tests {
                 .is_err()
         );
         assert!(Scheme::parse("bogus").is_err());
+    }
+
+    fn wgs84() -> RustEllipsoid {
+        crate::ellipsoid::EllipsoidLike::EllipsoidInverseFlattening(
+            crate::ellipsoid::EllipsoidInverseFlattening {
+                semi_major_axis: 6378137.0,
+                inverse_flattening: 298.257223563,
+            },
+        )
+        .into_ellipsoid()
+        .unwrap()
+    }
+
+    #[test]
+    fn test_vertices_matches_scalar_vertex_over_the_full_gridlook_geometry() {
+        // the shape gridlook's `makeHealpixGeometry` builds: 12 base cells ×
+        // 65 × 65 vertices, in both sphere and ellipsoid mode. This is the
+        // bit-for-bit cross-check the benchmark write-up refers to.
+        let steps = 65u32;
+        let scale = 1.0 / f64::from(steps - 1);
+
+        for ellipsoid in [RustEllipsoid::default(), wgs84()] {
+            let mut geometry = grid(Scheme::Nested, 0);
+            geometry.ellipsoid = ellipsoid;
+
+            for cell in 0..12u64 {
+                let bulk = geometry.vertices_impl(cell, f64::from(steps)).unwrap();
+                assert_eq!(bulk.len(), (steps * steps * 2) as usize);
+
+                for i in 0..steps {
+                    for j in 0..steps {
+                        let scalar = geometry
+                            .vertex_impl(cell, f64::from(i) * scale, f64::from(j) * scale)
+                            .unwrap();
+                        let offset = ((i * steps + j) * 2) as usize;
+                        assert_eq!(bulk[offset], scalar.lon);
+                        assert_eq!(bulk[offset + 1], scalar.lat);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_vertices_rejects_degenerate_steps() {
+        let grid = grid(Scheme::Nested, 4);
+        assert!(grid.vertices_impl(164, 1.0).is_err());
+        assert!(grid.vertices_impl(164, 0.0).is_err());
+    }
+
+    #[test]
+    fn test_bulk_methods_reject_invalid_cells() {
+        let nested_grid = grid(Scheme::Nested, 4);
+        assert!(nested_grid.vertices_impl(3072, 2.0).is_err());
+
+        // the offending index is named rather than trapping the instance on
+        // one bad element of a long batch
+        let message = nested_grid
+            .healpix_to_lonlat_impl(&[0, 164, 3072])
+            .unwrap_err();
+        assert!(message.starts_with("cells[2]:"), "{}", message);
+
+        let zuniq_grid = grid(Scheme::Zuniq, 4);
+        assert!(zuniq_grid.healpix_to_lonlat_impl(&[0]).is_err());
+        assert!(zuniq_grid.healpix_to_lonlat_impl(&[u64::MAX]).is_err());
+    }
+
+    #[test]
+    fn test_lonlat_roundtrip() {
+        let grid = grid(Scheme::Ring, 4);
+        let cells: Vec<u64> = vec![0, 164, 700];
+
+        let centers = grid.healpix_to_lonlat_impl(&cells).unwrap();
+        assert_eq!(centers.len(), cells.len() * 2);
+
+        let roundtrip = grid.lonlat_to_healpix_impl(&centers).unwrap();
+        assert_eq!(roundtrip, cells);
+    }
+
+    #[test]
+    fn test_lonlat_to_healpix_rejects_odd_length() {
+        let grid = grid(Scheme::Nested, 4);
+        assert!(grid.lonlat_to_healpix_impl(&[45.0, 0.0, 90.0]).is_err());
+    }
+
+    #[test]
+    fn test_lonlat_to_healpix_rejects_out_of_range_coordinates() {
+        // every one of these used to trap the wasm instance inside
+        // `Layer::hash`'s `-FRAC_PI_2 <= lat <= FRAC_PI_2` assertion
+        for scheme in [Scheme::Nested, Scheme::Ring, Scheme::Zuniq] {
+            let grid = grid(scheme, 4);
+
+            assert!(grid.lonlat_to_healpix_impl(&[0.0, 100.0]).is_err());
+            assert!(grid.lonlat_to_healpix_impl(&[0.0, -90.000000001]).is_err());
+            assert!(grid.lonlat_to_healpix_impl(&[0.0, f64::NAN]).is_err());
+            assert!(grid.lonlat_to_healpix_impl(&[f64::NAN, 0.0]).is_err());
+            assert!(grid.lonlat_to_healpix_impl(&[f64::INFINITY, 0.0]).is_err());
+
+            // the poles themselves are legal, and so is an unwrapped longitude
+            assert!(grid.lonlat_to_healpix_impl(&[0.0, 90.0]).is_ok());
+            assert!(grid.lonlat_to_healpix_impl(&[0.0, -90.0]).is_ok());
+            assert!(grid.lonlat_to_healpix_impl(&[-720.5, 45.0]).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_lonlat_to_healpix_names_the_offending_index() {
+        // one NaN out of a data buffer used to trap the whole instance with
+        // `RuntimeError: unreachable`, naming nothing
+        let grid = grid(Scheme::Nested, 4);
+
+        let message = grid
+            .lonlat_to_healpix_impl(&[45.0, 0.0, 45.0, 0.0, 0.0, 100.0])
+            .unwrap_err();
+        assert!(message.starts_with("lonlats[2]:"), "{}", message);
+
+        let message = grid.lonlat_to_healpix_impl(&[45.0, f64::NAN]).unwrap_err();
+        assert!(message.starts_with("lonlats[0]:"), "{}", message);
+        assert!(grid.lonlat_to_healpix_impl(&[f64::NAN, 0.0]).is_err());
+
+        // and the legal batch still works
+        assert_eq!(grid.lonlat_to_healpix_impl(&[45.0, 0.0]).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_zuniq_lonlat_methods_are_not_inverses_across_levels() {
+        // `healpixToLonLat` reads each id at its embedded level,
+        // `lonLatToHealpix` always encodes at the grid's level: a coarse id
+        // does not survive the roundtrip. This is the documented rule, pinned
+        // here.
+        let grid = grid(Scheme::Zuniq, 4);
+        let coarse = healpix::nested::to_zuniq(0, 5);
+        let fine = healpix::nested::to_zuniq(4, 164);
+
+        let centers = grid.healpix_to_lonlat_impl(&[coarse, fine]).unwrap();
+        let roundtrip = grid.lonlat_to_healpix_impl(&centers).unwrap();
+
+        assert_eq!(roundtrip[1], fine);
+        assert_ne!(roundtrip[0], coarse);
+        // it comes back as the level-4 cell containing the level-0 center
+        assert_eq!(healpix::nested::from_zuniq(roundtrip[0]).0, 4);
+    }
+
+    #[test]
+    fn test_bit_combine_table_matches_scalar() {
+        // `bit_combine_table_impl` derives its z-order curve from `size` and
+        // `bit_combine_impl` from `self.level`, so the documented equivalence
+        // is a claim about two different `zoc`s. `size == nside` is the case
+        // where they coincide trivially; `size < nside` is the one that
+        // actually tests it.
+        for (scheme, level, size) in [
+            (Scheme::Nested, 3u8, 8u32),
+            (Scheme::Nested, 12, 8),
+            (Scheme::Ring, 5, 4),
+            (Scheme::Zuniq, 5, 4),
+        ] {
+            let grid = grid(scheme, level);
+
+            let table = grid.bit_combine_table_impl(f64::from(size)).unwrap();
+            assert_eq!(table.len(), (size * size) as usize);
+            for row in 0..size {
+                for col in 0..size {
+                    assert_eq!(
+                        table[(row * size + col) as usize],
+                        grid.bit_combine_impl(f64::from(col), f64::from(row))
+                            .unwrap(),
+                        "{:?} level {} size {} at ({}, {})",
+                        scheme,
+                        level,
+                        size,
+                        col,
+                        row
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_bulk_methods_reject_non_integer_sizes() {
+        // wasm-bindgen's ToUint32 coercion silently turned `2^32 + 2` into 2
+        let grid = grid(Scheme::Nested, 4);
+
+        assert!(grid.vertices_impl(164, 4294967298.0).is_err());
+        assert!(grid.vertices_impl(164, 2.5).is_err());
+        assert!(grid.vertices_impl(164, f64::NAN).is_err());
+        assert!(grid.bit_combine_table_impl(4294967298.0).is_err());
+        assert!(grid.bit_combine_table_impl(2.5).is_err());
+        assert!(grid.bit_combine_table_impl(-4.0).is_err());
+    }
+
+    #[test]
+    fn test_bit_combine_table_is_level_independent() {
+        // the table describes the z-order layout of a `size` × `size` block,
+        // which is the same interleave at every level that can hold it
+        let size = 8u32;
+        let shallow = grid(Scheme::Nested, 3)
+            .bit_combine_table_impl(f64::from(size))
+            .unwrap();
+
+        for level in 4..=12u8 {
+            let deep = grid(Scheme::Nested, level)
+                .bit_combine_table_impl(f64::from(size))
+                .unwrap();
+            assert_eq!(deep, shallow, "level {}", level);
+        }
+    }
+
+    #[test]
+    fn test_bit_combine_table_rejects_size_level_mismatches() {
+        // each of these silently returned wrong values (or trapped) when the
+        // z-order curve was taken from the grid's level and `size` was
+        // unvalidated
+
+        // level 0 gave cdshealpix's EMPTY_ZOC -> every entry 0
+        assert!(grid(Scheme::Nested, 0).bit_combine_table_impl(4.0).is_err());
+        assert!(grid(Scheme::Zuniq, 0).bit_combine_table_impl(4.0).is_err());
+        // size > 256 aliased mod 256 through `SmallZOC`'s `i as u8`
+        assert!(
+            grid(Scheme::Nested, 8)
+                .bit_combine_table_impl(300.0)
+                .is_err()
+        );
+        assert!(
+            grid(Scheme::Nested, 8)
+                .bit_combine_table_impl(512.0)
+                .is_err()
+        );
+        // size > nside spilled out of the base cell's cell-id range
+        assert!(
+            grid(Scheme::Nested, 3)
+                .bit_combine_table_impl(16.0)
+                .is_err()
+        );
+        // ... which then panicked inside `to_ring`
+        assert!(grid(Scheme::Ring, 1).bit_combine_table_impl(256.0).is_err());
+        // not a power of two
+        assert!(grid(Scheme::Nested, 8).bit_combine_table_impl(3.0).is_err());
+        assert!(grid(Scheme::Nested, 8).bit_combine_table_impl(0.0).is_err());
+
+        // the legal cases stay legal, including size == 1 and size == nside
+        assert_eq!(
+            grid(Scheme::Nested, 0).bit_combine_table_impl(1.0).unwrap(),
+            vec![0]
+        );
+        assert_eq!(
+            grid(Scheme::Nested, 8)
+                .bit_combine_table_impl(256.0)
+                .unwrap()
+                .len(),
+            65536
+        );
     }
 }

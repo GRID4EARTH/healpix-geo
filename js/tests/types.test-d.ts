@@ -66,4 +66,19 @@ describe("generated index.d.ts", () => {
       .parameter(2)
       .toEqualTypeOf<number | null | undefined>();
   });
+
+  test("the bulk methods exchange typed arrays", () => {
+    expectTypeOf<Grid["vertices"]>().toEqualTypeOf<
+      (cell: bigint, steps: number) => Float64Array
+    >();
+    expectTypeOf<Grid["healpixToLonLat"]>().toEqualTypeOf<
+      (cells: BigUint64Array) => Float64Array
+    >();
+    expectTypeOf<Grid["lonLatToHealpix"]>().toEqualTypeOf<
+      (lonlats: Float64Array) => BigUint64Array
+    >();
+    expectTypeOf<Grid["bitCombineTable"]>().toEqualTypeOf<
+      (size: number) => BigUint64Array
+    >();
+  });
 });

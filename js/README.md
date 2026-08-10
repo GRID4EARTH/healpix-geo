@@ -45,6 +45,39 @@ Three things worth knowing:
   the `semiMajorAxis` / `flattening` / `isSphere` getters, which return plain
   numbers.
 
+### bulk methods
+
+Four methods run the whole loop inside WASM and hand back a single typed
+array, which is what makes a per-vertex mesh build practical:
+
+```typescript
+const grid = new Grid({ scheme: "nested", level: 4 });
+
+// steps x steps vertices of one cell, [lon0, lat0, lon1, lat1, ...]
+// (i outer, j inner, matching vertex(cell, i / (steps - 1), j / (steps - 1)))
+const mesh: Float64Array = grid.vertices(164n, 65);
+
+// centers of many cells, same interleaving
+const centers: Float64Array = grid.healpixToLonLat(
+  new BigUint64Array([0n, 164n]),
+);
+
+// and back: one cell id per [lon, lat] pair
+const cells: BigUint64Array = grid.lonLatToHealpix(centers);
+
+// entry `row * size + col` is `bitCombine(col, row)` — the layout for
+// unshuffling a z-order-flattened size x size chunk into row-major order
+const table: BigUint64Array = grid.bitCombineTable(8);
+```
+
+A batch is rejected as a whole, naming the offending index
+(`cells[2]: ...`, `lonlats[2]: ...`), rather than trapping on one bad element.
+
+Note that `healpixToLonLat` and `lonLatToHealpix` are only exact inverses
+within one level: on a `zuniq` grid `healpixToLonLat` reads each id at its
+embedded level while `lonLatToHealpix` encodes at the grid's level, so a
+coarse id in a mixed-level batch comes back refined.
+
 ## Low-level scheme functions
 
 The `nested` / `ring` / `zuniq` namespaces expose the per-scheme functions
