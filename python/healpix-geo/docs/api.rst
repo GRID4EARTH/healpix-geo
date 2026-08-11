@@ -73,6 +73,12 @@ Ellipsoids
    **Always use** ``ellipsoid="WGS84"`` for real geospatial applications.
    See :doc:`tutorials/ellipsoid_basics` for more details.
 
+.. currentmodule:: healpix_geo
+
+.. autosummary::
+   :toctree: generated/
+
+   ellipsoid.resolve
 
 Conventions
 ===========
