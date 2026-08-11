@@ -1,7 +1,8 @@
 use geodesy::ellps::Ellipsoid as GeoEllipsoid;
-use healpix_geo_core::ellipsoid::{Ellipsoid, ReferenceEllipsoid, ReferenceSphere};
+use healpix_geo_core::ellipsoid::{Ellipsoid, ReferenceBody, ReferenceEllipsoid, ReferenceSphere};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::{IntoPyDict, PyDict, PyDictMethods};
 
 #[derive(FromPyObject)]
 pub(crate) enum EllipsoidLike {
@@ -78,4 +79,23 @@ impl EllipsoidLike {
             }
         }
     }
+}
+
+#[pyfunction]
+pub(crate) fn resolve_ellipsoid<'py>(
+    py: Python<'py>,
+    name: String,
+) -> PyResult<Bound<'py, PyDict>> {
+    let mapping = PyDict::new(py);
+    mapping.set_item("name", &name)?;
+
+    let ellipsoid = EllipsoidLike::Named(name).into_ellipsoid()?;
+
+    let mut parameters = ellipsoid.to_mapping();
+    if let Some(v) = parameters.remove("flattening") {
+        parameters.insert("inverse_flattening".to_string(), 1.0 / v);
+    }
+    mapping.update(parameters.into_py_dict(py)?.as_mapping())?;
+
+    Ok(mapping)
 }

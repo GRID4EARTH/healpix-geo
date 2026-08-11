@@ -69,4 +69,7 @@ mod healpix_geo {
     use crate::geometry::{cartesian_to_lonlat, lonlat_to_cartesian};
     #[pymodule_export]
     use crate::mesh::vertex_to_geographic;
+
+    #[pymodule_export]
+    use crate::ellipsoid::resolve_ellipsoid;
 }
