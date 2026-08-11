@@ -8,8 +8,8 @@ The module `healpix_geo.ring` gives for the ring indexation scheme.
 .. note::
    The ring scheme is principally given for **compatibility**. For new applications, prefer `healpix_geo.nested`.
 
-Coordinates Conversions
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Coordinate Conversions
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
    :toctree: ../generated/

@@ -5,8 +5,8 @@ The module `healpix_geo.nested` gives functions for the nested indexing scheme.
 
 .. currentmodule:: healpix_geo.nested
 
-Coordinates Conversions
-~~~~~~~~~~~~~~~~~~~~~~~~
+Coordinate Conversions
+~~~~~~~~~~~~~~~~~~~~~~
 
 Conversions between geographic coordinates and HEALPix indices.
 
