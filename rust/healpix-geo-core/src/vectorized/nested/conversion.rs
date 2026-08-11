@@ -5,32 +5,6 @@ use crate::maybe_parallelize;
 use crate::scalar::nested::conversion as scalar;
 use crate::vectorized::depth::Depth;
 
-pub fn from_zuniq(ipix: &[u64], nthreads: usize) -> Vec<(u64, u8)> {
-    let mut result = Vec::<(u64, u8)>::with_capacity(ipix.len());
-
-    maybe_parallelize!(nthreads, ipix, result, scalar::from_zuniq);
-
-    result
-}
-
-pub fn from_ring(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
-    let mut result = Vec::<u64>::with_capacity(ipix.len());
-
-    match depth {
-        Depth::Scalar(d) => {
-            maybe_parallelize!(nthreads, ipix, result, |hash| scalar::from_ring(hash, d));
-        }
-        Depth::Array(d) => {
-            let zipped: Vec<_> = ipix.iter().zip(d.iter()).collect();
-            maybe_parallelize!(nthreads, zipped, result, |(hash, depth)| scalar::from_ring(
-                hash, depth
-            ));
-        }
-    };
-
-    result
-}
-
 pub fn to_zuniq(ipix: &[u64], depth: Depth, nthreads: usize) -> Vec<u64> {
     let mut result = Vec::<u64>::with_capacity(ipix.len());
 

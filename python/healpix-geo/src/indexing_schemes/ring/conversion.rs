@@ -7,33 +7,6 @@ use crate::indexing_schemes::depth::DepthLike;
 
 #[allow(clippy::type_complexity)]
 #[pyfunction]
-pub(crate) fn from_zuniq<'py>(
-    py: Python<'py>,
-    zuniq: &Bound<'py, PyArrayDyn<u64>>,
-    nthreads: u16,
-) -> PyResult<(Bound<'py, PyArrayDyn<u64>>, Bound<'py, PyArrayDyn<u8>>)> {
-    let input_shape = zuniq.shape();
-
-    let flattened = zuniq.reshape([zuniq.len()])?;
-    let flattened_ = flattened.readonly();
-    let (ring, depths) = vectorized::from_zuniq(flattened_.as_slice()?, nthreads as usize)
-        .into_iter()
-        .unzip();
-
-    Ok((
-        PyArray1::from_vec(py, ring)
-            .reshape(input_shape)?
-            .to_dyn()
-            .clone(),
-        PyArray1::from_vec(py, depths)
-            .reshape(input_shape)?
-            .to_dyn()
-            .clone(),
-    ))
-}
-
-#[allow(clippy::type_complexity)]
-#[pyfunction]
 pub(crate) fn to_zuniq<'py>(
     py: Python<'py>,
     ring: &Bound<'py, PyArrayDyn<u64>>,
@@ -49,28 +22,6 @@ pub(crate) fn to_zuniq<'py>(
     let zuniq = vectorized::to_zuniq(flattened_.as_slice()?, depth_, nthreads as usize);
 
     Ok(PyArray1::from_vec(py, zuniq)
-        .reshape(input_shape)?
-        .to_dyn()
-        .clone())
-}
-
-#[allow(clippy::type_complexity)]
-#[pyfunction]
-pub(crate) fn from_nested<'py>(
-    py: Python<'py>,
-    nested: &Bound<'py, PyArrayDyn<u64>>,
-    depth: DepthLike,
-    nthreads: u16,
-) -> PyResult<Bound<'py, PyArrayDyn<u64>>> {
-    let input_shape = nested.shape();
-
-    let flattened = nested.reshape([nested.len()])?;
-    let flattened_ = flattened.readonly();
-
-    let depth_ = depth.as_depth()?;
-    let ring = vectorized::from_nested(flattened_.as_slice()?, depth_, nthreads as usize);
-
-    Ok(PyArray1::from_vec(py, ring)
         .reshape(input_shape)?
         .to_dyn()
         .clone())

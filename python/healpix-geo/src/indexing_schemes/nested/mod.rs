@@ -5,7 +5,7 @@ mod hierarchy;
 mod mesh;
 mod sets;
 
-pub(crate) use self::conversion::{from_ring, from_zuniq, to_ring, to_zuniq};
+pub(crate) use self::conversion::{to_ring, to_zuniq};
 pub(crate) use self::coordinates::{
     angular_distances, bilinear_interpolation, cartesian_to_healpix, healpix_to_cartesian,
     healpix_to_lonlat, lonlat_to_healpix, vertices,

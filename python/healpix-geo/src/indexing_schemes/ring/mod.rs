@@ -4,7 +4,7 @@ mod coverage;
 mod hierarchy;
 mod mesh;
 
-pub(crate) use self::conversion::{from_nested, from_zuniq, to_nested, to_zuniq};
+pub(crate) use self::conversion::{to_nested, to_zuniq};
 pub(crate) use self::coordinates::{
     angular_distances, bilinear_interpolation, cartesian_to_healpix, healpix_to_cartesian,
     healpix_to_lonlat, lonlat_to_healpix, vertices,

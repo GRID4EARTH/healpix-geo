@@ -16,10 +16,9 @@ mod nested {
     #[pymodule_export]
     use crate::indexing_schemes::nested::{
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
-        cone_coverage, elliptical_cone_coverage, from_ring, from_zuniq, healpix_to_cartesian,
-        healpix_to_lonlat, internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix,
-        polygon_coverage, siblings, to_ring, to_zuniq, vertex_indices, vertices, zone_coverage,
-        zoom_to,
+        cone_coverage, elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat,
+        internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage,
+        siblings, to_ring, to_zuniq, vertex_indices, vertices, zone_coverage, zoom_to,
     };
 }
 
@@ -28,9 +27,9 @@ mod ring {
     #[pymodule_export]
     use crate::indexing_schemes::ring::{
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
-        cone_coverage, elliptical_cone_coverage, from_nested, from_zuniq, healpix_to_cartesian,
-        healpix_to_lonlat, kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage,
-        to_nested, to_zuniq, vertex_indices, vertices, zone_coverage,
+        cone_coverage, elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat,
+        kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, to_nested,
+        to_zuniq, vertex_indices, vertices, zone_coverage,
     };
 }
 
@@ -39,9 +38,9 @@ mod zuniq {
     #[pymodule_export]
     use crate::indexing_schemes::zuniq::{
         bilinear_interpolation, box_coverage, cartesian_to_healpix, cone_coverage,
-        elliptical_cone_coverage, from_nested, from_ring, healpix_to_cartesian, healpix_to_lonlat,
-        kth_neighbourhood, kth_neighbours, lonlat_to_healpix, polygon_coverage, to_nested, to_ring,
-        vertex_indices, vertices, zone_coverage,
+        elliptical_cone_coverage, healpix_to_cartesian, healpix_to_lonlat, kth_neighbourhood,
+        kth_neighbours, lonlat_to_healpix, polygon_coverage, to_nested, to_ring, vertex_indices,
+        vertices, zone_coverage,
     };
 }
 
