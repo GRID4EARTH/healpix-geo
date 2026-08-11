@@ -32,6 +32,23 @@ def test_dispatch_module_failing(scheme):
 
 
 @pytest.mark.parametrize(
+    ["ellipsoid", "expected"],
+    (
+        pytest.param("unitsphere", {"name": "unitsphere", "radius": 1.0}, id="name"),
+        pytest.param(
+            {"name": "sphere", "radius": 6370997.0},
+            {"name": "sphere", "radius": 6370997.0},
+            id="mapping",
+        ),
+    ),
+)
+def test_constructor_ellipsoid(ellipsoid, expected) -> None:
+    grid = auto.Grid(level=5, indexing_scheme="nested", ellipsoid=ellipsoid)
+
+    assert grid.ellipsoid == expected
+
+
+@pytest.mark.parametrize(
     ["grid", "expected"],
     (
         (
