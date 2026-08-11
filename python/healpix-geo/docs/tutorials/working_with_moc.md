@@ -7,19 +7,19 @@ This tutorial explains how to use Multi-Order Coverage maps (MOC) to represent e
 The MOC is using the **zuniq** scheme which encode depth + ipix in one integer 64-bit.
 
 ```python
-from healpix_geo.zuniq import from_nested, to_nested
+import healpix_geo
 import numpy as np
 
 # Cells nested
 ipix_nested = np.array([100, 200, 300])
 depth = 8
 
-# Convert in zuniq
-zuniq_ids = from_nested(ipix_nested, depth)
+# Convert to zuniq
+zuniq_ids = healpix_geo.nested.to_zuniq(ipix_nested, depth)
 print(f"Zuniq IDs: {zuniq_ids}")
 
 # Convert return in nested
-ipix_back, depth_back = to_nested(zuniq_ids)
+ipix_back, depth_back = healpix_geo.zuniq.to_nested(zuniq_ids)
 print(f"Nested: depth={depth_back}, ipix={ipix_back}")
 ```
 

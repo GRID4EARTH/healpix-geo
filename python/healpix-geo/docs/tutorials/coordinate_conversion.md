@@ -49,18 +49,18 @@ The nested and ring indices **are not interchangeable**. The same point has diff
 ### Nested and Zuniq
 
 ```{code-cell} python
-from healpix_geo.zuniq import from_nested, to_nested
+import healpix_geo
 import numpy as np
 
 # Nested → Zuniq
 ipix_nested = 349440
 depth = 8
-zuniq_id = from_nested(ipix_nested, depth)
+zuniq_id = healpix_geo.nested.to_zuniq(ipix_nested, depth)
 
 print(f"Nested (depth={depth}, ipix={ipix_nested}) → Zuniq: {zuniq_id}")
 
 # Zuniq → Nested
-ipix_back, depth_back = to_nested(zuniq_id)
+ipix_back, depth_back = healpix_geo.zuniq.to_nested(zuniq_id)
 print(f"Zuniq {zuniq_id} → Nested (depth={depth_back}, ipix={ipix_back})")
 ```
 
