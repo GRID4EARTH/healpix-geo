@@ -4,7 +4,7 @@ mod coverage;
 mod hierarchy;
 mod mesh;
 
-pub(crate) use self::conversion::{from_nested, to_nested};
+pub(crate) use self::conversion::{to_nested, to_ring};
 pub(crate) use self::coordinates::{
     bilinear_interpolation, cartesian_to_healpix, healpix_to_cartesian, healpix_to_lonlat,
     lonlat_to_healpix, vertices,

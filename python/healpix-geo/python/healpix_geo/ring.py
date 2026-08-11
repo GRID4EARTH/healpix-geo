@@ -11,6 +11,108 @@ from healpix_geo.utils import _check_depth, _check_ipixels, _check_ring
 if TYPE_CHECKING:
     import numpy.typing as npt
 
+    from healpix_geo.typing import DepthType
+
+
+def to_nested(
+    ipix: npt.NDArray[np.uint64], depth: DepthType, num_threads: int = 0
+) -> npt.NDArray[np.uint64]:
+    """Convert from ring to nested
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes in the ring scheme given as a `np.uint64` numpy array.
+    depth : int or array-like of int
+        The HEALPix cell depth given as scalar or a `np.uint8` numpy array.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    nested : array-like of int
+        The cell ids in the nested scheme.
+
+    Examples
+    --------
+    >>> import healpix_geo
+    >>> import numpy as np
+
+    Scalar depth:
+
+    >>> ipix_ring = np.array([1190, 189, 870, 432], dtype="uint64")
+    >>> depth = 4
+    >>> ipix_nested = healpix_geo.ring.to_nested(ipix_ring, depth)
+    >>> ipix_nested
+    array([ 32, 125,  45,  91], dtype=uint64)
+
+    Array depth:
+
+    >>> ipix_ring = np.array([44, 7, 9, 432], dtype="uint64")
+    >>> depth = np.array([1, 3, 2, 4], dtype="uint8")
+    >>> ipix_nested = healpix_geo.ring.to_nested(ipix_ring, depth)
+    >>> ipix_nested
+    array([ 32, 125,  45,  91], dtype=uint64)
+    """
+    _check_depth(depth)
+
+    ipix = np.atleast_1d(ipix)
+    _check_ipixels(data=ipix, depth=depth)
+    ipix = ipix.astype(np.uint64)
+
+    ipix = np.atleast_1d(ipix).astype(np.uint64)
+
+    num_threads = np.uint16(num_threads)
+
+    return healpix_geo.ring.to_nested(ipix, depth, num_threads)
+
+
+def to_zuniq(
+    ipix: npt.NDArray[np.uint64], depth: DepthType, num_threads: int = 0
+) -> npt.NDArray[np.uint64]:
+    """Convert from nested to zuniq
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes in the nested scheme given as a `np.uint64` numpy array.
+    depth : int or array-like of int
+        The HEALPix cell depth given as scalar or a `np.uint8` numpy array.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    nested : array-like of int
+        The cell ids in the nested scheme.
+
+    Examples
+    --------
+    >>> import healpix_geo.nested
+    >>> import numpy as np
+    >>> ipix_ring = np.array([32, 125, 45, 91], dtype="uint64")
+    >>> depth = np.array([1, 3, 2, 4], dtype="uint8")
+    >>> ipix_zuniq = healpix_geo.ring.to_zuniq(ipix_ring, depth)
+    >>> ipix_zuniq
+    array([3530822107858468864,  806144333299318784,  882705526964617216,
+           1106759608426299392], dtype=uint64)
+    """
+    _check_depth(depth)
+
+    ipix = np.atleast_1d(ipix)
+    _check_ipixels(data=ipix, depth=depth)
+    ipix = ipix.astype(np.uint64)
+
+    depth = depth if isinstance(depth, int) else depth.astype("uint8")
+
+    num_threads = np.uint16(num_threads)
+
+    return healpix_geo.ring.to_zuniq(ipix, depth, num_threads)
+
 
 def healpix_to_lonlat(ipix, depth, ellipsoid="sphere", num_threads=0):
     r"""Get the longitudes and latitudes of the center of some HEALPix cells.
