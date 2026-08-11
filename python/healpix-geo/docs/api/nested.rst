@@ -28,8 +28,6 @@ Indexing Scheme Conversions
 .. autosummary::
    :toctree: ../generated/
 
-   from_ring
-   from_zuniq
    to_ring
    to_zuniq
 
