@@ -219,7 +219,7 @@ class TestHealpixToGeographic:
 
                 return cdshealpix.nested.healpix_to_lonlat(cell_ids, depths)
 
-            cell_ids = healpix_geo.zuniq.from_nested(cell_ids, depth)
+            cell_ids = healpix_geo.nested.to_zuniq(cell_ids, depth)
             param_cds = depth
         else:
             param_cds = depth
@@ -364,7 +364,7 @@ class TestGeographicToHealpix:
 
             def cds_lonlat_to_healpix(lon, lat, depth):
                 cell_ids = cdshealpix.nested.lonlat_to_healpix(lon, lat, depth)
-                return healpix_geo.zuniq.from_nested(cell_ids, depth)
+                return healpix_geo.nested.to_zuniq(cell_ids, depth)
 
             param_cds = depth
             hg_lonlat_to_healpix = healpix_geo.zuniq.lonlat_to_healpix
@@ -400,7 +400,7 @@ class TestGeographicToHealpix:
 
             def cds(lon, lat, depth):
                 cell_ids = cdshealpix.nested.lonlat_to_healpix(lon, lat, depth)
-                return healpix_geo.zuniq.from_nested(cell_ids, depth)
+                return healpix_geo.nested.to_zuniq(cell_ids, depth)
 
             param_cds = depth
             hg = healpix_geo.zuniq.lonlat_to_healpix
@@ -544,7 +544,7 @@ class TestHealpixToCartesian:
         ns = getattr(healpix_geo, scheme)
         params = {"ellipsoid": ellipsoid}
         if scheme == "zuniq":
-            ipix = ns.from_nested(ipix, depth)
+            ipix = healpix_geo.nested.to_zuniq(ipix, depth)
         else:
             params["depth"] = depth
 
