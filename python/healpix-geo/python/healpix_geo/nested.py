@@ -54,9 +54,10 @@ def face_neighbour_transform(face, direction):
 
     Notes
     -----
-    This operation is independent of depth. It reports orientation only; a
-    caller remapping an ``nside`` by ``nside`` array should swap axes first,
-    then replace a flipped coordinate ``v`` with ``nside - 1 - v``.
+    This is a scalar-only operation and is independent of depth. It reports
+    orientation only; a caller remapping an ``nside`` by ``nside`` array should
+    swap axes first, then replace a flipped coordinate ``v`` with
+    ``nside - 1 - v``.
 
     Examples
     --------
@@ -66,7 +67,9 @@ def face_neighbour_transform(face, direction):
     >>> face_neighbour_transform(4, "N") is None
     True
     """
-    if not isinstance(face, (int, np.integer)) or face < 0 or face > 11:
+    if not isinstance(face, (int, np.integer)):
+        raise TypeError("face must be an integer")
+    if face < 0 or face > 11:
         raise ValueError("Face must be in the [0, 11] closed range")
     if not isinstance(direction, str):
         raise TypeError("direction must be a string")
