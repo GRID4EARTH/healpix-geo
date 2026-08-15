@@ -39,6 +39,18 @@ Indexing Scheme Conversions
    to_ring
    to_zuniq
 
+Face-local Topology
+~~~~~~~~~~~~~~~~~~~
+
+Integer-only conversion and navigation within HEALPix base faces.
+
+.. autosummary::
+   :toctree: ../generated/
+
+   pix2xyf
+   xyf2pix
+   face_neighbour_transform
+
 Interpolation
 ~~~~~~~~~~~~~
 

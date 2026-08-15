@@ -54,6 +54,12 @@ def test_face_neighbour_transform_rejects_invalid_face(face):
         nested.face_neighbour_transform(face, "N")
 
 
+@pytest.mark.parametrize("face", ["0", 0.0, [0]])
+def test_face_neighbour_transform_rejects_non_integer_face(face):
+    with pytest.raises(TypeError, match="face must be an integer"):
+        nested.face_neighbour_transform(face, "N")
+
+
 def test_face_neighbour_transform_rejects_invalid_direction():
     with pytest.raises(ValueError, match="direction"):
         nested.face_neighbour_transform(0, "up")
