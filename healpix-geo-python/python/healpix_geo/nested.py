@@ -54,10 +54,11 @@ def face_neighbour_transform(face, direction):
 
     Notes
     -----
-    This is a scalar-only operation and is independent of depth. It reports
-    orientation only; a caller remapping an ``nside`` by ``nside`` array should
-    swap axes first, then replace a flipped coordinate ``v`` with
-    ``nside - 1 - v``.
+    This operation accepts one face and direction because the transform is
+    constant for each face/direction pair and is independent of depth. Callers
+    should obtain it once and apply it to vectorized coordinate arrays. When
+    remapping an ``nside`` by ``nside`` array, swap axes first, then replace a
+    flipped coordinate ``v`` with ``nside - 1 - v``.
 
     Examples
     --------
