@@ -69,6 +69,7 @@ Find all the cells which intersect a region.
    box_coverage
    polygon_coverage
    cone_coverage
+   cone_coverage_many
    elliptical_cone_coverage
    internal_boundary
 

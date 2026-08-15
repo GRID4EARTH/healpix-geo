@@ -9,6 +9,8 @@ use crate::scalar::nested::coverage as scalar;
 
 pub type Coverage = (Vec<u64>, Vec<u8>, Vec<bool>);
 
+// Keep automatic parallelism conservative because every worker builds an
+// independent variable-sized coverage result.
 const MAX_CONE_COVERAGE_THREADS: usize = 8;
 
 fn bounded_thread_count(nthreads: usize) -> usize {

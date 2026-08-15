@@ -986,7 +986,8 @@ def cone_coverage_many(
         If ``True``, all returned cells are at ``depth``.
     num_threads : int, default: 0
         Number of native worker threads. Zero selects the available parallelism.
-        This operation uses at most eight threads.
+        To keep automatic parallelism conservative, this operation uses at most
+        eight threads; larger values are clamped to eight.
 
     Returns
     -------
