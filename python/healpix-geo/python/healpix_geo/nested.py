@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import marray
 import numpy as np
@@ -17,8 +17,165 @@ RangeMOCIndex = healpix_geo.nested.RangeMOCIndex
 internal_boundary = healpix_geo.nested.internal_boundary
 
 
+class FaceTransform(NamedTuple):
+    """Orientation of a neighbouring HEALPix base face.
+
+    Apply ``swap_xy`` first, then ``flip_x`` and ``flip_y`` to orient a
+    face-local array in the target face's coordinate frame.
+    """
+
+    target_face: int
+    swap_xy: bool
+    flip_x: bool
+    flip_y: bool
+
+
 def create_empty(depth):
     return RangeMOCIndex.empty(depth)
+
+
+def face_neighbour_transform(face, direction):
+    """Return the adjacent base face and relative coordinate orientation.
+
+    Parameters
+    ----------
+    face : int
+        Source base-face index in the closed range ``[0, 11]``.
+    direction : {"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
+        HEALPix direction in the source face's local coordinate frame. Matching
+        is case-insensitive.
+
+    Returns
+    -------
+    `FaceTransform` or None
+        The target face and the axis swap/reversal required to orient source
+        coordinates in the target frame. ``None`` means the source base face
+        has no distinct neighbour in that direction.
+
+    Notes
+    -----
+    This operation is independent of depth. It reports orientation only; a
+    caller remapping an ``nside`` by ``nside`` array should swap axes first,
+    then replace a flipped coordinate ``v`` with ``nside - 1 - v``.
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import face_neighbour_transform
+    >>> face_neighbour_transform(0, "N")
+    FaceTransform(target_face=2, swap_xy=False, flip_x=True, flip_y=True)
+    >>> face_neighbour_transform(4, "N") is None
+    True
+    """
+    if not isinstance(face, (int, np.integer)) or face < 0 or face > 11:
+        raise ValueError("Face must be in the [0, 11] closed range")
+    if not isinstance(direction, str):
+        raise TypeError("direction must be a string")
+
+    transform = healpix_geo.nested.face_neighbour_transform(np.uint8(face), direction)
+    return None if transform is None else FaceTransform(*transform)
+
+
+def pix2xyf(cell_ids, depth, num_threads=0):
+    """Convert NESTED cell indexes to base-face-local coordinates.
+
+    This is an integer-only topology operation. At ``depth``, each of the 12
+    base faces is a ``2**depth`` by ``2**depth`` grid. Array inputs are
+    broadcast against an array-valued ``depth`` and output shapes are
+    preserved.
+
+    Parameters
+    ----------
+    cell_ids : array-like of int
+        NESTED cell indexes.
+    depth : int or array-like of int
+        HEALPix depth in the closed range ``[0, 29]``.
+    num_threads : int, optional
+        Number of worker threads. Zero uses the Rayon default.
+
+    Returns
+    -------
+    face, x, y : tuple of `numpy.ndarray`
+        Base-face indexes as ``uint8`` and face-local coordinates as ``uint32``.
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import pix2xyf
+    >>> pix2xyf([0, 3, 4, 47], 1)
+    (array([ 0,  0,  1, 11], dtype=uint8), array([0, 1, 0, 1], dtype=uint32), array([0, 1, 0, 1], dtype=uint32))
+    """
+    _check_depth(depth)
+    cell_ids = np.atleast_1d(cell_ids)
+
+    if isinstance(depth, int):
+        broadcast_depth = depth
+    else:
+        cell_ids, broadcast_depth = np.broadcast_arrays(cell_ids, np.asarray(depth))
+        broadcast_depth = np.ascontiguousarray(broadcast_depth, dtype=np.uint8)
+
+    _check_ipixels(data=cell_ids, depth=broadcast_depth)
+    cell_ids = np.ascontiguousarray(cell_ids, dtype=np.uint64)
+    num_threads = np.uint16(num_threads)
+
+    return healpix_geo.nested.pix2xyf(cell_ids, broadcast_depth, num_threads)
+
+
+def xyf2pix(face, x, y, depth, num_threads=0):
+    """Convert base-face-local coordinates to NESTED cell indexes.
+
+    ``face``, ``x``, ``y``, and an array-valued ``depth`` follow NumPy
+    broadcasting rules. Coordinates must lie inside the selected base face.
+
+    Parameters
+    ----------
+    face : array-like of int
+        Base-face indexes in the closed range ``[0, 11]``.
+    x, y : array-like of int
+        Face-local coordinates in ``[0, 2**depth - 1]``.
+    depth : int or array-like of int
+        HEALPix depth in the closed range ``[0, 29]``.
+    num_threads : int, optional
+        Number of worker threads. Zero uses the Rayon default.
+
+    Returns
+    -------
+    cell_ids : `numpy.ndarray`
+        NESTED cell indexes as ``uint64``.
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import xyf2pix
+    >>> xyf2pix([0, 0, 1, 11], [0, 1, 0, 1], [0, 1, 0, 1], 1)
+    array([ 0,  3,  4, 47], dtype=uint64)
+    """
+    _check_depth(depth)
+    face = np.atleast_1d(face)
+    x = np.atleast_1d(x)
+    y = np.atleast_1d(y)
+
+    if isinstance(depth, int):
+        face, x, y = np.broadcast_arrays(face, x, y)
+        broadcast_depth = depth
+    else:
+        face, x, y, broadcast_depth = np.broadcast_arrays(face, x, y, np.asarray(depth))
+        broadcast_depth = np.ascontiguousarray(broadcast_depth, dtype=np.uint8)
+
+    if (face < 0).any() or (face > 11).any():
+        raise ValueError("Face must be in the [0, 11] closed range")
+
+    nside = 2 ** np.asarray(broadcast_depth, dtype=np.uint64)
+    if (x < 0).any() or (x >= nside).any():
+        raise ValueError("x must be in the [0, 2**depth - 1] closed range")
+    if (y < 0).any() or (y >= nside).any():
+        raise ValueError("y must be in the [0, 2**depth - 1] closed range")
+
+    num_threads = np.uint16(num_threads)
+    return healpix_geo.nested.xyf2pix(
+        np.ascontiguousarray(face, dtype=np.uint8),
+        np.ascontiguousarray(x, dtype=np.uint32),
+        np.ascontiguousarray(y, dtype=np.uint32),
+        broadcast_depth,
+        num_threads,
+    )
 
 
 def to_ring(
