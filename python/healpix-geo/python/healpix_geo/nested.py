@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
 import marray
 import numpy as np
@@ -710,6 +710,51 @@ def bilinear_interpolation(
     mask = weights == 0
 
     return xp.asarray(ipix, mask=mask), xp.asarray(weights, mask=mask)
+
+
+def neighbours(
+    ipix,
+    depth,
+    *,
+    connectivity: Literal["edge", "edge_or_vertex"] = "edge_or_vertex",
+    num_threads=0,
+):
+    """Get direction-preserving immediate neighbours of NESTED HEALPix cells.
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The NESTED HEALPix cell indexes.
+    depth : int
+        The depth of the HEALPix cells.
+    connectivity : {"edge", "edge_or_vertex"}, optional
+        ``"edge"`` returns the four edge-sharing neighbours in ``SW, NW,
+        NE, SE`` order. ``"edge_or_vertex"`` returns all eight directional
+        positions in ``SW, W, NW, N, NE, E, SE, S`` order.
+    num_threads : int, optional
+        Number of threads. The default, 0, uses the Rayon global thread pool
+        for sufficiently large inputs and a sequential path for small inputs.
+
+    Returns
+    -------
+    neighbours : `numpy.ndarray`
+        An ``np.int64`` array with shape ``ipix.shape + (4,)`` for edge
+        connectivity or ``ipix.shape + (8,)`` for edge-or-vertex
+        connectivity. Scalar inputs are normalized to one-dimensional input,
+        producing shape ``(1, 4)`` or ``(1, 8)``. Missing directional
+        positions are represented by ``-1`` and never shift other positions.
+    """
+    _check_depth(depth)
+
+    if connectivity not in ("edge", "edge_or_vertex"):
+        raise ValueError("connectivity must be 'edge' or 'edge_or_vertex'")
+
+    ipix = np.atleast_1d(ipix)
+    _check_ipixels(data=ipix, depth=depth)
+    ipix = ipix.astype(np.uint64)
+
+    num_threads = np.uint16(num_threads)
+    return healpix_geo.nested.neighbours(depth, ipix, connectivity, num_threads)
 
 
 def kth_neighbours(ipix, depth, ring, num_threads=0):

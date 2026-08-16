@@ -18,8 +18,8 @@ mod nested {
         angular_distances, bilinear_interpolation, box_coverage, cartesian_to_healpix,
         cone_coverage, elliptical_cone_coverage, face_neighbour_transform, healpix_to_cartesian,
         healpix_to_lonlat, internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix,
-        pix2xyf, polygon_coverage, siblings, to_ring, to_zuniq, vertex_indices, vertices, xyf2pix,
-        zone_coverage, zoom_to,
+        neighbours, pix2xyf, polygon_coverage, siblings, to_ring, to_zuniq, vertex_indices,
+        vertices, xyf2pix, zone_coverage, zoom_to,
     };
 }
 
