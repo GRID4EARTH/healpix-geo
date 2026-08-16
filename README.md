@@ -9,7 +9,13 @@
 
 # `healpix-geo`
 
-This package integrates with `cds-healpix-rust` and `cds-healpix-python` to support specialized algorithms for the geosciences.
+`healpix-geo` provides HEALPix algorithms and bindings for geoscience applications. It
+builds on [`cds-healpix-rust`](https://github.com/cds-astro/cds-healpix-rust) and complements
+[`cds-healpix-python`](https://github.com/cds-astro/cds-healpix-python).
+
+The package is part of the [GRID4EARTH](https://github.com/GRID4EARTH) ecosystem. GRID4EARTH
+development is primarily supported by activities funded by the European Space Agency (ESA),
+and external contributions are welcome.
 
 ## Installation
 
@@ -28,3 +34,21 @@ uv add healpix-geo  # with uv
 ```
 
 For more information, see the [documentation](https://healpix-geo.readthedocs.io/en/latest).
+
+## Related GRID4EARTH repositories
+
+- [`healpix-analyse`](https://github.com/GRID4EARTH/healpix-analyse) uses `healpix-geo` for
+  HEALPix-based analysis workflows.
+- See the [GRID4EARTH organization](https://github.com/GRID4EARTH) for other related projects.
+
+## Development and contributing
+
+Bug reports, feature requests, and contributions are welcome. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution process and
+[`DEVELOPMENT.md`](DEVELOPMENT.md) for the lightweight branch and cross-repository development
+workflow.
+
+## Funding and acknowledgements
+
+GRID4EARTH development is primarily supported by ESA-funded activities. We also thank all
+external contributors and the open-source projects on which `healpix-geo` depends.
