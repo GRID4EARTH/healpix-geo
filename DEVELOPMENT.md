@@ -10,12 +10,24 @@ contributions are welcome.
 ## Branches
 
 - `main` is stable and release-ready.
-- `dev` is a shared integration branch for unreleased work needed by other GRID4EARTH
-  repositories. It is used when cross-repository integration is needed, rather than for every
-  change.
+- `integration` is a shared branch for combining and validating unreleased changes before they
+  are promoted to `main`. It is used primarily for integration and cross-repository validation,
+  not as the default branch for day-to-day feature development.
 - Feature branches and pull requests contain individual developments. They should be focused
-  and linked to the relevant issue where possible.
+  and linked to the relevant issue where possible. Start them from `main` by default.
 - Releases are tagged from `main`.
+
+The usual path remains a focused feature pull request to `main`. Use `integration` only when a
+change or compatible group of changes needs combined or downstream validation before promotion:
+
+```text
+feature branch ────────────────────────────────> PR to main ──> main ──> release tag
+       \
+        └─ when integration validation is needed ─> integration
+                                                       ├─> cross-feature validation
+                                                       ├─> cross-repository validation
+                                                       └─> PR: integration -> main
+```
 
 ## Cross-repository development
 
@@ -26,16 +38,19 @@ they are ready for a `healpix-geo` release. In that situation:
    process.
 2. When the unreleased change is needed for development or testing in at least one other
    repository in the GRID4EARTH organization, identify the downstream issue or pull request that
-   requires it. A maintainer may integrate the change into `dev` as soon as its feature branch or
-   pull request passes the relevant checks.
-3. Point the downstream development branch to `healpix-geo`'s `dev` branch temporarily and
-   document that unreleased dependency in the downstream pull request.
-4. Merge release-ready changes into `main` through the normal review process.
+   requires it. A maintainer may integrate the change into `integration` as soon as its feature
+   branch or pull request passes the relevant checks.
+3. Point the downstream development branch to `healpix-geo`'s `integration` branch temporarily
+   and document that unreleased dependency in the downstream pull request.
+4. After the combined and downstream checks pass, promote the compatible, release-ready changes
+   to `main` through an `integration`-to-`main` pull request and the normal review process. Keep
+   unrelated or incomplete changes out of that promotion.
 5. Tag the release from `main`, then update downstream repositories to use the released version
    instead of the branch dependency.
 
-The `dev` branch is an integration point, not a replacement for focused feature branches,
-review, or releases.
+The `integration` branch is a validation and promotion point. It is not a replacement for
+focused feature branches, pull-request review, or releases, and feature branches should not use
+it as their base unless the feature specifically depends on unreleased integrated work.
 
 ## Authorship and credit
 
