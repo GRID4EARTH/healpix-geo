@@ -593,9 +593,7 @@ def neighbours(
     ipix = ipix.astype(np.uint64)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.nested.neighbours(
-        depth, ipix, connectivity, num_threads
-    )
+    return healpix_geo.nested.neighbours(depth, ipix, connectivity, num_threads)
 
 
 def kth_neighbours(ipix, depth, ring, num_threads=0):
