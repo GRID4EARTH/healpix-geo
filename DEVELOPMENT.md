@@ -39,3 +39,9 @@ review, or releases.
 
 Contributions should retain accurate authorship through commits and pull requests. Project
 documentation and release records should acknowledge contributors where appropriate.
+
+The creators used for Zenodo release records are maintained in [`.zenodo.json`](.zenodo.json).
+Before tagging a release, review this metadata against the Git history, including
+`Co-authored-by` trailers. Add ORCID identifiers only after verifying them against a source
+controlled by the contributor. The release tag supplies the version to Zenodo, so the version is
+not stored in `.zenodo.json`.
