@@ -1,8 +1,45 @@
 use cdshealpix as healpix;
 use numpy::{PyArray1, PyArray2, PyArrayDyn, PyArrayMethods, PyUntypedArrayMethods};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use healpix_geo_core::vectorized::nested::hierarchy as vectorized;
+
+/// Return immediate neighbours in fixed directional positions.
+#[pyfunction]
+pub(crate) fn neighbours<'py>(
+    py: Python<'py>,
+    depth: u8,
+    ipix: &Bound<'py, PyArrayDyn<u64>>,
+    connectivity: &str,
+    nthreads: u16,
+) -> PyResult<Bound<'py, PyArrayDyn<i64>>> {
+    let input_shape = ipix.shape();
+    let ipix_ = ipix.readonly();
+    let layer = healpix::nested::get(depth);
+
+    let directions = match connectivity {
+        "edge" => &healpix_geo_core::scalar::nested::hierarchy::EDGE_DIRECTIONS[..],
+        "edge_or_vertex" => {
+            &healpix_geo_core::scalar::nested::hierarchy::EDGE_OR_VERTEX_DIRECTIONS[..]
+        }
+        _ => {
+            return Err(PyValueError::new_err(
+                "connectivity must be 'edge' or 'edge_or_vertex'",
+            ));
+        }
+    };
+
+    let result = vectorized::neighbours(ipix_.as_slice()?, layer, directions, nthreads as usize);
+
+    let output_shape: Vec<usize> = input_shape
+        .iter()
+        .copied()
+        .chain([directions.len()])
+        .collect();
+
+    PyArray1::from_vec(py, result).reshape(output_shape.as_slice())
+}
 
 /// Wrapper of `kth_neighbours`
 #[pyfunction]

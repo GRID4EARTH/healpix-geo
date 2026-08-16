@@ -4,6 +4,7 @@ mod coverage;
 mod hierarchy;
 mod mesh;
 mod sets;
+mod topology;
 
 pub(crate) use self::conversion::{to_ring, to_zuniq};
 pub(crate) use self::coordinates::{
@@ -14,6 +15,9 @@ pub(crate) use self::coverage::{
     box_coverage, cone_coverage, cone_coverage_many, elliptical_cone_coverage, polygon_coverage,
     zone_coverage,
 };
-pub(crate) use self::hierarchy::{kth_neighbourhood, kth_neighbours, siblings, zoom_to};
+pub(crate) use self::hierarchy::{
+    kth_neighbourhood, kth_neighbours, neighbours, siblings, zoom_to,
+};
 pub(crate) use self::mesh::vertex_indices;
 pub(crate) use self::sets::internal_boundary;
+pub(crate) use self::topology::{face_neighbour_transform, pix2xyf, xyf2pix};

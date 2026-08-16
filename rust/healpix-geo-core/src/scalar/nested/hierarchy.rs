@@ -1,4 +1,33 @@
-use cdshealpix::nested::Layer;
+use cdshealpix::{compass_point::MainWind, nested::Layer};
+
+pub const EDGE_DIRECTIONS: [MainWind; 4] = [MainWind::SW, MainWind::NW, MainWind::NE, MainWind::SE];
+
+pub const EDGE_OR_VERTEX_DIRECTIONS: [MainWind; 8] = [
+    MainWind::SW,
+    MainWind::W,
+    MainWind::NW,
+    MainWind::N,
+    MainWind::NE,
+    MainWind::E,
+    MainWind::SE,
+    MainWind::S,
+];
+
+/// Write immediate neighbours into fixed directional positions.
+///
+/// Missing directions are represented by `-1`. Unlike `kth_neighbours`,
+/// this function never compacts the remaining values when a direction is
+/// missing.
+pub fn write_neighbours(hash: &u64, layer: &Layer, directions: &[MainWind], output: &mut [i64]) {
+    debug_assert_eq!(directions.len(), output.len());
+
+    let neighbours = layer.neighbours(*hash, false);
+    for (value, direction) in output.iter_mut().zip(directions) {
+        *value = neighbours
+            .get(*direction)
+            .map_or(-1, |neighbour| *neighbour as i64);
+    }
+}
 
 pub fn kth_neighbours(hash: &u64, layer: &Layer, ring: &u32) -> Vec<i64> {
     let r = *ring;
@@ -27,4 +56,29 @@ pub fn kth_neighbourhood(hash: &u64, layer: &Layer, ring: &u32) -> Vec<i64> {
     }
 
     neighbours
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_write_edge_neighbours() {
+        let layer = cdshealpix::nested::get(2);
+        let mut result = [-1; 4];
+
+        write_neighbours(&42, layer, &EDGE_DIRECTIONS, &mut result);
+
+        assert_eq!(result, [111, 21, 43, 40]);
+    }
+
+    #[test]
+    fn test_write_full_neighbours_preserves_missing_direction() {
+        let layer = cdshealpix::nested::get(2);
+        let mut result = [-1; 8];
+
+        write_neighbours(&42, layer, &EDGE_OR_VERTEX_DIRECTIONS, &mut result);
+
+        assert_eq!(result, [111, -1, 21, 23, 43, 41, 40, 109]);
+    }
 }
