@@ -2,9 +2,9 @@ name: wasm
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "integration"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "integration"]
   release:
     types: ["published"]
 
