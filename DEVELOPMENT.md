@@ -24,8 +24,10 @@ they are ready for a `healpix-geo` release. In that situation:
 
 1. Develop the change on a feature branch and submit it through the normal pull request
    process.
-2. Integrate the unreleased change into `dev` when a shared branch is needed for downstream
-   testing.
+2. When the unreleased change is needed for development or testing in at least one other
+   repository in the GRID4EARTH organization, identify the downstream issue or pull request that
+   requires it. A maintainer may integrate the change into `dev` as soon as its feature branch or
+   pull request passes the relevant checks.
 3. Point the downstream development branch to `healpix-geo`'s `dev` branch temporarily and
    document that unreleased dependency in the downstream pull request.
 4. Merge release-ready changes into `main` through the normal review process.
@@ -45,3 +47,7 @@ Before tagging a release, review this metadata against the Git history, includin
 `Co-authored-by` trailers. Add ORCID identifiers only after verifying them against a source
 controlled by the contributor. The release tag supplies the version to Zenodo, so the version is
 not stored in `.zenodo.json`.
+
+Core developers are listed first in the agreed contribution order. Other creators are listed
+alphabetically by family name. Changes to the core developer list or creator order require
+maintainer agreement; do not reorder the list mechanically by commit count or lines changed.

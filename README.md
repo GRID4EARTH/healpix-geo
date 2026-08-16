@@ -50,5 +50,9 @@ workflow.
 
 ## Funding and acknowledgements
 
-GRID4EARTH development is primarily supported by ESA-funded activities. We also thank all
-external contributors and the open-source projects on which `healpix-geo` depends.
+**Funded by ESA, built by a European consortium.**
+
+ESA Contract: `4000147951/25/I-NS` — Technical Officer: Vincent Dumoulin.
+
+We also thank all external contributors and the open-source projects on which `healpix-geo`
+depends.
