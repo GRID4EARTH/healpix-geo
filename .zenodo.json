@@ -25,10 +25,6 @@
       "orcid": "0000-0002-1500-0156"
     },
     {
-      "name": "Cap, Etienne",
-      "orcid": "0009-0007-0360-0692"
-    },
-    {
       "name": "Gueguen, Camille",
       "orcid": "0009-0008-3748-9395"
     },
@@ -38,6 +34,13 @@
     },
     {
       "name": "Stuurman, Aart"
+    }
+  ],
+  "contributors": [
+    {
+      "name": "Cap, Etienne",
+      "orcid": "0009-0007-0360-0692",
+      "type": "ProjectMember"
     }
   ]
 }

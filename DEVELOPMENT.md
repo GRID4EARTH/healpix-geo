@@ -51,3 +51,8 @@ not stored in `.zenodo.json`.
 Core developers are listed first in the agreed contribution order. Other creators are listed
 alphabetically by family name. Changes to the core developer list or creator order require
 maintainer agreement; do not reorder the list mechanically by commit count or lines changed.
+
+Creator status reflects either ongoing core-development responsibility or a substantial
+contribution to the software's design, implementation, or documentation. More limited operational
+or maintenance contributions should still be credited in the Zenodo `contributors` list with an
+appropriate role.
