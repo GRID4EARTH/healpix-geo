@@ -51,6 +51,7 @@ Navigation in the hierarchical structure of HEALPix.
 
    kth_neighbours
    kth_neighbourhood
+   neighbours
    zoom_to
    siblings
 
