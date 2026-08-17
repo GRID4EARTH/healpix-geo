@@ -1,6 +1,10 @@
-use numpy::{PyArray1, PyArrayDyn, PyArrayMethods};
+use numpy::{
+    PyArray1, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods, PyUntypedArray,
+    PyUntypedArrayMethods, dtype,
+};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PySlice, PyType};
+use pyo3::types::{PyBytes, PyModule, PySlice, PyType};
 use std::collections::HashMap;
 
 use std::cmp::PartialEq;
@@ -24,12 +28,36 @@ impl IntoPySlice for ConcreteSlice<isize> {
     }
 }
 
-#[derive(FromPyObject, IntoPyObject)]
+#[derive(FromPyObject, IntoPyObject, Debug)]
 enum IndexKind<'py> {
     #[pyo3(transparent, annotation = "slice")]
     Slice(Bound<'py, PySlice>),
     #[pyo3(transparent, annotation = "numpy.ndarray")]
-    Array(Bound<'py, PyArrayDyn<i64>>),
+    Array(Bound<'py, PyUntypedArray>),
+}
+
+enum IntegralType {
+    Unsigned,
+    Signed,
+}
+
+fn detect_integral_type<'py>(element_type: &Bound<'py, PyArrayDescr>) -> Option<IntegralType> {
+    let py = element_type.py();
+    if element_type.is_equiv_to(&dtype::<i8>(py))
+        || element_type.is_equiv_to(&dtype::<i16>(py))
+        || element_type.is_equiv_to(&dtype::<i32>(py))
+        || element_type.is_equiv_to(&dtype::<i64>(py))
+    {
+        Some(IntegralType::Signed)
+    } else if element_type.is_equiv_to(&dtype::<u8>(py))
+        || element_type.is_equiv_to(&dtype::<u16>(py))
+        || element_type.is_equiv_to(&dtype::<u32>(py))
+        || element_type.is_equiv_to(&dtype::<u64>(py))
+    {
+        Some(IntegralType::Unsigned)
+    } else {
+        None
+    }
 }
 
 impl<'py> IndexKind<'py> {
@@ -43,8 +71,33 @@ impl<'py> IndexKind<'py> {
                 PositionalIndexer::Slice(Slice::create(start, stop, step))
             }
             Self::Array(pyarray) => {
-                let values: Vec<isize> =
-                    pyarray.to_vec()?.into_iter().map(|x| x as isize).collect();
+                let element_type = pyarray.dtype();
+                if detect_integral_type(&element_type).is_none() {
+                    return Err(PyTypeError::new_err(format!(
+                        "only integer dtypes are accepted, got {:?}",
+                        element_type,
+                    )));
+                }
+
+                let py = pyarray.py();
+                let array = if !element_type.is_equiv_to(&dtype::<i64>(py)) {
+                    let numpy = PyModule::import(py, "numpy")?;
+                    let astype = numpy.getattr("astype")?;
+
+                    astype
+                        .call1((pyarray, "int64"))?
+                        .cast::<PyUntypedArray>()?
+                        .clone()
+                } else {
+                    pyarray
+                };
+
+                let values: Vec<isize> = array
+                    .cast::<PyArrayDyn<i64>>()?
+                    .to_vec()?
+                    .into_iter()
+                    .map(|x| x as isize)
+                    .collect();
 
                 PositionalIndexer::Array(Array::create(values))
             }
@@ -70,7 +123,7 @@ impl<'py> IndexKind<'py> {
             }
             PositionalIndexer::Array(array) => {
                 let pyarray = PyArray1::from_iter(py, array.data.into_iter().map(|x| x as i64));
-                IndexKind::Array(pyarray.to_dyn().clone())
+                IndexKind::Array(pyarray.to_dyn().clone().cast::<PyUntypedArray>()?.into())
             }
         };
 
@@ -87,7 +140,26 @@ impl<'py> IndexKind<'py> {
                 LabelIndexer::Slice(Slice::create(start, stop, step))
             }
             Self::Array(pyarray) => {
-                let values: Vec<u64> = pyarray.to_vec()?.into_iter().map(|x| x as u64).collect();
+                let element_type = pyarray.dtype();
+                let py = pyarray.py();
+
+                let array = if element_type.is_equiv_to(&dtype::<u64>(py)) {
+                    Ok(pyarray.cast::<PyArrayDyn<u64>>()?.clone())
+                } else if element_type.is_equiv_to(&dtype::<i64>(py)) {
+                    let numpy = PyModule::import(py, "numpy")?;
+                    let astype = numpy.getattr("astype")?;
+
+                    Ok(astype
+                        .call1((pyarray, "uint64"))?
+                        .cast::<PyArrayDyn<u64>>()?
+                        .clone())
+                } else {
+                    Err(PyTypeError::new_err(format!(
+                        "cell ids must be integers with 64 bits, but found {}",
+                        element_type,
+                    )))
+                }?;
+                let values: Vec<u64> = array.to_vec()?;
 
                 LabelIndexer::Array(Array::create(values))
             }
