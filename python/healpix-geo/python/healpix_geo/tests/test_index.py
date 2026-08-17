@@ -166,7 +166,8 @@ class TestRangeMOCIndex:
             slice(None, 4),
             slice(2, None),
             slice(3, 7),
-            np.arange(5, dtype="int64"),
+            np.array([2, 3, 6], dtype="int8"),
+            np.arange(5, dtype="uint64"),
             np.array([1, 2, 4, 6, 8], dtype="int64"),
         ],
     )
