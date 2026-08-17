@@ -10,8 +10,7 @@
 # `healpix-geo`
 
 `healpix-geo` provides HEALPix algorithms and bindings for geoscience applications. It
-builds on [`cds-healpix-rust`](https://github.com/cds-astro/cds-healpix-rust) and complements
-[`cds-healpix-python`](https://github.com/cds-astro/cds-healpix-python).
+builds on the [`cds-healpix-rust`](https://github.com/cds-astro/cds-healpix-rust), [`moc`](https://github.com/cds-astro/cds-moc-rust) and [`geodesy`](https://github.com/busstoptaktik/geodesy) rust crates.
 
 The package is part of the [GRID4EARTH](https://github.com/GRID4EARTH) ecosystem. GRID4EARTH
 development is primarily supported by activities funded by the European Space Agency (ESA),
