@@ -209,19 +209,25 @@ class TestRangeMOCIndex:
             pytest.param(
                 0,
                 np.arange(12, dtype="uint64"),
-                np.arange(12, dtype="int64"),
+                np.arange(12, dtype="uint64"),
                 id="base cells-array-full",
             ),
             pytest.param(
                 0,
                 np.arange(12, dtype="uint64"),
-                np.arange(2, 7, dtype="int64"),
+                np.arange(12, dtype="int64"),
+                id="base cells-array-full-signed",
+            ),
+            pytest.param(
+                0,
+                np.arange(12, dtype="uint64"),
+                np.arange(2, 7, dtype="uint64"),
                 id="base cells-array-domain",
             ),
             pytest.param(
                 0,
                 np.arange(12, dtype="uint64"),
-                np.array([1, 2, 3, 7, 8, 9, 10], dtype="int64"),
+                np.array([1, 2, 3, 7, 8, 9, 10], dtype="uint64"),
                 id="base cells-array-disconnected",
             ),
             pytest.param(
@@ -233,7 +239,7 @@ class TestRangeMOCIndex:
             pytest.param(
                 1,
                 np.array([0, 1, 2, 4, 5, 11, 12, 13, 25, 26, 27], dtype="uint64"),
-                np.array([2, 5, 11, 12, 25, 27], dtype="int64"),
+                np.array([2, 5, 11, 12, 25, 27], dtype="uint64"),
                 id="list of level 1 cells-array-disconnected",
             ),
             pytest.param(
