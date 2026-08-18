@@ -259,10 +259,9 @@ jobs:
       name: pypi
       url: https://pypi.org/p/healpix-geo
     permissions:
-      id-token: write # upload the release artifacts
-      # contents: write # upload the artifact attestations
-      attestations: write # generate artifact attestation
-      artifact-metadata: write
+      id-token: write # upload the release artifacts and request sigstore signing certificate
+      attestations: write # generate the artifact attestation
+      artifact-metadata: write # create the artifact storage record
     if: github.event_name == 'release'
     needs: [linux, musllinux, windows, macos]
     steps:
