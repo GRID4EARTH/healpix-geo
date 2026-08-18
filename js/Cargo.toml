@@ -1,6 +1,6 @@
 [package]
 name = "healpix-geo-wasm"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Justus Magin <keewis@posteo.de>"]
 description = "HEALPix for the geosciences"
 edition = "2024"
