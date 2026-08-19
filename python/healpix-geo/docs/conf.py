@@ -122,6 +122,7 @@ nb_execution_timeout = 120
 
 # -- Options for HTML output -------------------------------------------------
 
+html_baseurl = "https://grid4earth.eu/healpix-geo/"
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]

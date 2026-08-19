@@ -1,6 +1,6 @@
 [![Rust CI](https://github.com/GRID4EARTH/healpix-geo/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/GRID4EARTH/healpix-geo/actions/workflows/rust-ci.yml)
 [![Python CI](https://github.com/GRID4EARTH/healpix-geo/actions/workflows/python-ci.yml/badge.svg)](https://github.com/GRID4EARTH/healpix-geo/actions/workflows/python-ci.yml)
-[![Docs](https://readthedocs.org/projects/healpix-geo/badge/?version=latest)](https://healpix-geo.readthedocs.io/)
+[![Docs](https://img.shields.io/badge/docs-grid4earth.eu-blue.svg)](https://grid4earth.eu/healpix-geo/)
 [![Formatted with black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 [![Available on pypi](https://img.shields.io/pypi/v/healpix-geo.svg)](https://pypi.python.org/pypi/healpix-geo/)
 [![PyPI Downloads](https://pepy.tech/badge/healpix-geo)](https://pepy.tech/projects/healpix-geo)
@@ -27,4 +27,4 @@ pip install healpix-geo  # with pip
 uv add healpix-geo  # with uv
 ```
 
-For more information, see the [documentation](https://healpix-geo.readthedocs.io/en/latest).
+For more information, see the [documentation](https://grid4earth.eu/healpix-geo/).
