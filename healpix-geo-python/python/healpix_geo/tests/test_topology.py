@@ -20,6 +20,7 @@ EXPECTED_NEIGHBOUR_FACES = (
 )
 
 
+class TestFaceNeighbourTransform:
 def test_face_neighbour_transform_all_faces_and_directions():
     for face, expected_faces in enumerate(EXPECTED_NEIGHBOUR_FACES):
         for direction, expected_face in zip(DIRECTIONS, expected_faces, strict=True):
