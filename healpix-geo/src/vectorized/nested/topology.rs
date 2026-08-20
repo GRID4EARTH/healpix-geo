@@ -80,7 +80,7 @@ pub fn face_neighbour_transform(face: u8, direction: MainWind) -> Option<FaceTra
 /// Split cell indexes into base-face-local coordinates.
 ///
 /// Inputs are assumed to have already been validated. The returned vectors have
-/// the same length and contain `(face, x, y)` components in matching order.
+/// the same length and contain `(face, i, j)` components in matching order.
 pub fn pix2xyf(ipix: &[u64], depth: Depth, nthreads: usize) -> (Vec<u8>, Vec<u32>, Vec<u32>) {
     let mut result = Vec::<(u8, u32, u32)>::with_capacity(ipix.len());
 
