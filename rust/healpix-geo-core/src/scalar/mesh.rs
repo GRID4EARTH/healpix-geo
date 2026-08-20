@@ -178,11 +178,8 @@ fn decode_vertex(depth: u8, vertex_id: u64, scheme: VertexIdScheme) -> (f64, f64
     }
 }
 
-// /// Deduplicate and sort the given vertex ids
-// pub fn vertex_indices(ipix: &[CellVertices]) -> (Vec<u64>, Vec<CellIndices>) {}
-
 /// Convert a vertex id to coordinates
-pub fn vertex_to_geographic(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f64, f64) {
+pub fn vertex_to_lonlat(depth: u8, hash: &u64, ellipsoid: &Ellipsoid) -> (f64, f64) {
     // convert vertex hash to (face, x, y)
     // - convert the vertex id into (face, x, y, depth, corner-kind)
     // - from there, convert to (x, y) healpix plane coordinates (offset from the healpix
@@ -608,7 +605,7 @@ mod tests {
     #[case::l3_ellipsoid_north_polar_cap(
         3, 21, TestEllipsoid::Ellipsoid,
         (239.99999999999997, 72.46140571909436))]
-    fn test_vertex_to_geographic(
+    fn test_vertex_to_lonlat(
         #[case] level: u8,
         #[case] vertex_id: u64,
         #[case] ellipsoid_kind: TestEllipsoid,
@@ -623,7 +620,7 @@ mod tests {
             )),
         };
 
-        let actual = vertex_to_geographic(level, &vertex_id, &ellipsoid);
+        let actual = vertex_to_lonlat(level, &vertex_id, &ellipsoid);
         assert_approx_eq!(actual.0, expected.0);
         assert_approx_eq!(actual.1, expected.1);
     }

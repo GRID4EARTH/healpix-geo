@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use crate::ellipsoid::Ellipsoid;
 use crate::scalar::mesh as scalar;
 
-pub fn vertex_to_geographic(
+pub fn vertex_to_lonlat(
     depth: u8,
     hashes: &[u64],
     ellipsoid: &Ellipsoid,
@@ -14,7 +14,7 @@ pub fn vertex_to_geographic(
     let mut result = Vec::<(f64, f64)>::with_capacity(hashes.len());
 
     maybe_parallelize!(nthreads, hashes, result, |hash| {
-        scalar::vertex_to_geographic(depth, hash, ellipsoid)
+        scalar::vertex_to_lonlat(depth, hash, ellipsoid)
     });
 
     result

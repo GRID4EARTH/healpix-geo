@@ -431,7 +431,7 @@ def vertex_indices(
 
     See Also
     --------
-    healpix_geo.vertex_to_geographic
+    healpix_geo.vertex_to_lonlat
 
     Examples
     --------

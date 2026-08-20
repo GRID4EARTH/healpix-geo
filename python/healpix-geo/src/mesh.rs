@@ -6,7 +6,7 @@ use healpix_geo_core::vectorized::mesh as vectorized;
 
 #[allow(clippy::type_complexity)]
 #[pyfunction]
-pub(crate) fn vertex_to_geographic<'py>(
+pub(crate) fn vertex_to_lonlat<'py>(
     py: Python<'py>,
     depth: u8,
     ipix: &Bound<'py, PyArrayDyn<u64>>,
@@ -19,7 +19,7 @@ pub(crate) fn vertex_to_geographic<'py>(
     let ipix_ = ipix.readonly();
 
     let (lon, lat): (Vec<f64>, Vec<f64>) =
-        vectorized::vertex_to_geographic(depth, ipix_.as_slice()?, &ellipsoid, nthreads as usize)
+        vectorized::vertex_to_lonlat(depth, ipix_.as_slice()?, &ellipsoid, nthreads as usize)
             .into_iter()
             .unzip();
 

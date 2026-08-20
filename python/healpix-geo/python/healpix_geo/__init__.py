@@ -2,7 +2,7 @@ import numpy as np
 
 from healpix_geo import geometry, healpix_geo, nested, ring, zuniq
 from healpix_geo.geometry import Bbox
-from healpix_geo.mesh import vertex_to_geographic
+from healpix_geo.mesh import vertex_to_lonlat
 
 
 def cartesian_to_lonlat(x, y, z, ellipsoid="sphere", num_threads=0):
@@ -99,7 +99,7 @@ __all__ = [
     "slices",
     "geometry",
     "Bbox",
-    "vertex_to_geographic",
+    "vertex_to_lonlat",
     "lonlat_to_cartesian",
     "cartesian_to_lonlat",
 ]

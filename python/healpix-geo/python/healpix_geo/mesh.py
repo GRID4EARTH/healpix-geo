@@ -13,14 +13,14 @@ if TYPE_CHECKING:
     from healpix_geo.typing import EllipsoidLike
 
 
-def vertex_to_geographic(
+def vertex_to_lonlat(
     vertex_ids: npt.NDArray[np.uint64],
     depth: int,
     *,
     ellipsoid: EllipsoidLike = "sphere",
     num_threads: int = 0,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """geographic coordinates for the given vertex ids
+    """Longitude and latitude coordinates for the given vertex ids
 
     Parameters
     ----------
@@ -42,11 +42,11 @@ def vertex_to_geographic(
 
     Examples
     --------
-    >>> from healpix_geo import vertex_to_geographic
+    >>> from healpix_geo import vertex_to_lonlat
     >>> import numpy as np
     >>> depth = 0
     >>> vertex_ids = np.arange(12 * 4**depth + 2, dtype="uint64")
-    >>> lon, lat = vertex_to_geographic(vertex_ids, depth, ellipsoid="sphere")
+    >>> lon, lat = vertex_to_lonlat(vertex_ids, depth, ellipsoid="sphere")
     >>> np.stack([lon, lat], axis=-1)
     array([[  0.       ,  90.       ],
            [  0.       ,  41.8103149],
@@ -73,4 +73,4 @@ def vertex_to_geographic(
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.vertex_to_geographic(depth, vertex_ids, ellipsoid, num_threads)
+    return healpix_geo.vertex_to_lonlat(depth, vertex_ids, ellipsoid, num_threads)
