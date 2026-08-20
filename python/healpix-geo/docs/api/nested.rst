@@ -17,10 +17,18 @@ Conversions between geographic coordinates and HEALPix indices.
    lonlat_to_healpix
    healpix_to_cartesian
    cartesian_to_healpix
-   vertices
 
 .. seealso::
    Tutorial complete : :doc:`../tutorials/coordinate_conversion`
+
+Cell geometry
+~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: ../generated/
+
+   vertices
+   vertex_indices
+
 
 Indexing Scheme Conversions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

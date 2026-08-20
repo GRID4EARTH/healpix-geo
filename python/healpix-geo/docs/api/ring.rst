@@ -18,7 +18,14 @@ Coordinate Conversions
    lonlat_to_healpix
    healpix_to_cartesian
    cartesian_to_healpix
+
+Cell geometry
+~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: ../generated/
+
    vertices
+   vertex_indices
 
 Indexing Scheme Conversions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -20,6 +20,14 @@ Coordinate Conversions
 .. seealso::
    Complete tutorial : :doc:`../tutorials/coordinate_conversion`
 
+Cell geometry
+~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: ../generated/
+
+   vertices
+   vertex_indices
+
 Indexing Scheme Conversions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
