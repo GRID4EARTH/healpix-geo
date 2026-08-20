@@ -952,6 +952,79 @@ def cone_coverage(
     )
 
 
+def cone_coverage_many(
+    centers,
+    radius,
+    depth,
+    *,
+    delta_depth=0,
+    ellipsoid="sphere",
+    flat=True,
+    num_threads=0,
+):
+    """Search the cells covering multiple cones.
+
+    This is the batched equivalent of :func:`cone_coverage`. Each row of the
+    result is identical to a scalar call for the corresponding center. Results
+    are returned in compressed sparse row (CSR) form because different cones
+    may cover different numbers of cells.
+
+    Parameters
+    ----------
+    centers : array-like of float
+        Cone centers as a two-dimensional ``(N, 2)`` array of longitude and
+        latitude pairs in degrees.
+    radius : float
+        Radius shared by all cones, in degrees.
+    depth : int
+        Maximum depth of the cells to return.
+    delta_depth : int, default: 0
+        Additional depth used by the approximate cone coverage algorithm.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference ellipsoid on which to evaluate HEALPix.
+    flat : bool, default: True
+        If ``True``, all returned cells are at ``depth``.
+    num_threads : int, default: 0
+        Number of native worker threads. Zero selects the available parallelism.
+        To keep automatic parallelism conservative, this operation uses at most
+        eight threads; larger values are clamped to eight.
+
+    Returns
+    -------
+    offsets : numpy.ndarray
+        Unsigned offsets with length ``N + 1``. The result for center ``i`` is
+        stored in ``offsets[i]:offsets[i + 1]`` in each following array.
+    cell_ids : numpy.ndarray
+        Concatenated nested HEALPix cell ids.
+    depths : numpy.ndarray
+        Concatenated depths of the returned cells.
+    fully_covered : numpy.ndarray
+        Concatenated flags marking fully covered cells.
+    """
+    _check_depth(depth)
+
+    centers = np.asarray(centers, dtype=np.float64)
+    if centers.ndim != 2 or centers.shape[1] != 2:
+        raise ValueError(
+            "centers must be a two-dimensional array with shape (N, 2), "
+            f"got {centers.shape}"
+        )
+    if num_threads < 0:
+        raise ValueError("num_threads must be non-negative")
+
+    centers = np.ascontiguousarray(centers)
+    num_threads = np.uint16(min(int(num_threads), 8))
+    return healpix_geo.nested.cone_coverage_many(
+        depth,
+        centers,
+        float(radius),
+        delta_depth=delta_depth,
+        ellipsoid=ellipsoid,
+        flat=flat,
+        nthreads=num_threads,
+    )
+
+
 def elliptical_cone_coverage(
     center,
     ellipse_geometry,
