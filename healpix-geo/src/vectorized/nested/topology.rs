@@ -77,7 +77,7 @@ pub fn face_neighbour_transform(face: u8, direction: MainWind) -> Option<FaceTra
     })
 }
 
-/// Split NESTED cell indexes into base-face-local coordinates.
+/// Split cell indexes into base-face-local coordinates.
 ///
 /// Inputs are assumed to have already been validated. The returned vectors have
 /// the same length and contain `(face, x, y)` components in matching order.
