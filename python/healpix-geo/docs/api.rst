@@ -26,8 +26,8 @@ Overview
 .. tip::
    **For most of the applications**, use module ``healpix_geo.auto`` with the ``nested`` indexing scheme. It offers the best support for hierarchical operations.
 
-Helpers
-~~~~~~~
+Geometry helpers
+~~~~~~~~~~~~~~~~
 .. currentmodule:: healpix_geo
 
 .. autosummary::
@@ -37,6 +37,7 @@ Helpers
 
    cartesian_to_lonlat
    lonlat_to_cartesian
+   vertex_to_lonlat
 
 Common Parameters
 ==================
