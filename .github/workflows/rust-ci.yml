@@ -3,8 +3,14 @@ name: Rust CI
 on:
   push:
     branches: ["main"]
+    paths:
+      - "Cargo.*"
+      - "rust/**"
   pull_request:
     branches: ["main"]
+    paths:
+      - "Cargo.*"
+      - "rust/**"
 
 concurrency:
   group: ${{ github.workflow }}.${{ github.ref }}
