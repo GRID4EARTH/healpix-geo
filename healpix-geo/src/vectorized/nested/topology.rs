@@ -1,4 +1,4 @@
-//! Integer-only topology operations for NESTED cells.
+//! Integer-only topology operations for nested cells.
 
 #[cfg(not(target_arch = "wasm32"))]
 use rayon::prelude::*;
