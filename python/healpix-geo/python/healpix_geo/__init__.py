@@ -1,5 +1,6 @@
 import numpy as np
 
+import healpix_geo.ellipsoid  # noqa: F401
 from healpix_geo import geometry, healpix_geo, nested, ring, zuniq
 from healpix_geo.geometry import Bbox
 from healpix_geo.mesh import vertex_to_lonlat
