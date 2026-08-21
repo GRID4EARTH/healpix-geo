@@ -9,6 +9,8 @@ on:
   release:
     types:
       - published
+    tags:
+      - "python-v*"
   pull_request:
     branches:
       - main
