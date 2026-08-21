@@ -7,6 +7,8 @@ on:
     branches: ["main"]
   release:
     types: ["published"]
+    tags:
+      - "js-v*"
 
 concurrency:
   group: ${{ github.workflow }}.${{ github.ref }}
