@@ -31,17 +31,10 @@ jobs:
           persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        # zizmor: ignore[cache-poisoning] # not used for releases
         with:
           node-version: "26"
+          package-manager-cache: false
           registry-url: "https://registry.npmjs.org"
-
-      - name: Create rust cache
-        if: github.event_name != 'release'
-        # zizmor: ignore[cache-poisoning] # not used for releases
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          prefix-key: wasm32
 
       - name: setup
         run: |
