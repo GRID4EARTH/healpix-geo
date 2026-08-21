@@ -72,16 +72,6 @@ jobs:
         run: |
           cargo install wasm-pack@0.15.0
 
-      # - name: build node bundle
-      #   run: |
-      #     mkdir -p build/nodejs
-      #     wasm-pack build --release --target nodejs --out-name index --out-dir build/nodejs
-
-      # - name: build esm bundle
-      #   run: |
-      #     mkdir -p build/esm
-      #     wasm-pack build --release --target web --out-name index --out-dir build/esm
-
       - name: build esm bundle
         run: |
           bash scripts/build.sh --mode release bundler
@@ -89,22 +79,6 @@ jobs:
       - name: pack the package
         run: |
           wasm-pack pack pkg
-
-      # - name: assemble package
-      #   run: |
-      #     mkdir -p pkg/{node,esm,bundler}
-
-      #     cp build/bundler/index* pkg/bundler
-      #     cp build/esm/index* pkg/esm
-      #     cp build/nodejs/index* pkg/node
-
-      #     cp build/bundler/package.json pkg/
-
-      #     # minimal package.json for esm
-      #     echo '{"type": "module"}' > pkg/esm/package.json
-
-      #     jq '.files = ["*"] | .module = "bundler/index.js" | .types = "bundler/index.d.ts" | .name = "healpix-geo"' pkg/package.json > package.json.tmp
-      #     mv package.json.tmp pkg/package.json
 
       - name: Upload package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
