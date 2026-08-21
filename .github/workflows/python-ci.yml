@@ -6,6 +6,11 @@ on:
   pull_request:
     branches:
       - "main"
+    paths:
+      - "pixi.toml"
+      - "Cargo.lock"
+      - "rust/**"
+      - "python/healpix-geo/**"
   workflow_dispatch: # allows triggering manually
 
 concurrency:
