@@ -1,3 +1,4 @@
+pub mod connectivity;
 pub mod ellipsoid;
 pub mod geometry;
 pub mod index;
