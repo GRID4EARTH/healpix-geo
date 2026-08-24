@@ -1,6 +1,5 @@
 use cdshealpix as healpix;
 use numpy::{PyArray1, PyArray2, PyArrayDyn, PyArrayMethods, PyUntypedArrayMethods};
-use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use crate::indexing_schemes::connectivity::Connectivity;
@@ -18,21 +17,18 @@ pub(crate) fn neighbours<'py>(
     let input_shape = ipix.shape();
     let ipix_ = ipix.readonly();
     let layer = healpix::nested::get(depth);
+    let connectivity_ = connectivity.into_connectivity();
 
-    let result = vectorized::neighbours(
-        ipix_.as_slice()?,
-        layer,
-        connectivity.into_connectivity(),
-        nthreads as usize,
-    );
+    let result =
+        vectorized::neighbours(ipix_.as_slice()?, layer, &connectivity_, nthreads as usize);
 
     let output_shape: Vec<usize> = input_shape
         .iter()
         .copied()
-        .chain([directions.len()])
+        .chain([connectivity_.size()])
         .collect();
 
-    PyArray1::from_vec(py, result).reshape(output_shape.as_slice())
+    PyArray2::from_vec2(py, &result)?.reshape(output_shape.as_slice())
 }
 
 /// Wrapper of `kth_neighbours`

@@ -1,11 +1,9 @@
 use cdshealpix::compass_point::MainWind;
 
-const EDGE_DIRECTIONS: &'static [MainWind] =
-    &[MainWind::SW, MainWind::NW, MainWind::NE, MainWind::SE];
-const VERTEX_DIRECTIONS: &'static [MainWind] =
-    &[MainWind::S, MainWind::W, MainWind::N, MainWind::E];
+const EDGE_DIRECTIONS: &[MainWind] = &[MainWind::SW, MainWind::NW, MainWind::NE, MainWind::SE];
+const VERTEX_DIRECTIONS: &[MainWind] = &[MainWind::S, MainWind::W, MainWind::N, MainWind::E];
 
-const ALL_DIRECTIONS: &'static [MainWind] = &[
+const ALL_DIRECTIONS: &[MainWind] = &[
     MainWind::S,
     MainWind::SW,
     MainWind::W,
@@ -37,8 +35,10 @@ impl Connectivity {
     }
 }
 
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn default() {
         assert!(matches!(Connectivity::default(), Connectivity::All));

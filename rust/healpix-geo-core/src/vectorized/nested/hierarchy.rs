@@ -17,7 +17,7 @@ pub fn neighbours(
     connectivity: &Connectivity,
     nthreads: usize,
 ) -> Vec<Vec<i64>> {
-    let result = Vec::<Vec<i64>>::with_capacity(connectivity.size());
+    let mut result = Vec::<Vec<i64>>::with_capacity(connectivity.size());
 
     maybe_parallelize!(nthreads, ipix, result, |hash| scalar::neighbours(
         hash,

@@ -1,3 +1,4 @@
+use crate::connectivity::Connectivity;
 use cdshealpix::nested::Layer;
 
 /// Immediate neighbours as fixed directional positions.
@@ -11,8 +12,6 @@ use cdshealpix::nested::Layer;
 /// this function never compacts the remaining values when a direction is
 /// missing.
 pub fn neighbours(hash: &u64, layer: &Layer, connectivity: &Connectivity) -> Vec<i64> {
-    debug_assert_eq!(directions.len(), output.len());
-
     let neighbours = layer.neighbours(*hash, false);
 
     connectivity
@@ -60,21 +59,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_write_edge_neighbours() {
+    fn test_edge_neighbours() {
         let layer = cdshealpix::nested::get(2);
-        let mut result = [-1; 4];
 
-        write_neighbours(&42, layer, &EDGE_DIRECTIONS, &mut result);
+        let result = neighbours(&42, layer, &Connectivity::Edge);
 
         assert_eq!(result, [111, 21, 43, 40]);
     }
 
     #[test]
-    fn test_write_full_neighbours_preserves_missing_direction() {
+    fn test_all_neighbours_preserves_missing_direction() {
         let layer = cdshealpix::nested::get(2);
-        let mut result = [-1; 8];
 
-        write_neighbours(&42, layer, &EDGE_OR_VERTEX_DIRECTIONS, &mut result);
+        let result = neighbours(&42, layer, &Connectivity::All);
 
         assert_eq!(result, [111, -1, 21, 23, 43, 41, 40, 109]);
     }
