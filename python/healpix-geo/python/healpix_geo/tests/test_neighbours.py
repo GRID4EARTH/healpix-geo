@@ -322,148 +322,145 @@ def test_kth_neighbours(depth, cell_ids, ring, indexing_scheme, expected):
     np.testing.assert_equal(actual, expected)
 
 
-@pytest.mark.parametrize(
-    ("connectivity", "expected"),
-    [
-        pytest.param(
-            "edge",
-            np.array([[111, 21, 43, 40]], dtype="int64"),
-            id="edge",
-        ),
-        pytest.param(
-            "edge_or_vertex",
-            np.array(
-                [[111, -1, 21, 23, 43, 41, 40, 109]],
-                dtype="int64",
+class TestNeighbours:
+    @pytest.mark.parametrize(
+        ("connectivity", "expected"),
+        [
+            pytest.param(
+                "edge",
+                np.array([[111, 21, 43, 40]], dtype="int64"),
+                id="edge",
             ),
-            id="edge-or-vertex",
-        ),
-    ],
-)
-def test_direction_preserving_neighbours(connectivity, expected):
-    actual = healpix_geo.nested.neighbours(
-        np.array([42], dtype="uint64"),
-        depth=2,
-        connectivity=connectivity,
-        num_threads=1,
+            pytest.param(
+                "all",
+                np.array(
+                    [[109, 111, -1, 21, 23, 43, 41, 40]],
+                    dtype="int64",
+                ),
+                id="all",
+            ),
+        ],
     )
-
-    np.testing.assert_equal(actual, expected)
-    assert actual.flags.c_contiguous
-
-
-@pytest.mark.parametrize(
-    ("connectivity", "width"),
-    [
-        pytest.param("edge", 4, id="edge"),
-        pytest.param("edge_or_vertex", 8, id="edge-or-vertex"),
-    ],
-)
-def test_neighbours_preserves_input_shape(connectivity, width):
-    cells = np.array([[42, 43], [44, 45]], dtype="uint64")
-
-    result = healpix_geo.nested.neighbours(
-        cells,
-        depth=2,
-        connectivity=connectivity,
-    )
-
-    assert result.shape == cells.shape + (width,)
-    assert result.dtype == np.dtype("int64")
-    assert result.flags.c_contiguous
-
-
-@pytest.mark.parametrize(
-    ("connectivity", "width"),
-    [
-        pytest.param("edge", 4, id="edge"),
-        pytest.param("edge_or_vertex", 8, id="edge-or-vertex"),
-    ],
-)
-def test_neighbours_scalar_and_empty_shapes(connectivity, width):
-    scalar = healpix_geo.nested.neighbours(
-        42,
-        depth=2,
-        connectivity=connectivity,
-    )
-    empty = healpix_geo.nested.neighbours(
-        np.array([], dtype="uint64"),
-        depth=2,
-        connectivity=connectivity,
-    )
-
-    assert scalar.shape == (1, width)
-    assert empty.shape == (0, width)
-    assert scalar.flags.c_contiguous
-    assert empty.flags.c_contiguous
-
-
-def test_neighbours_rejects_invalid_connectivity():
-    with pytest.raises(
-        ValueError,
-        match="connectivity must be 'edge' or 'edge_or_vertex'",
-    ):
-        healpix_geo.nested.neighbours(
+    def test_direction_preserving(self, connectivity, expected):
+        actual = healpix_geo.nested.neighbours(
             np.array([42], dtype="uint64"),
             depth=2,
-            connectivity="invalid",
+            connectivity=connectivity,
+            num_threads=1,
         )
 
+        np.testing.assert_equal(actual, expected)
+        assert actual.dtype == np.dtype("int64")
 
-@pytest.mark.parametrize("depth", range(6))
-def test_edge_neighbour_topology_for_every_cell(depth):
-    cells = np.arange(12 * 4**depth, dtype="uint64")
-    edge = healpix_geo.nested.neighbours(
-        cells,
-        depth=depth,
-        connectivity="edge",
+    @pytest.mark.parametrize(
+        ("connectivity", "width"),
+        [
+            pytest.param("edge", 4, id="edge"),
+            pytest.param("all", 8, id="all"),
+        ],
     )
-    full = healpix_geo.nested.neighbours(
-        cells,
-        depth=depth,
-        connectivity="edge_or_vertex",
+    def test_preserves_input_shape(self, connectivity, width):
+        cells = np.array([[42, 43], [44, 45]], dtype="uint64")
+
+        result = healpix_geo.nested.neighbours(
+            cells,
+            depth=2,
+            connectivity=connectivity,
+        )
+
+        assert result.shape == cells.shape + (width,)
+        assert result.dtype == np.dtype("int64")
+        assert result.flags.c_contiguous
+
+    @pytest.mark.parametrize(
+        ("connectivity", "width"),
+        [
+            pytest.param("edge", 4, id="edge"),
+            pytest.param("vertex", 4, id="edge"),
+            pytest.param("all", 8, id="all"),
+        ],
     )
+    def test_scalar_and_empty_shapes(self, connectivity, width):
+        scalar = healpix_geo.nested.neighbours(
+            42,
+            depth=2,
+            connectivity=connectivity,
+        )
+        empty = healpix_geo.nested.neighbours(
+            np.array([], dtype="uint64"),
+            depth=2,
+            connectivity=connectivity,
+        )
 
-    assert edge.shape == (cells.size, 4)
-    assert np.all(edge >= 0)
-    assert np.all(edge < cells.size)
+        assert scalar.shape == (1, width)
+        assert empty.shape == (0, width)
+        assert scalar.flags.c_contiguous
+        assert empty.flags.c_contiguous
 
-    # Each edge neighbour must be present in the full neighbourhood.
-    assert np.all(np.any(edge[:, :, None] == full[:, None, :], axis=2))
+    def test_neighbours_rejects_invalid_connectivity(self):
+        with pytest.raises(
+            ValueError,
+            match="Connectivity must be 'edge', 'vertex', or 'all'. Got 'invalid'",
+        ):
+            healpix_geo.nested.neighbours(
+                np.array([42], dtype="uint64"),
+                depth=2,
+                connectivity="invalid",
+            )
 
-    # Edge adjacency is symmetric for every cell, including singularities.
-    for direction in range(edge.shape[1]):
-        neighbour_rows = edge[edge[:, direction]]
-        assert np.all(np.any(neighbour_rows == cells[:, None], axis=1))
+    @pytest.mark.parametrize("depth", range(6))
+    def test_edge_neighbour_topology_for_every_cell(self, depth):
+        cells = np.arange(12 * 4**depth, dtype="uint64")
+        edge = healpix_geo.nested.neighbours(
+            cells,
+            depth=depth,
+            connectivity="edge",
+        )
+        full = healpix_geo.nested.neighbours(
+            cells,
+            depth=depth,
+            connectivity="all",
+        )
 
-    valid_full_count = np.count_nonzero(full >= 0, axis=1)
-    if depth == 0:
-        assert np.all(valid_full_count == 6)
-    else:
-        assert np.all((valid_full_count == 7) | (valid_full_count == 8))
+        assert edge.shape == (cells.size, 4)
+        assert np.all(edge >= 0)
+        assert np.all(edge < cells.size)
 
+        # Each edge neighbour must be present in the full neighbourhood.
+        assert np.all(np.any(edge[:, :, None] == full[:, None, :], axis=2))
 
-def test_neighbours_threading_paths_agree():
-    cells = np.arange(12_000, dtype="uint64")
+        # Edge adjacency is symmetric for every cell, including singularities.
+        for direction in range(edge.shape[1]):
+            neighbour_rows = edge[edge[:, direction]]
+            assert np.all(np.any(neighbour_rows == cells[:, None], axis=1))
 
-    sequential = healpix_geo.nested.neighbours(
-        cells,
-        depth=5,
-        connectivity="edge_or_vertex",
-        num_threads=1,
-    )
-    automatic = healpix_geo.nested.neighbours(
-        cells,
-        depth=5,
-        connectivity="edge_or_vertex",
-        num_threads=0,
-    )
-    explicit_parallel = healpix_geo.nested.neighbours(
-        cells,
-        depth=5,
-        connectivity="edge_or_vertex",
-        num_threads=2,
-    )
+        valid_full_count = np.count_nonzero(full >= 0, axis=1)
+        if depth == 0:
+            assert np.all(valid_full_count == 6)
+        else:
+            assert np.all((valid_full_count == 7) | (valid_full_count == 8))
 
-    np.testing.assert_equal(automatic, sequential)
-    np.testing.assert_equal(explicit_parallel, sequential)
+    def test_neighbours_threading_paths_agree(self):
+        cells = np.arange(12_000, dtype="uint64")
+
+        sequential = healpix_geo.nested.neighbours(
+            cells,
+            depth=5,
+            connectivity="all",
+            num_threads=1,
+        )
+        automatic = healpix_geo.nested.neighbours(
+            cells,
+            depth=5,
+            connectivity="all",
+            num_threads=0,
+        )
+        explicit_parallel = healpix_geo.nested.neighbours(
+            cells,
+            depth=5,
+            connectivity="all",
+            num_threads=2,
+        )
+
+        np.testing.assert_equal(automatic, sequential)
+        np.testing.assert_equal(explicit_parallel, sequential)
