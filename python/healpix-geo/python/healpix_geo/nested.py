@@ -552,41 +552,40 @@ def bilinear_interpolation(
 
 
 def neighbours(
-    ipix,
-    depth,
+    ipix: npt.NDArray[np.uint64],
+    depth: int,
     *,
-    connectivity: Literal["edge", "edge_or_vertex"] = "edge_or_vertex",
-    num_threads=0,
+    connectivity: Literal["edge", "vertex", "all"] = "all",
+    num_threads: int = 0,
 ):
-    """Get direction-preserving immediate neighbours of NESTED HEALPix cells.
+    """Get the direction-preserving immediate neighbours of some HEALPix cells at a given depth.
 
     Parameters
     ----------
     ipix : `numpy.ndarray`
-        The NESTED HEALPix cell indexes.
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
     depth : int
         The depth of the HEALPix cells.
-    connectivity : {"edge", "edge_or_vertex"}, optional
-        ``"edge"`` returns the four edge-sharing neighbours in ``SW, NW,
-        NE, SE`` order. ``"edge_or_vertex"`` returns all eight directional
-        positions in ``SW, W, NW, N, NE, E, SE, S`` order.
+    connectivity : {"edge", "vertex", "all"}, default: "all"
+        The connectivity of the neighbours. The different kinds are:
+        - ``"edge"`` connectivity returns the four edge-sharing neighbours in ``SW, NW, NE, SE`` order.
+        - ``"vertex"`` connectivity returns the four vertex (but not edge) sharing neighbours. The order is ``S, W, N, E``.
+        - ``"all"`` returns all immediate neighbours. The order is always ``S, SW, W, NW, N, NE, E, SE``.
     num_threads : int, optional
-        Number of threads. The default, 0, uses the Rayon global thread pool
-        for sufficiently large inputs and a sequential path for small inputs.
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
 
     Returns
     -------
     neighbours : `numpy.ndarray`
-        An ``np.int64`` array with shape ``ipix.shape + (4,)`` for edge
-        connectivity or ``ipix.shape + (8,)`` for edge-or-vertex
-        connectivity. Scalar inputs are normalized to one-dimensional input,
-        producing shape ``(1, 4)`` or ``(1, 8)``. Missing directional
-        positions are represented by ``-1`` and never shift other positions.
+        A :math:`N` x :math:`n` ``np.int64`` array, with :math:`n = 4` for edge or vertex
+        connectivity and :math:`n = 8` for both together. Scalar inputs are
+        normalized to one-dimensional input, producing shape ``(1, 4)`` or ``(1, 8)``.
+        Missing directional positions are represented by ``-1`` and never shift
+        other positions.
     """
     _check_depth(depth)
-
-    if connectivity not in ("edge", "edge_or_vertex"):
-        raise ValueError("connectivity must be 'edge' or 'edge_or_vertex'")
 
     ipix = np.atleast_1d(ipix)
     _check_ipixels(data=ipix, depth=depth)

@@ -21,7 +21,7 @@ impl FromPyObject<'_, '_> for Connectivity {
             "vertex" => Ok(Connectivity::Vertex),
             "all" => Ok(Connectivity::All),
             _ => Err(PyValueError::new_err(format!(
-                "unknown connectivity: {extracted}"
+                "Connectivity must be 'edge', 'vertex', or 'all'. Got '{extracted}'"
             ))),
         }
     }
