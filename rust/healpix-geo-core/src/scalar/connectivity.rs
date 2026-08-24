@@ -17,7 +17,7 @@ const ALL_DIRECTIONS: &'static [MainWind] = &[
 ];
 
 #[derive(Debug, Default)]
-enum Connectivity {
+pub enum Connectivity {
     Edge,
     Vertex,
     #[default]
@@ -25,7 +25,10 @@ enum Connectivity {
 }
 
 impl Connectivity {
-    pub(crate) fn directions(&self) -> &'static [MainWind] {
+    pub fn size(&self) -> usize {
+        self.directions().len()
+    }
+    pub fn directions(&self) -> &'static [MainWind] {
         match self {
             Self::Edge => EDGE_DIRECTIONS,
             Self::Vertex => VERTEX_DIRECTIONS,
