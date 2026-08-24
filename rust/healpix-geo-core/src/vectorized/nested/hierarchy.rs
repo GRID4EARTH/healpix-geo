@@ -2,68 +2,28 @@
 use rayon::prelude::*;
 
 use cdshealpix as healpix;
-use cdshealpix::compass_point::MainWind;
 use cdshealpix::nested::Layer;
 
+use crate::connectivity::Connectivity;
 use crate::maybe_parallelize;
 use crate::scalar::nested::hierarchy as scalar;
 
-/// Below this size, creating or scheduling parallel work is generally more
-/// expensive than the immediate-neighbour calculation itself.
-const AUTO_PARALLEL_THRESHOLD: usize = 32_768;
-
 /// Return immediate neighbours without losing their directional positions.
 ///
-/// The result is a flat row-major buffer with `directions.len()` values per
-/// input cell. Missing positions are represented by `-1`.
+/// Missing positions are represented by `-1`.
 pub fn neighbours(
     ipix: &[u64],
     layer: &Layer,
-    directions: &[MainWind],
+    connectivity: &Connectivity,
     nthreads: usize,
-) -> Vec<i64> {
-    let width = directions.len();
-    debug_assert!(width > 0);
+) -> Vec<Vec<i64>> {
+    let result = Vec::<Vec<i64>>::with_capacity(connectivity.size());
 
-    let mut result = vec![-1; ipix.len() * width];
-
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let write_parallel = |output: &mut [i64]| {
-            output
-                .par_chunks_mut(width)
-                .zip(ipix.par_iter())
-                .for_each(|(row, hash)| scalar::write_neighbours(hash, layer, directions, row));
-        };
-
-        match nthreads {
-            1 => result
-                .chunks_mut(width)
-                .zip(ipix)
-                .for_each(|(row, hash)| scalar::write_neighbours(hash, layer, directions, row)),
-            0 if ipix.len() < AUTO_PARALLEL_THRESHOLD => result
-                .chunks_mut(width)
-                .zip(ipix)
-                .for_each(|(row, hash)| scalar::write_neighbours(hash, layer, directions, row)),
-            0 => write_parallel(&mut result),
-            _ => {
-                let pool = rayon::ThreadPoolBuilder::new()
-                    .num_threads(nthreads)
-                    .build()
-                    .unwrap();
-                pool.install(|| write_parallel(&mut result));
-            }
-        }
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    {
-        let _ = nthreads;
-        result
-            .chunks_mut(width)
-            .zip(ipix)
-            .for_each(|(row, hash)| scalar::write_neighbours(hash, layer, directions, row));
-    }
+    maybe_parallelize!(nthreads, ipix, result, |hash| scalar::neighbours(
+        hash,
+        layer,
+        connectivity
+    ));
 
     result
 }
