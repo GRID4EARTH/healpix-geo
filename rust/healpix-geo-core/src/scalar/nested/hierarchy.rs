@@ -1,32 +1,29 @@
-use cdshealpix::{compass_point::MainWind, nested::Layer};
+use cdshealpix::nested::Layer;
 
-pub const EDGE_DIRECTIONS: [MainWind; 4] = [MainWind::SW, MainWind::NW, MainWind::NE, MainWind::SE];
-
-pub const EDGE_OR_VERTEX_DIRECTIONS: [MainWind; 8] = [
-    MainWind::SW,
-    MainWind::W,
-    MainWind::NW,
-    MainWind::N,
-    MainWind::NE,
-    MainWind::E,
-    MainWind::SE,
-    MainWind::S,
-];
-
-/// Write immediate neighbours into fixed directional positions.
+/// Immediate neighbours as fixed directional positions.
+///
+/// The order always starts at S and moves in a clock-wise direction:
+/// - vertex connectivity: S, W, N, E
+/// - edge connectivity: SW, NW, NE, SE
+/// - all: S, SW, W, NW, N, NE, E, SE
 ///
 /// Missing directions are represented by `-1`. Unlike `kth_neighbours`,
 /// this function never compacts the remaining values when a direction is
 /// missing.
-pub fn write_neighbours(hash: &u64, layer: &Layer, directions: &[MainWind], output: &mut [i64]) {
+pub fn neighbours(hash: &u64, layer: &Layer, connectivity: &Connectivity) -> Vec<i64> {
     debug_assert_eq!(directions.len(), output.len());
 
     let neighbours = layer.neighbours(*hash, false);
-    for (value, direction) in output.iter_mut().zip(directions) {
-        *value = neighbours
-            .get(*direction)
-            .map_or(-1, |neighbour| *neighbour as i64);
-    }
+
+    connectivity
+        .directions()
+        .iter()
+        .map(|direction| {
+            neighbours
+                .get(*direction)
+                .map_or(-1, |neighbour| *neighbour as i64)
+        })
+        .collect()
 }
 
 pub fn kth_neighbours(hash: &u64, layer: &Layer, ring: &u32) -> Vec<i64> {
