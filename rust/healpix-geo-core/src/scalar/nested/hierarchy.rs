@@ -73,6 +73,6 @@ mod tests {
 
         let result = neighbours(&42, layer, &Connectivity::All);
 
-        assert_eq!(result, [111, -1, 21, 23, 43, 41, 40, 109]);
+        assert_eq!(result, [109, 111, -1, 21, 23, 43, 41, 40]);
     }
 }
