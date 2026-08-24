@@ -9,6 +9,8 @@ from healpix_geo import healpix_geo
 from healpix_geo.utils import _check_depth
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     import numpy.typing as npt
 
     from healpix_geo.typing import DepthType
@@ -529,6 +531,43 @@ def bilinear_interpolation(
     mask = weights == 0
 
     return xp.asarray(ipix, mask=mask), xp.asarray(weights, mask=mask)
+
+
+def neighbours(
+    ipix: npt.NDArray[np.uint64],
+    *,
+    connectivity: Literal["edge", "vertex", "all"] = "all",
+    num_threads: int = 0,
+):
+    """Get the direction-preserving immediate neighbours of some HEALPix cells at a given depth.
+
+    Parameters
+    ----------
+    ipix : `numpy.ndarray`
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    connectivity : {"edge", "vertex", "all"}, default: "all"
+        The connectivity of the neighbours. The different kinds are:
+        - ``"edge"`` connectivity returns the four edge-sharing neighbours in ``SW, NW, NE, SE`` order.
+        - ``"vertex"`` connectivity returns the four vertex (but not edge) sharing neighbours. The order is ``S, W, N, E``.
+        - ``"all"`` returns all immediate neighbours. The order is always ``S, SW, W, NW, N, NE, E, SE``.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    neighbours : `numpy.ndarray`
+        A :math:`N` x :math:`n` ``np.int64`` array, with :math:`n = 4` for edge or vertex
+        connectivity and :math:`n = 8` for both together. Scalar inputs are
+        normalized to one-dimensional input, producing shape ``(1, 4)`` or ``(1, 8)``.
+        Missing directional positions are represented by ``-1`` and never shift
+        other positions.
+    """
+    ipix = np.astype(np.atleast_1d(ipix), np.uint64)
+
+    num_threads = np.uint16(num_threads)
+    return healpix_geo.zuniq.neighbours(ipix, connectivity, num_threads)
 
 
 def kth_neighbours(ipix, ring, num_threads=0):

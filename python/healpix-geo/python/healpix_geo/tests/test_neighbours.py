@@ -324,30 +324,89 @@ def test_kth_neighbours(depth, cell_ids, ring, indexing_scheme, expected):
 
 class TestNeighbours:
     @pytest.mark.parametrize(
-        ("connectivity", "expected"),
-        [
+        ["cell_ids", "indexing_scheme", "connectivity", "expected"],
+        (
             pytest.param(
+                np.array([42], dtype="uint64"),
+                "nested",
                 "edge",
                 np.array([[111, 21, 43, 40]], dtype="int64"),
-                id="edge",
+                id="nested-edge",
             ),
             pytest.param(
+                np.array([42], dtype="uint64"),
+                "nested",
                 "all",
                 np.array(
                     [[109, 111, -1, 21, 23, 43, 41, 40]],
                     dtype="int64",
                 ),
-                id="all",
+                id="nested-all",
             ),
-        ],
+            pytest.param(
+                np.array([13, 32], dtype="uint64"),
+                "ring",
+                "all",
+                np.array(
+                    [[3, 9, 11, 14, 15, 13, 7, 6], [109, 111, -1, 21, 23, 43, 41, 40]],
+                    dtype="int64",
+                ),
+                id="ring-all",
+            ),
+            pytest.param(
+                np.array(
+                    [522417556774977536, 918734323983581184, 1531223873305968640],
+                    dtype="uint64",
+                ),
+                "zuniq",
+                "all",
+                np.array(
+                    [
+                        [
+                            342273571680157696,
+                            414331165718085632,
+                            1999598234552500224,
+                            2215771016666284032,
+                            2287828610704211968,
+                            558446353793941504,
+                            486388759756013568,
+                            450359962737049600,
+                        ],
+                        [
+                            666532744850833408,
+                            882705526964617216,
+                            954763121002545152,
+                            990791918021509120,
+                            1098878309078401024,
+                            1026820715040473088,
+                            810647932926689280,
+                            702561541869797376,
+                        ],
+                        [
+                            3945153273576554496,
+                            4017210867614482432,
+                            -1,
+                            774619135907725312,
+                            846676729945653248,
+                            1567252670324932608,
+                            1495195076287004672,
+                            1459166279268040704,
+                        ],
+                    ],
+                    dtype="int64",
+                ),
+                id="zuniq-all",
+            ),
+        ),
     )
-    def test_direction_preserving(self, connectivity, expected):
-        actual = healpix_geo.nested.neighbours(
-            np.array([42], dtype="uint64"),
-            depth=2,
-            connectivity=connectivity,
-            num_threads=1,
-        )
+    def test_direction_preserving(
+        self, cell_ids, indexing_scheme, connectivity, expected
+    ):
+        ns = getattr(healpix_geo, indexing_scheme)
+        kwargs = {}
+        if indexing_scheme in {"nested", "ring"}:
+            kwargs["depth"] = 2
+        actual = ns.neighbours(cell_ids, **kwargs, connectivity=connectivity)
 
         np.testing.assert_equal(actual, expected)
         assert actual.dtype == np.dtype("int64")
