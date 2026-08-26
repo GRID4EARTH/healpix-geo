@@ -44,19 +44,41 @@ impl CellRegion {
         }
     }
 
-    pub fn from_ranges(depth: u8, ranges: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
+    fn from_ranges_impl(depth: u8, ranges: Vec<Range<u64>>, ellipsoid: Ellipsoid) -> Self {
         let size = ranges.len();
         Self {
-            moc: RangeMOC::from_maxdepth_ranges(
-                depth,
-                ranges.chunks(2).map(|chunk| Range {
-                    start: chunk[0],
-                    end: chunk[1],
-                }),
-                Some(size),
-            ),
+            moc: RangeMOC::from_maxdepth_ranges(depth, ranges, Some(size)),
             ellipsoid,
         }
+    }
+
+    pub fn from_compacted(depth: u8, cell_ids: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
+        let ranges: Vec<Range<u64>> = cell_ids
+            .into_iter()
+            .map(|hash| {
+                let (hash_nested, compacted_depth) = nested::from_zuniq_unchecked(hash);
+
+                let shift = Hpx::<u64>::shift_from_depth_max(compacted_depth) as u32;
+
+                let from = hash_nested;
+                let to = from + u64::one();
+
+                from.unsigned_shl(shift)..to.unsigned_shl(shift)
+            })
+            .collect();
+
+        Self::from_ranges_impl(depth, ranges, ellipsoid)
+    }
+
+    pub fn from_ranges(depth: u8, ranges: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
+        Self::from_ranges_impl(
+            depth,
+            ranges.chunks(2).map(|chunk| Range {
+                start: chunk[0],
+                end: chunk[1],
+            }),
+            ellipsoid,
+        )
     }
 
     pub fn nbytes(&self) -> usize {
