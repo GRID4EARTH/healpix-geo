@@ -394,6 +394,12 @@ impl RangeMOCIndex {
         ))
     }
 
+    fn refine(&self, depth: u8) -> PyResult<Self> {
+        Ok(Self {
+            region: self.region.refine(depth),
+        })
+    }
+
     /// Retrieve the cell ids from the index.
     ///
     /// Returns

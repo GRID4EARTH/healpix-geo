@@ -33,6 +33,21 @@ class TestRangeMOCIndex:
         assert index.depth == level
 
     @pytest.mark.parametrize(
+        ["level", "new_level"],
+        (
+            (25, 2),
+            (2, 6),
+        ),
+    )
+    def test_refine(self, level: int, new_level: int) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.full_domain(level)
+
+        expected = np.arange(12 * 4**new_level, dtype="uint64")
+        refined = index.refine(new_level)
+
+        np.testing.assert_equal(refined.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
         ["level", "cell_ids1", "cell_ids2", "expected"],
         (
             (

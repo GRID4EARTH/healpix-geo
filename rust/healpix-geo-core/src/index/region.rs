@@ -59,6 +59,26 @@ impl CellRegion {
         self.moc.flatten_to_fixed_depth_cells().collect()
     }
 
+    pub fn refine(&self, depth: u8) -> Self {
+        let moc_depth = self.moc.depth_max();
+
+        let moc = if depth == moc_depth {
+            self.moc.clone()
+        } else if depth < moc_depth {
+            self.moc.degraded(depth)
+        } else {
+            let mut moc = self.moc.clone();
+            moc.refine(depth);
+
+            moc
+        };
+
+        Self {
+            moc,
+            ellipsoid: self.ellipsoid.clone(),
+        }
+    }
+
     pub fn cells_at_depth(&self) -> u64 {
         12 * 4u64.pow(self.depth() as u32)
     }
