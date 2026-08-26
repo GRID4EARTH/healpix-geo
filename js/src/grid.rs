@@ -394,7 +394,8 @@ impl Grid {
 
         let mut out = Vec::with_capacity(lonlats.len() / 2);
 
-        for (index, pair) in lonlats.chunks_exact(2).enumerate() {
+        // clippy claims that as_chunks is to be preferred over chunks_exact
+        for (index, pair) in lonlats.as_chunks::<2>().0.iter().enumerate() {
             // one NaN in a million-element buffer used to abort the call with
             // `RuntimeError: unreachable` — no message and no index
             let hash = self
