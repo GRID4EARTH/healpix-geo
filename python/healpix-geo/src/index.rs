@@ -394,6 +394,19 @@ impl RangeMOCIndex {
         ))
     }
 
+    /// Change the internal depth of the index
+    ///
+    /// This may change the region covered by the index if the new depth is smaller than the current depth.
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The new depth
+    ///
+    /// Returns
+    /// -------
+    /// refined : RangeMOCIndex
+    ///     The refined index with a different level
     fn refine(&self, depth: u8) -> PyResult<Self> {
         Ok(Self {
             region: self.region.refine(depth),
