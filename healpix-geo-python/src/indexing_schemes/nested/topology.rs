@@ -2,47 +2,34 @@ use numpy::{PyArray1, PyArrayDyn, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-use cdshealpix::compass_point::MainWind;
+use crate::indexing_schemes::wind_rose::WindRose;
+use healpix_geo_core::scalar::nested::topology as scalar;
 use healpix_geo_core::vectorized::nested::topology as vectorized;
 
 use crate::indexing_schemes::depth::DepthLike;
 
+#[allow(clippy::type_complexity)]
 #[pyfunction]
-pub(crate) fn face_neighbour_transform(
+pub(crate) fn base_cell_relationship<'py>(
+    py: Python<'py>,
     face: u8,
-    direction: &str,
-) -> PyResult<Option<(u8, bool, bool, bool)>> {
-    if face >= 12 {
-        return Err(PyValueError::new_err(
+    direction: WindRose,
+) -> PyResult<Option<(Bound<'py, PyArray1<i32>>, Bound<'py, PyArray1<i32>>)>> {
+    if !(0..=11).contains(&face) {
+        Err(PyValueError::new_err(
             "face must be in the [0, 11] closed range",
-        ));
-    }
-    let direction = match direction.to_ascii_uppercase().as_str() {
-        "N" => MainWind::N,
-        "NE" => MainWind::NE,
-        "E" => MainWind::E,
-        "SE" => MainWind::SE,
-        "S" => MainWind::S,
-        "SW" => MainWind::SW,
-        "W" => MainWind::W,
-        "NW" => MainWind::NW,
-        _ => {
-            return Err(PyValueError::new_err(
-                "direction must be one of N, NE, E, SE, S, SW, W, or NW",
-            ));
-        }
-    };
+        ))
+    } else {
+        match scalar::base_cell_relationship(face, direction.into_mainwind()) {
+            None => Ok(None),
+            Some(((x1, y1), (x2, y2))) => {
+                let array1 = PyArray1::from_vec(py, vec![x1, y1]);
+                let array2 = PyArray1::from_vec(py, vec![x2, y2]);
 
-    Ok(
-        vectorized::face_neighbour_transform(face, direction).map(|transform| {
-            (
-                transform.target_face,
-                transform.swap_xy,
-                transform.flip_x,
-                transform.flip_y,
-            )
-        }),
-    )
+                Ok(Some((array1, array2)))
+            }
+        }
+    }
 }
 
 #[allow(clippy::type_complexity)]
