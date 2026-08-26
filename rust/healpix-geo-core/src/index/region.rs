@@ -13,7 +13,8 @@ use moc::moc::range::{CellSelection, RangeMOC};
 use moc::moc::{
     CellMOCIntoIterator, CellMOCIterator, HasMaxDepth, RangeMOCIntoIterator, RangeMOCIterator,
 };
-use moc::qty::Hpx;
+use moc::qty::{Hpx, MocQty};
+use num_traits::PrimInt;
 use std::ops::Range;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -47,7 +48,7 @@ impl CellRegion {
     fn from_ranges_impl(depth: u8, ranges: Vec<Range<u64>>, ellipsoid: Ellipsoid) -> Self {
         let size = ranges.len();
         Self {
-            moc: RangeMOC::from_maxdepth_ranges(depth, ranges, Some(size)),
+            moc: RangeMOC::from_maxdepth_ranges(depth, ranges.into_iter(), Some(size)),
             ellipsoid,
         }
     }
@@ -56,12 +57,12 @@ impl CellRegion {
         let ranges: Vec<Range<u64>> = cell_ids
             .into_iter()
             .map(|hash| {
-                let (hash_nested, compacted_depth) = nested::from_zuniq_unchecked(hash);
+                let (compacted_depth, hash_nested) = nested::from_zuniq(hash);
 
                 let shift = Hpx::<u64>::shift_from_depth_max(compacted_depth) as u32;
 
                 let from = hash_nested;
-                let to = from + u64::one();
+                let to = from + 1;
 
                 from.unsigned_shl(shift)..to.unsigned_shl(shift)
             })
@@ -73,10 +74,13 @@ impl CellRegion {
     pub fn from_ranges(depth: u8, ranges: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
         Self::from_ranges_impl(
             depth,
-            ranges.chunks(2).map(|chunk| Range {
-                start: chunk[0],
-                end: chunk[1],
-            }),
+            ranges
+                .chunks(2)
+                .map(|chunk| Range {
+                    start: chunk[0],
+                    end: chunk[1],
+                })
+                .collect::<Vec<Range<u64>>>(),
             ellipsoid,
         )
     }

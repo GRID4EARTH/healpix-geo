@@ -80,6 +80,49 @@ class TestRangeMOCIndex:
         np.testing.assert_equal(index.cell_ids(), expected)
 
     @pytest.mark.parametrize(
+        ["level", "cell_ids", "expected"],
+        (
+            (
+                0,
+                np.array(
+                    [864691128455135232, 1441151880758558720, 3170534137668829184],
+                    dtype="uint64",
+                ),
+                np.array([1, 2, 5], dtype="uint64"),
+            ),
+            (
+                3,
+                np.array(
+                    [
+                        216172782113783808,
+                        306244774661193728,
+                        342273571680157696,
+                        378302368699121664,
+                    ],
+                    dtype="uint64",
+                ),
+                np.concat(
+                    [
+                        np.arange(1 * 4**2, 2 * 4**2, dtype="uint64"),
+                        np.arange(8 * 4**1, 11 * 4**1, dtype="uint64"),
+                    ],
+                    axis=0,
+                ),
+            ),
+            (
+                6,
+                np.array([22517998136852480], dtype="uint64"),
+                np.arange(2 * 4**3, 3 * 4**3, dtype="uint64"),
+            ),
+        ),
+    )
+    def test_from_compacted(self, level, cell_ids, expected):
+        index = healpix_geo.nested.RangeMOCIndex.from_compacted(level, cell_ids)
+
+        assert index.depth == level
+        np.testing.assert_equal(index.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
         ["level", "new_level"],
         (
             (25, 2),

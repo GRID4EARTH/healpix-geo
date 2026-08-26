@@ -274,6 +274,34 @@ impl RangeMOCIndex {
         Ok(index)
     }
 
+    /// Create an index from the given compacted cells
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The maximum depth of the index
+    /// cell_ids : numpy.ndarray
+    ///     The cell ids in ``zuniq`` indexing scheme as a :math:`N` ``uint64`` array
+    #[pyo3(signature = (depth, cell_ids, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_compacted<'py>(
+        _cls: &Bound<'py, PyType>,
+        _py: Python<'py>,
+        depth: u8,
+        cell_ids: &Bound<'py, PyArray1<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let index = Self {
+            region: CellRegion::from_compacted(
+                depth,
+                cell_ids.to_vec()?,
+                ellipsoid.into_ellipsoid()?,
+            ),
+        };
+
+        Ok(index)
+    }
+
     /// Compute the set union of two indexes
     ///
     /// Parameters
