@@ -44,6 +44,21 @@ impl CellRegion {
         }
     }
 
+    pub fn from_ranges(depth: u8, ranges: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
+        let size = ranges.len();
+        Self {
+            moc: RangeMOC::from_maxdepth_ranges(
+                depth,
+                ranges.chunks(2).map(|chunk| Range {
+                    start: chunk[0],
+                    end: chunk[1],
+                }),
+                Some(size),
+            ),
+            ellipsoid,
+        }
+    }
+
     pub fn nbytes(&self) -> usize {
         self.moc.len() * 2 * u64::BITS as usize / 8
     }

@@ -34,6 +34,52 @@ class TestRangeMOCIndex:
         assert index.depth == level
 
     @pytest.mark.parametrize(
+        ["level", "ranges", "expected"],
+        (
+            pytest.param(
+                2,
+                np.array([[0, 12 * 4**29]], dtype="uint64"),
+                np.arange(12 * 4**2, dtype="uint64"),
+                id="full_domain",
+            ),
+            pytest.param(
+                1,
+                np.array(
+                    [[1 * 4**29, 3 * 4**29], [5 * 4**29, 7 * 4**29]], dtype="uint64"
+                ),
+                np.concat(
+                    [
+                        np.arange(1 * 4**1, 3 * 4**1, dtype="uint64"),
+                        np.arange(5 * 4**1, 7 * 4**1, dtype="uint64"),
+                    ]
+                ),
+                id="ranges_with_gap",
+            ),
+            pytest.param(
+                3,
+                (
+                    np.array(
+                        [
+                            [4, 8],
+                            [9, 10],
+                            [15, 17],
+                            [19, 20],
+                        ],
+                        dtype="uint64",
+                    )
+                    * 4**26
+                ),
+                np.array([4, 5, 6, 7, 9, 15, 16, 19], dtype="uint64"),
+                id="isolated_pixels",
+            ),
+        ),
+    )
+    def test_from_ranges(self, level, ranges, expected) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.from_ranges(level, ranges)
+
+        np.testing.assert_equal(index.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
         ["level", "new_level"],
         (
             (25, 2),

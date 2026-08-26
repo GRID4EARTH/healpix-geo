@@ -249,6 +249,31 @@ impl RangeMOCIndex {
         Ok(index)
     }
 
+    /// Create an index from the given ranges at level 29
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The maximum depth of the index.
+    /// ranges : numpy.ndarray
+    ///     The ranges to construct the index from as a :math:`N` x :math:`2` array.
+    #[pyo3(signature = (depth, ranges, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_ranges<'py>(
+        _cls: &Bound<'py, PyType>,
+        _py: Python<'py>,
+        depth: u8,
+        ranges: &Bound<'py, PyArray2<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let ranges_ = ranges.to_vec()?;
+        let index = Self {
+            region: CellRegion::from_ranges(depth, ranges_, ellipsoid.into_ellipsoid()?),
+        };
+
+        Ok(index)
+    }
+
     /// Compute the set union of two indexes
     ///
     /// Parameters
