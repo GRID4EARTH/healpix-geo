@@ -8,7 +8,7 @@ use crate::connectivity::Connectivity;
 use crate::maybe_parallelize;
 use crate::scalar::nested::hierarchy as scalar;
 
-/// Return immediate neighbours without losing their directional positions.
+/// Immediate neighbours without losing their directional positions.
 ///
 /// Missing positions are represented by `-1`.
 pub fn neighbours(

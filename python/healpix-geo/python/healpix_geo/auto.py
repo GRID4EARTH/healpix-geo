@@ -1,6 +1,7 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -41,6 +42,14 @@ class Grid:
     ellipsoid: EllipsoidLike = "sphere"
     """The reference ellipsoid of the grid."""
 
+    known_aliases: ClassVar[dict[str, str]] = {
+        "refinement_level": "level",
+        "depth": "level",
+        "order": "level",
+        "resolution": "level",
+    }
+    """Known aliases of the parameters."""
+
     def __post_init__(self):
         if isinstance(self.ellipsoid, str):
             from healpix_geo.ellipsoid import resolve
@@ -48,12 +57,32 @@ class Grid:
             # normalize to an object or dict
             object.__setattr__(self, "ellipsoid", resolve(self.ellipsoid))
 
-    def _as_params(self):
+    def _as_params(self) -> dict[str, Any]:
         params = {"ellipsoid": self.ellipsoid}
         if self.indexing_scheme != "zuniq":
             params["depth"] = self.level
 
         return params
+
+    @classmethod
+    def from_user_input(
+        cls, data: Mapping[str, Any], *, known_aliases: dict[str, str] | None = None
+    ) -> Self:
+        """Constructor with simple parsing of a user-provided dict
+
+        Note that this only includes aliases, parameters that require
+        transformations like the HEALPix ``nside`` are not supported.
+
+        Parameters
+        ----------
+        data : dict-like of str to any
+            The input data.
+        """
+        if known_aliases is None:
+            known_aliases = cls.known_aliases
+
+        translated = {known_aliases.get(key, key): value for key, value in data.items()}
+        return cls(**translated)
 
 
 def convert(
