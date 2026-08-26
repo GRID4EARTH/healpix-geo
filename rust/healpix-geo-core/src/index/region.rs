@@ -14,6 +14,7 @@ use moc::moc::{
     CellMOCIntoIterator, CellMOCIterator, HasMaxDepth, RangeMOCIntoIterator, RangeMOCIterator,
 };
 use moc::qty::Hpx;
+use std::ops::Range;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CellRegion {
@@ -85,6 +86,10 @@ impl CellRegion {
 
     pub fn ellipsoid(&self) -> &Ellipsoid {
         &self.ellipsoid
+    }
+
+    pub fn ranges(&self) -> Vec<Range<u64>> {
+        self.moc.moc_ranges().iter().cloned().collect()
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

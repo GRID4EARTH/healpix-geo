@@ -1,6 +1,7 @@
 import pickle
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import shapely
 
@@ -157,6 +158,58 @@ class TestRangeMOCIndex:
 
         assert isinstance(actual, healpix_geo.nested.RangeMOCIndex)
         np.testing.assert_equal(actual.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
+        ["level", "cell_ids", "expected"],
+        (
+            pytest.param(
+                2,
+                np.arange(12 * 4**2, dtype="uint64"),
+                np.array([[0, 12 * 4**29]], dtype="uint64"),
+                id="full_domain",
+            ),
+            pytest.param(
+                1,
+                np.concat(
+                    [
+                        np.arange(1 * 4**1, 3 * 4**1, dtype="uint64"),
+                        np.arange(5 * 4**1, 7 * 4**1, dtype="uint64"),
+                    ]
+                ),
+                np.array(
+                    [[1 * 4**29, 3 * 4**29], [5 * 4**29, 7 * 4**29]], dtype="uint64"
+                ),
+                id="ranges_with_gap",
+            ),
+            pytest.param(
+                3,
+                np.array([4, 5, 6, 7, 9, 15, 16, 19], dtype="uint64"),
+                (
+                    np.array(
+                        [
+                            [4, 8],
+                            [9, 10],
+                            [15, 17],
+                            [19, 20],
+                        ],
+                        dtype="uint64",
+                    )
+                    * 4**26
+                ),
+                id="isolated_pixels",
+            ),
+        ),
+    )
+    def test_ranges(
+        self,
+        level: int,
+        cell_ids: npt.NDArray[np.uint64],
+        expected: npt.NDArray[np.uint64],
+    ) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.from_cell_ids(level, cell_ids)
+
+        actual = index.ranges()
+        np.testing.assert_equal(actual, expected)
 
     @pytest.mark.parametrize(
         ["level", "cell_ids"],

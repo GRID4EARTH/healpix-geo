@@ -1,6 +1,6 @@
 use numpy::{
-    PyArray1, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods, PyUntypedArray,
-    PyUntypedArrayMethods, dtype,
+    PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods,
+    PyUntypedArray, PyUntypedArrayMethods, dtype,
 };
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -410,6 +410,25 @@ impl RangeMOCIndex {
         let cell_ids: Vec<u64> = self.region.cell_ids();
 
         Ok(PyArray1::from_vec(py, cell_ids))
+    }
+
+    /// Extract the underlying connected ranges
+    ///
+    /// Returns
+    /// -------
+    /// ranges: numpy.ndarray
+    ///     The ranges as a :math:`N` x :math:`2` array of dtype ``uint64``.
+    fn ranges<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<u64>>> {
+        let ranges = self.region.ranges();
+        let shape = (ranges.len(), 2);
+        let ranges: Vec<u64> = py.detach(move || {
+            ranges
+                .into_iter()
+                .flat_map(|range| [range.start, range.end])
+                .collect()
+        });
+
+        PyArray1::from_vec(py, ranges).reshape(shape)
     }
 
     /// Subset the index using positions
