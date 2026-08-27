@@ -138,7 +138,7 @@ build-clean-and-host-docs = [
 rust = "*"
 
 [feature.rust.tasks]
-rust-tests = { cmd = "cargo test", cwd = "rust/healpix-geo-core" }
+rust-tests = { cmd = "cargo test", cwd = "healpix-geo" }
 
 [tasks.build-and-host]
 depends-on = [

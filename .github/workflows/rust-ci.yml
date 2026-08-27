@@ -40,8 +40,8 @@ jobs:
           hash-files: |
             pixi.toml
             Cargo.toml
-            python/healpix-geo/pyproject.toml
-            python/healpix-geo/pixi.toml
+            healpix-geo-python/pyproject.toml
+            healpix-geo-python/pixi.toml
 
   lint:
     name: Lint
