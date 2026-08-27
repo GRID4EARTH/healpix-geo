@@ -15,3 +15,6 @@ fi
 
 # skip if there are no commits modifying relevant files
 [ $n_modifying_commits -eq 0 ] && exit $CODE_SKIP
+
+# explicitly set exit code
+exit 0
