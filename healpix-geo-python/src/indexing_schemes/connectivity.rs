@@ -1,4 +1,4 @@
-use healpix_geo_core::connectivity::Connectivity as RustConnectivity;
+use healpix_geo::connectivity::Connectivity as RustConnectivity;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
