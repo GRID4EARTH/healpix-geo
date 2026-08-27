@@ -18,7 +18,9 @@ dynamic = ["version"]
 geometries = ["shapely>=2"]
 
 [tool.maturin]
+module-name = "healpix_geo.healpix_geo"
 python-source = "python"
+editable-profile = "dev"
 binding = "pyo3"
 
 [tool.coverage.run]
