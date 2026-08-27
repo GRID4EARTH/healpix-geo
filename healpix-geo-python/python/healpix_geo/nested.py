@@ -344,34 +344,6 @@ def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
     )
 
 
-def base_cell_relationship(
-    base_cell: int, direction: Direction
-) -> tuple[int, npt.NDArray[np.int32], npt.NDArray[np.int32]] | None:
-    """Return the adjacent base cell and relative coordinate orientation.
-
-    Parameters
-    ----------
-    base_cell : int
-        Source base cell id in the closed range ``[0, 11]``.
-    direction : {"S", "SW", "W", "NW", "N", "NE", "E", "SE"}
-        Direction of the target cell in the base cell's local coordinate system.
-
-    Returns
-    -------
-    target_cell : int
-        The id of the target base cell.
-    displacement_i, displacement_j : array-like of int32
-        The change in direction between the base vectors of the source and target base cells.
-
-    Examples
-    --------
-    >>> from healpix_geo.nested import base_cell_relationship
-    >>> base_cell_relationship(0, "N")
-    >>> base_cell_relationship(4, "N") is None
-    """
-    return healpix_geo.nested.base_cell_relationship(base_cell, direction)
-
-
 def healpix_to_base_cell_coordinates(cell_ids, depth, num_threads=0):
     """Convert cell ids to base cell-local coordinates.
 
