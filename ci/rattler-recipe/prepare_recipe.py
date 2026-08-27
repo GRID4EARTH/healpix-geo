@@ -17,12 +17,12 @@ def dev_version(most_recent_release):
 def extract_version(cargo_data):
     parsed = tomllib.loads(cargo_data)
 
-    return packaging.version.parse(parsed["workspace"]["package"]["version"])
+    return packaging.version.parse(parsed["package"]["version"])
 
 
 def main():
     root = pathlib.Path.cwd()
-    cargo_config_path = root / "Cargo.toml"
+    cargo_config_path = root / "healpix-geo-python" / "Cargo.toml"
     version = extract_version(cargo_config_path.read_text()).__replace__(dev=0)
 
     recipe_root = root / "ci/rattler-recipe"
