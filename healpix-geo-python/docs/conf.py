@@ -100,6 +100,7 @@ try_examples_global_warning_text = (
 
 # unsilence to see the error message of jupyter lite build
 jupyterlite_silence = False
+jupyterlite_content_dir = "_build/contents"
 
 # -- myst-parser -------------------------------------------------------------
 
