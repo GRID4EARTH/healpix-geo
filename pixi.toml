@@ -103,7 +103,7 @@ cwd = "healpix-geo-python"
 
 [feature.docs.dependencies]
 sphinx = "*"
-matplotlib = "*"
+matplotlib-base = "*"
 pydata-sphinx-theme = "*"
 myst-nb = "*"
 sphinx-autobuild = "*"
