@@ -12,19 +12,6 @@ use crate::vectorized::depth::Depth;
 
 use crate::scalar::nested::topology as scalar;
 
-/// The target base face and its orientation relative to the source face.
-///
-/// The booleans describe an array transform applied in this order: swap the
-/// axes, then reverse the target x and/or y axis. Translation is intentionally
-/// omitted because it depends on the coordinate extent used by the caller.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct FaceTransform {
-    pub target_face: u8,
-    pub swap_xy: bool,
-    pub flip_x: bool,
-    pub flip_y: bool,
-}
-
 /// Split cell indexes into base-face-local coordinates.
 ///
 /// Inputs are assumed to have already been validated. The returned vectors have

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, NamedTuple
+from typing import TYPE_CHECKING
 
 import marray
 import numpy as np
@@ -9,119 +9,102 @@ from healpix_geo import _healpix_geo_python
 from healpix_geo.utils import _check_depth, _check_ipixels, _check_ring
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     import numpy.typing as npt
 
     from healpix_geo.typing import DepthType
 
+    Direction = Literal["S", "SW", "W", "NW", "N", "NE", "E", "SE"]
+
 RangeMOCIndex = _healpix_geo_python.nested.RangeMOCIndex
 internal_boundary = _healpix_geo_python.nested.internal_boundary
-
-
-class FaceTransform(NamedTuple):
-    """Orientation of a neighbouring HEALPix base face.
-
-    Apply ``swap_xy`` first, then ``flip_x`` and ``flip_y`` to orient a
-    face-local array in the target face's coordinate frame.
-    """
-
-    target_face: int
-    swap_xy: bool
-    flip_x: bool
-    flip_y: bool
 
 
 def create_empty(depth):
     return RangeMOCIndex.empty(depth)
 
 
-def face_neighbour_transform(face, direction):
-    """Return the adjacent base face and relative coordinate orientation.
+def base_cell_relationship(
+    base_cell: int, direction: Direction
+) -> tuple[int, npt.NDArray[np.int32], npt.NDArray[np.int32]] | None:
+    """Return the adjacent base cell and relative coordinate orientation.
 
     Parameters
     ----------
-    face : int
-        Source base-face index in the closed range ``[0, 11]``.
-    direction : {"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
-        HEALPix direction in the source face's local coordinate frame. Matching
-        is case-insensitive.
+    base_cell : int
+        Source base cell id in the closed range ``[0, 11]``.
+    direction : {"S", "SW", "W", "NW", "N", "NE", "E", "SE"}
+        Direction of the target cell in the base cell's local coordinate system.
 
     Returns
     -------
-    `FaceTransform` or None
-        The target face and the axis swap/reversal required to orient source
-        coordinates in the target frame. ``None`` means the source base face
-        has no distinct neighbour in that direction.
-
-    Notes
-    -----
-    This operation accepts one face and direction because the transform is
-    constant for each face/direction pair and is independent of depth. Callers
-    should obtain it once and apply it to vectorized coordinate arrays. When
-    remapping an ``nside`` by ``nside`` array, swap axes first, then replace a
-    flipped coordinate ``v`` with ``nside - 1 - v``.
+    target_cell : int
+        The id of the target base cell.
+    displacement_i, displacement_j : array-like of int32
+        The change in direction between the base vectors of the source and target base cells.
 
     Examples
     --------
-    >>> from healpix_geo.nested import face_neighbour_transform
-    >>> face_neighbour_transform(0, "N")
-    FaceTransform(target_face=2, swap_xy=False, flip_x=True, flip_y=True)
-    >>> face_neighbour_transform(4, "N") is None
-    True
+    >>> from healpix_geo.nested import base_cell_relationship
+    >>> base_cell_relationship(0, "N")
+    >>> base_cell_relationship(4, "N") is None
     """
-    if not isinstance(face, (int, np.integer)):
-        raise TypeError("face must be an integer")
-    if face < 0 or face > 11:
-        raise ValueError("Face must be in the [0, 11] closed range")
-    if not isinstance(direction, str):
-        raise TypeError("direction must be a string")
-
-    transform = healpix_geo.nested.face_neighbour_transform(np.uint8(face), direction)
-    return None if transform is None else FaceTransform(*transform)
+    return healpix_geo.nested.base_cell_relationship(base_cell, direction)
 
 
 def healpix_to_base_cell_coordinates(cell_ids, depth, num_threads=0):
-    """Convert cell ids to base-face-local coordinates.
+    """Convert cell ids to base cell-local coordinates.
 
     This is an integer-only topology operation. At ``depth``, each of the 12
-    base faces is a ``2**depth`` by ``2**depth`` grid. Array inputs are
-    broadcast against an array-valued ``depth`` and output shapes are
+    base faces is a ``2**depth`` by ``2**depth`` grid. Output shapes are
     preserved.
 
     Parameters
     ----------
     cell_ids : array-like of int
-        NESTED cell indexes.
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
     depth : int or array-like of int
-        HEALPix depth in the closed range ``[0, 29]``.
+        The HEALPix cell depth given as scalar or a `np.uint8` numpy array. If
+        an array, must have the same shape as ``cell_ids``.
     num_threads : int, optional
-        Number of worker threads. Zero uses the Rayon default.
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    face, i, j : tuple of `numpy.ndarray`
-        Base-face indexes as ``uint8`` and face-local coordinates as ``uint32``.
+    base_cell : `numpy.ndarray`
+        Base cell ids as a ``numpy.ndarray` of ``uint8``.
+    i, j : `numpy.ndarray`
+        Base cell-local coordinates as ``numpy.ndarray`` objects of `numpy.uint32`.
 
     Examples
     --------
     >>> from healpix_geo.nested import healpix_to_base_cell_coordinates
-    >>> healpix_to_base_cell_coordinates([0, 3, 4, 47], 1)
-    (array([ 0,  0,  1, 11], dtype=uint8), array([0, 1, 0, 1], dtype=uint32), array([0, 1, 0, 1], dtype=uint32))
+    >>> base_cells, i, j = healpix_to_base_cell_coordinates([0, 3, 4, 47], 1)
+    >>> base_cells
+    >>> i
+    >>> j
     """
     _check_depth(depth)
     cell_ids = np.atleast_1d(cell_ids)
 
-    if isinstance(depth, int):
-        broadcast_depth = depth
-    else:
-        cell_ids, broadcast_depth = np.broadcast_arrays(cell_ids, np.asarray(depth))
-        broadcast_depth = np.ascontiguousarray(broadcast_depth, dtype=np.uint8)
+    if not isinstance(depth, int):
+        depth = np.astype(np.atleast_1d(depth), np.uint8)
 
-    _check_ipixels(data=cell_ids, depth=broadcast_depth)
+        if depth.shape != cell_ids.shape:
+            raise ValueError(
+                "A array valued depth must have the same shape as the cell ids"
+            )
+
+    _check_ipixels(data=cell_ids, depth=depth)
+
     cell_ids = np.ascontiguousarray(cell_ids, dtype=np.uint64)
     num_threads = np.uint16(num_threads)
 
     return healpix_geo.nested.healpix_to_base_cell_coordinates(
-        cell_ids, broadcast_depth, num_threads
+        cell_ids, depth, num_threads
     )
 
 
