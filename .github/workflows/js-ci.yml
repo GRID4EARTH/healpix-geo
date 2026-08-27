@@ -3,12 +3,18 @@ name: Javascript CI
 on:
   push:
     branches: ["main"]
+    paths:
+      - "Cargo.*"
+      - "healpix-geo/Cargo.toml"
+      - "healpix-geo/src/**"
+      - "healpix-geo-js/**"
   pull_request:
     branches: ["main"]
     paths:
       - "Cargo.*"
-      - "js/**"
-      - "rust/**"
+      - "healpix-geo/Cargo.toml"
+      - "healpix-geo/src/**"
+      - "healpix-geo-js/**"
 
 concurrency:
   group: ${{ github.workflow }}.${{ github.ref }}

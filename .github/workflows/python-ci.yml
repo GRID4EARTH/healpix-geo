@@ -3,14 +3,21 @@ on:
   push:
     branches:
       - "main"
+    paths:
+      - "pixi.toml"
+      - "Cargo.*"
+      - "healpix-geo/Cargo.toml"
+      - "healpix-geo/src/**"
+      - "healpix-geo-python/**"
   pull_request:
     branches:
       - "main"
     paths:
       - "pixi.toml"
-      - "Cargo.lock"
-      - "rust/**"
-      - "python/healpix-geo/**"
+      - "Cargo.*"
+      - "healpix-geo/Cargo.toml"
+      - "healpix-geo/src/**"
+      - "healpix-geo-python/**"
   workflow_dispatch: # allows triggering manually
 
 concurrency:

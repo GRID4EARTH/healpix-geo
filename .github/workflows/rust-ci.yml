@@ -5,12 +5,14 @@ on:
     branches: ["main"]
     paths:
       - "Cargo.*"
-      - "rust/**"
+      - "healpix-geo/Cargo.toml"
+      - "healpix-geo/src/**"
   pull_request:
     branches: ["main"]
     paths:
       - "Cargo.*"
-      - "rust/**"
+      - "healpix-geo/Cargo.toml"
+      - "healpix-geo/src/**"
 
 concurrency:
   group: ${{ github.workflow }}.${{ github.ref }}
