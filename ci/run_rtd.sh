@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+CODE_SKIP=183
+
+n_modifying_commits=$(git --no-pager log --pretty="tformat:%s" main..HEAD -- .readthedocs.yml Cargo.toml Cargo.lock healpix-geo healpix-geo-python | wc -l)
+most_recent_commit_msg=$(git --no-pager log --pretty="tformat:%s" -1)
+
+if grep -qF "[run-rtd]" <(echo "$most_recent_commit_msg"); then
+    # always run, regardless of other conditions
+    exit 0
+fi
+
+# always skip if in the message
+grep -vqF "[skip-rtd]" <(echo "$most_recent_commit_msg") || exit $CODE_SKIP
+
+# skip if there are no commits modifying relevant files
+[[ $n_modifying_commits -eq 0 ]] && exit $CODE_SKIP
