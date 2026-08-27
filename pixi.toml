@@ -116,11 +116,11 @@ astropy = ">=7.2.0"
 cdshealpix = ">=0.7.2"
 sphinx-design = ">=0.7.0,<0.8"
 jupyterlite-xeus = ">=4.5.0,<5"
-jupyterlite-sphinx = ">=0.22.1,<0.23"
+jupyterlite-sphinx = ">=0.23.0"
 jupyterlite-core = ">=0.7.3,<0.8"
 
 [feature.docs.tasks]
-clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/ _contents", cwd = "healpix-geo-python/docs" }
+clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/", cwd = "healpix-geo-python/docs" }
 build-docs = { cmd = "python -m sphinx -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "healpix-geo-python/docs" }
 autobuild-docs = { cmd = "sphinx-autobuild -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "healpix-geo-python/docs" }
 build-docs-rtd = { cmd = "python -m sphinx -b html -W -T -j auto . $READTHEDOCS_OUTPUT/html", cwd = "healpix-geo-python/docs" }
