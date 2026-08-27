@@ -2,7 +2,7 @@
 
 CODE_SKIP=183
 
-n_modifying_commits=$(git --no-pager log --pretty="tformat:%s" main..HEAD -- .readthedocs.yml Cargo.toml Cargo.lock healpix-geo healpix-geo-python | wc -l)
+n_modifying_commits=$(git --no-pager log --pretty="tformat:%s" main..HEAD -- .readthedocs.yml Cargo.toml Cargo.lock ci/rattler-recipe healpix-geo healpix-geo-python | wc -l)
 most_recent_commit_msg=$(git --no-pager log --pretty="tformat:%s" -1)
 
 if grep -qF "[run-rtd]" <(echo "$most_recent_commit_msg"); then
