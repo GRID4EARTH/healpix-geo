@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "healpix-geo"
 license = "Apache-2.0"
 requires-python = ">=3.10"
-readme = "../../README.md"
+readme = "../README.md"
 classifiers = [
   "Programming Language :: Rust",
   "Programming Language :: Python :: Implementation :: CPython",
