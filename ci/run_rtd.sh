@@ -14,4 +14,4 @@ fi
 grep -vqF "[skip-rtd]" <(echo "$most_recent_commit_msg") || exit $CODE_SKIP
 
 # skip if there are no commits modifying relevant files
-[[ $n_modifying_commits -eq 0 ]] && exit $CODE_SKIP
+[ $n_modifying_commits -eq 0 ] && exit $CODE_SKIP
