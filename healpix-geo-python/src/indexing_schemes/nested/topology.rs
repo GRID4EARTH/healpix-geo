@@ -34,7 +34,7 @@ pub(crate) fn base_cell_relationship<'py>(
 
 #[allow(clippy::type_complexity)]
 #[pyfunction]
-pub(crate) fn pix2xyf<'py>(
+pub(crate) fn healpix_to_base_cell_coordinates<'py>(
     py: Python<'py>,
     nested: &Bound<'py, PyArrayDyn<u64>>,
     depth: DepthLike,
@@ -49,7 +49,11 @@ pub(crate) fn pix2xyf<'py>(
     let flattened = flattened.readonly();
     let depth = depth.as_depth()?;
 
-    let (face, x, y) = vectorized::pix2xyf(flattened.as_slice()?, depth, nthreads as usize);
+    let (face, x, y) = vectorized::healpix_to_base_cell_coordinates(
+        flattened.as_slice()?,
+        depth,
+        nthreads as usize,
+    );
 
     Ok((
         PyArray1::from_vec(py, face)
@@ -68,24 +72,27 @@ pub(crate) fn pix2xyf<'py>(
 }
 
 #[pyfunction]
-pub(crate) fn xyf2pix<'py>(
+pub(crate) fn base_cell_coordinates_to_healpix<'py>(
     py: Python<'py>,
     face: &Bound<'py, PyArrayDyn<u8>>,
-    x: &Bound<'py, PyArrayDyn<u32>>,
-    y: &Bound<'py, PyArrayDyn<u32>>,
+    i: &Bound<'py, PyArrayDyn<u32>>,
+    j: &Bound<'py, PyArrayDyn<u32>>,
     depth: DepthLike,
     nthreads: u16,
 ) -> PyResult<Bound<'py, PyArrayDyn<u64>>> {
     let input_shape = face.shape();
+
     let face = face.reshape([face.len()])?;
-    let x = x.reshape([x.len()])?;
-    let y = y.reshape([y.len()])?;
+    let i = i.reshape([i.len()])?;
+    let j = j.reshape([j.len()])?;
+
     let face = face.readonly();
     let x = x.readonly();
     let y = y.readonly();
+
     let depth = depth.as_depth()?;
 
-    let nested = vectorized::xyf2pix(
+    let nested = vectorized::base_cell_coordinates_to_healpix(
         face.as_slice()?,
         x.as_slice()?,
         y.as_slice()?,

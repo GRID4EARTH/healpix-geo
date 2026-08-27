@@ -10,18 +10,7 @@ use cdshealpix::nested::zordercurve::get_zoc;
 use crate::maybe_parallelize;
 use crate::vectorized::depth::Depth;
 
-#[inline]
-fn pix2xyf_scalar(hash: u64, depth: u8) -> (u8, u32, u32) {
-    let twice_depth = depth << 1;
-    let zoc = get_zoc(depth);
-    let ij = zoc.h2ij(hash & ((1_u64 << twice_depth) - 1));
-    ((hash >> twice_depth) as u8, zoc.ij2i(ij), zoc.ij2j(ij))
-}
-
-#[inline]
-fn xyf2pix_scalar(face: u8, x: u32, y: u32, depth: u8) -> u64 {
-    ((face as u64) << (depth << 1)) | get_zoc(depth).ij2h(x, y)
-}
+use crate::scalar::nested::topology as scalar;
 
 /// The target base face and its orientation relative to the source face.
 ///
@@ -36,62 +25,27 @@ pub struct FaceTransform {
     pub flip_y: bool,
 }
 
-/// Return the canonical orientation of a neighbouring HEALPix base face.
-///
-/// `None` means that the base face has no distinct neighbour in that direction.
-/// The result is derived from `cdshealpix`'s coordinate transform instead of a
-/// separately maintained adjacency or orientation table.
-pub fn face_neighbour_transform(face: u8, direction: MainWind) -> Option<FaceTransform> {
-    if face >= 12 || direction == MainWind::C {
-        return None;
-    }
-
-    // Any depth >= 1 is sufficient: the affine transform has the same signed
-    // permutation at every depth. Sampling its basis vectors avoids duplicating
-    // the canonical face-orientation rules implemented by cdshealpix.
-    let layer = get(1);
-    let (target_face, origin_x, origin_y) =
-        layer.to_neighbour_base_cell_coo(face, 0, 0, direction)?;
-    let (target_x, x_axis_x, x_axis_y) = layer.to_neighbour_base_cell_coo(face, 1, 0, direction)?;
-    let (target_y, y_axis_x, y_axis_y) = layer.to_neighbour_base_cell_coo(face, 0, 1, direction)?;
-    debug_assert_eq!(target_face, target_x);
-    debug_assert_eq!(target_face, target_y);
-
-    let dx = (x_axis_x - origin_x, x_axis_y - origin_y);
-    let dy = (y_axis_x - origin_x, y_axis_y - origin_y);
-    debug_assert!(matches!(dx, (1 | -1, 0) | (0, 1 | -1)));
-    debug_assert!(matches!(dy, (1 | -1, 0) | (0, 1 | -1)));
-
-    let swap_xy = dx.1 != 0;
-    let (flip_x, flip_y) = if swap_xy {
-        (dy.0 < 0, dx.1 < 0)
-    } else {
-        (dx.0 < 0, dy.1 < 0)
-    };
-
-    Some(FaceTransform {
-        target_face,
-        swap_xy,
-        flip_x,
-        flip_y,
-    })
-}
-
 /// Split cell indexes into base-face-local coordinates.
 ///
 /// Inputs are assumed to have already been validated. The returned vectors have
 /// the same length and contain `(face, i, j)` components in matching order.
-pub fn pix2xyf(ipix: &[u64], depth: Depth, nthreads: usize) -> (Vec<u8>, Vec<u32>, Vec<u32>) {
+pub fn healpix_to_base_cell_coordinates(
+    ipix: &[u64],
+    depth: Depth,
+    nthreads: usize,
+) -> (Vec<u8>, Vec<u32>, Vec<u32>) {
     let mut result = Vec::<(u8, u32, u32)>::with_capacity(ipix.len());
 
     match depth {
         Depth::Scalar(depth) => {
-            maybe_parallelize!(nthreads, ipix, result, |hash| pix2xyf_scalar(*hash, *depth));
+            maybe_parallelize!(nthreads, ipix, result, |hash| {
+                scalar::healpix_to_base_cell_coordinates(*hash, *depth)
+            });
         }
         Depth::Array(depths) => {
             let zipped: Vec<_> = ipix.iter().zip(depths.iter()).collect();
             maybe_parallelize!(nthreads, zipped, result, |(hash, depth)| {
-                pix2xyf_scalar(**hash, **depth)
+                scalar::healpix_to_base_cell_coordinates(**hash, **depth)
             });
         }
     }
@@ -110,20 +64,26 @@ pub fn pix2xyf(ipix: &[u64], depth: Depth, nthreads: usize) -> (Vec<u8>, Vec<u32
 /// Combine base faces and face-local coordinates into NESTED cell indexes.
 ///
 /// Inputs are assumed to have equal lengths and to have already been validated.
-pub fn xyf2pix(face: &[u8], x: &[u32], y: &[u32], depth: Depth, nthreads: usize) -> Vec<u64> {
+pub fn base_cell_coordinates_to_healpix(
+    face: &[u8],
+    x: &[u32],
+    y: &[u32],
+    depth: Depth,
+    nthreads: usize,
+) -> Vec<u64> {
     let inputs: Vec<_> = face.iter().zip(x.iter()).zip(y.iter()).collect();
     let mut result = Vec::<u64>::with_capacity(face.len());
 
     match depth {
         Depth::Scalar(depth) => {
             maybe_parallelize!(nthreads, inputs, result, |((face, x), y)| {
-                xyf2pix_scalar(**face, **x, **y, *depth)
+                scalar::base_cell_coordinates_to_healpix(**face, **x, **y, *depth)
             });
         }
         Depth::Array(depths) => {
             let inputs: Vec<_> = inputs.iter().zip(depths.iter()).collect();
             maybe_parallelize!(nthreads, inputs, result, |(((face, x), y), depth)| {
-                xyf2pix_scalar(**face, **x, **y, **depth)
+                scalar::base_cell_coordinates_to_healpix(**face, **x, **y, **depth)
             });
         }
     }
@@ -141,8 +101,8 @@ mod tests {
         for depth in 0..=5 {
             let npix = 12_u64 << (depth << 1);
             let pixels: Vec<_> = (0..npix).collect();
-            let (face, x, y) = pix2xyf(&pixels, Depth::Scalar(&depth), 1);
-            let actual = xyf2pix(&face, &x, &y, Depth::Scalar(&depth), 1);
+            let (face, x, y) = healpix_to_base_cell_coordinates(&pixels, Depth::Scalar(&depth), 1);
+            let actual = base_cell_coordinates_to_healpix(&face, &x, &y, Depth::Scalar(&depth), 1);
             assert_eq!(actual, pixels);
         }
     }
@@ -151,11 +111,14 @@ mod tests {
     fn level_zero_is_the_base_face() {
         let pixels: Vec<_> = (0..12).collect();
         let depth = 0;
-        let (face, x, y) = pix2xyf(&pixels, Depth::Scalar(&depth), 1);
+        let (face, x, y) = healpix_to_base_cell_coordinates(&pixels, Depth::Scalar(&depth), 1);
         assert_eq!(face, (0..12).collect::<Vec<_>>());
         assert_eq!(x, vec![0; 12]);
         assert_eq!(y, vec![0; 12]);
-        assert_eq!(xyf2pix(&face, &x, &y, Depth::Scalar(&depth), 1), pixels);
+        assert_eq!(
+            base_cell_coordinates_to_healpix(&face, &x, &y, Depth::Scalar(&depth), 1),
+            pixels
+        );
     }
 
     #[test]
@@ -164,8 +127,8 @@ mod tests {
         let face = [0, 3, 7, 11, 5];
         let x = [0, 1, 3, 1023, (1 << 29) - 1];
         let y = [0, 0, 2, 17, 123_456_789];
-        let pixels = xyf2pix(&face, &x, &y, Depth::Array(&depths), 1);
-        let actual = pix2xyf(&pixels, Depth::Array(&depths), 1);
+        let pixels = base_cell_coordinates_to_healpix(&face, &x, &y, Depth::Array(&depths), 1);
+        let actual = healpix_to_base_cell_coordinates(&pixels, Depth::Array(&depths), 1);
         assert_eq!(actual, (face.to_vec(), x.to_vec(), y.to_vec()));
     }
 

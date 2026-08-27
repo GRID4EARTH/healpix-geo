@@ -1,6 +1,19 @@
 use cdshealpix as healpix;
 use cdshealpix::compass_point::MainWind;
 
+#[inline]
+fn healpix_to_base_cell_coordinates(hash: u64, depth: u8) -> (u8, u32, u32) {
+    let twice_depth = depth << 1;
+    let zoc = healpix::nested::zordercurve::get_zoc(depth);
+    let ij = zoc.h2ij(hash & ((1_u64 << twice_depth) - 1));
+    ((hash >> twice_depth) as u8, zoc.ij2i(ij), zoc.ij2j(ij))
+}
+
+#[inline]
+fn base_cell_coordinates_to_healpix(face: u8, x: u32, y: u32, depth: u8) -> u64 {
+    ((face as u64) << (depth << 1)) | healpix::nested::zordercurve::get_zoc(depth).ij2h(x, y)
+}
+
 /// Return the canonical orientation of a neighbouring HEALPix base face.
 ///
 /// `None` means that the base face has no distinct neighbour in that direction.
