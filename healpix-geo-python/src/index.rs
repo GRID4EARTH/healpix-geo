@@ -1,0 +1,574 @@
+use numpy::{
+    PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods,
+    PyUntypedArray, PyUntypedArrayMethods, dtype,
+};
+use pyo3::exceptions::PyTypeError;
+use pyo3::prelude::*;
+use pyo3::types::{PyBytes, PyModule, PySlice, PyType};
+use std::collections::HashMap;
+
+use std::cmp::PartialEq;
+
+use crate::ellipsoid::EllipsoidLike;
+use crate::geometry::GeometryTypes;
+
+use healpix_geo::ellipsoid::ReferenceBody;
+use healpix_geo::index::{
+    Array, CellRegion, ConcreteSlice, LabelIndexer, PositionalIndexer, Slice,
+};
+use healpix_geo::index::{GeometryQuery, Indexing, SetOperations};
+
+trait IntoPySlice {
+    fn into_pyslice<'py>(self, py: Python<'py>) -> Bound<'py, PySlice>;
+}
+
+impl IntoPySlice for ConcreteSlice<isize> {
+    fn into_pyslice<'py>(self, py: Python<'py>) -> Bound<'py, PySlice> {
+        PySlice::new(py, self.start, self.stop, self.step)
+    }
+}
+
+#[derive(FromPyObject, IntoPyObject, Debug)]
+enum IndexKind<'py> {
+    #[pyo3(transparent, annotation = "slice")]
+    Slice(Bound<'py, PySlice>),
+    #[pyo3(transparent, annotation = "numpy.ndarray")]
+    Array(Bound<'py, PyUntypedArray>),
+}
+
+enum IntegralType {
+    Unsigned,
+    Signed,
+}
+
+fn detect_integral_type<'py>(element_type: &Bound<'py, PyArrayDescr>) -> Option<IntegralType> {
+    let py = element_type.py();
+    if element_type.is_equiv_to(&dtype::<i8>(py))
+        || element_type.is_equiv_to(&dtype::<i16>(py))
+        || element_type.is_equiv_to(&dtype::<i32>(py))
+        || element_type.is_equiv_to(&dtype::<i64>(py))
+    {
+        Some(IntegralType::Signed)
+    } else if element_type.is_equiv_to(&dtype::<u8>(py))
+        || element_type.is_equiv_to(&dtype::<u16>(py))
+        || element_type.is_equiv_to(&dtype::<u32>(py))
+        || element_type.is_equiv_to(&dtype::<u64>(py))
+    {
+        Some(IntegralType::Unsigned)
+    } else {
+        None
+    }
+}
+
+impl<'py> IndexKind<'py> {
+    fn into_positional_indexer(self) -> PyResult<PositionalIndexer> {
+        let positional_indexer = match self {
+            Self::Slice(pyslice) => {
+                let start = pyslice.getattr("start")?.extract::<Option<isize>>()?;
+                let stop = pyslice.getattr("stop")?.extract::<Option<isize>>()?;
+                let step = pyslice.getattr("step")?.extract::<Option<isize>>()?;
+
+                PositionalIndexer::Slice(Slice::create(start, stop, step))
+            }
+            Self::Array(pyarray) => {
+                let element_type = pyarray.dtype();
+                if detect_integral_type(&element_type).is_none() {
+                    return Err(PyTypeError::new_err(format!(
+                        "only integer dtypes are accepted, got {:?}",
+                        element_type,
+                    )));
+                }
+
+                let py = pyarray.py();
+                let array = if !element_type.is_equiv_to(&dtype::<i64>(py)) {
+                    let numpy = PyModule::import(py, "numpy")?;
+                    let astype = numpy.getattr("astype")?;
+
+                    astype
+                        .call1((pyarray, "int64"))?
+                        .cast::<PyUntypedArray>()?
+                        .clone()
+                } else {
+                    pyarray
+                };
+
+                let values: Vec<isize> = array
+                    .cast::<PyArrayDyn<i64>>()?
+                    .to_vec()?
+                    .into_iter()
+                    .map(|x| x as isize)
+                    .collect();
+
+                PositionalIndexer::Array(Array::create(values))
+            }
+        };
+
+        Ok(positional_indexer)
+    }
+
+    fn from_positional_indexer(
+        py: Python<'py>,
+        positional_indexer: PositionalIndexer,
+    ) -> PyResult<Self> {
+        let indexer = match positional_indexer {
+            PositionalIndexer::Slice(slice) => {
+                let pyslice = py
+                    .import("builtins")?
+                    .getattr("slice")?
+                    .call1((slice.start, slice.stop, slice.step))?
+                    .cast::<PySlice>()?
+                    .clone();
+
+                Self::Slice(pyslice)
+            }
+            PositionalIndexer::Array(array) => {
+                let pyarray = PyArray1::from_iter(py, array.data.into_iter().map(|x| x as i64));
+                IndexKind::Array(pyarray.to_dyn().clone().cast::<PyUntypedArray>()?.into())
+            }
+        };
+
+        Ok(indexer)
+    }
+
+    fn into_label_indexer(self) -> PyResult<LabelIndexer> {
+        let label_indexer = match self {
+            Self::Slice(pyslice) => {
+                let start = pyslice.getattr("start")?.extract::<Option<u64>>()?;
+                let stop = pyslice.getattr("stop")?.extract::<Option<u64>>()?;
+                let step = pyslice.getattr("step")?.extract::<Option<u64>>()?;
+
+                LabelIndexer::Slice(Slice::create(start, stop, step))
+            }
+            Self::Array(pyarray) => {
+                let element_type = pyarray.dtype();
+                let py = pyarray.py();
+
+                let array = if element_type.is_equiv_to(&dtype::<u64>(py)) {
+                    Ok(pyarray.cast::<PyArrayDyn<u64>>()?.clone())
+                } else if element_type.is_equiv_to(&dtype::<i64>(py)) {
+                    let numpy = PyModule::import(py, "numpy")?;
+                    let astype = numpy.getattr("astype")?;
+
+                    Ok(astype
+                        .call1((pyarray, "uint64"))?
+                        .cast::<PyArrayDyn<u64>>()?
+                        .clone())
+                } else {
+                    Err(PyTypeError::new_err(format!(
+                        "cell ids must be integers with 64 bits, but found {}",
+                        element_type,
+                    )))
+                }?;
+                let values: Vec<u64> = array.to_vec()?;
+
+                LabelIndexer::Array(Array::create(values))
+            }
+        };
+
+        Ok(label_indexer)
+    }
+}
+
+/// range-based index of healpix cell ids
+///
+/// The idea is to compress cell ids at depth 29 based on run-length encoding (RLE).
+///
+/// Only works with cell ids following the "nested" scheme.
+#[derive(PartialEq, Debug, Clone)]
+#[pyclass(from_py_object)]
+#[pyo3(module = "healpix_geo.nested")]
+pub struct RangeMOCIndex {
+    region: CellRegion,
+}
+
+#[pymethods]
+impl RangeMOCIndex {
+    /// Create a full domain index
+    ///
+    /// This is a short-cut for creating an index for the entire sphere.
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The cell depth.
+    #[pyo3(signature = (depth, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn full_domain(
+        _cls: &Bound<'_, PyType>,
+        depth: u8,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let index = RangeMOCIndex {
+            region: CellRegion::full_domain(depth, ellipsoid.into_ellipsoid()?),
+        };
+
+        Ok(index)
+    }
+
+    /// Create an empty index
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The cell depth.
+    #[pyo3(signature = (depth, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn empty(_cls: &Bound<'_, PyType>, depth: u8, ellipsoid: EllipsoidLike) -> PyResult<Self> {
+        let index = RangeMOCIndex {
+            region: CellRegion::empty(depth, ellipsoid.into_ellipsoid()?),
+        };
+
+        Ok(index)
+    }
+
+    /// Create an index from given cell ids.
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The cell depth.
+    /// cell_ids : numpy.ndarray
+    ///     The cells to construct the the index from.
+    #[pyo3(signature = (depth, cell_ids, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_cell_ids<'a>(
+        _cls: &Bound<'a, PyType>,
+        _py: Python,
+        depth: u8,
+        cell_ids: &Bound<'a, PyArray1<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let index = RangeMOCIndex {
+            region: CellRegion::from_cell_ids(
+                depth,
+                cell_ids.to_vec()?,
+                ellipsoid.into_ellipsoid()?,
+            ),
+        };
+
+        Ok(index)
+    }
+
+    /// Create an index from the given ranges at level 29
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The maximum depth of the index.
+    /// ranges : numpy.ndarray
+    ///     The ranges to construct the index from as a :math:`N` x :math:`2` array.
+    #[pyo3(signature = (depth, ranges, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_ranges<'py>(
+        _cls: &Bound<'py, PyType>,
+        _py: Python<'py>,
+        depth: u8,
+        ranges: &Bound<'py, PyArray2<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let ranges_ = ranges.to_vec()?;
+        let index = Self {
+            region: CellRegion::from_ranges(depth, ranges_, ellipsoid.into_ellipsoid()?),
+        };
+
+        Ok(index)
+    }
+
+    /// Create an index from the given compacted cells
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The maximum depth of the index
+    /// cell_ids : numpy.ndarray
+    ///     The cell ids in ``zuniq`` indexing scheme as a :math:`N` ``uint64`` array
+    #[pyo3(signature = (depth, cell_ids, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_compacted<'py>(
+        _cls: &Bound<'py, PyType>,
+        _py: Python<'py>,
+        depth: u8,
+        cell_ids: &Bound<'py, PyArray1<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let index = Self {
+            region: CellRegion::from_compacted(
+                depth,
+                cell_ids.to_vec()?,
+                ellipsoid.into_ellipsoid()?,
+            ),
+        };
+
+        Ok(index)
+    }
+
+    /// Compute the set union of two indexes
+    ///
+    /// Parameters
+    /// ----------
+    /// other : RangeMOCIndex
+    ///     The other index. May have a different depth, in which case the
+    ///     result will use the maximum depth between both indexes.
+    ///
+    /// Returns
+    /// -------
+    /// result : RangeMOCIndex
+    ///     The union of the two indexes.
+    fn union(&self, other: &RangeMOCIndex) -> Self {
+        RangeMOCIndex {
+            region: self.region.union(&other.region),
+        }
+    }
+
+    /// Compute the set intersection of two indexes
+    ///
+    /// Parameters
+    /// ----------
+    /// other : RangeMOCIndex
+    ///     The other index. May have a different depth, in which case the
+    ///     result will use the maximum depth between both indexes.
+    ///
+    /// Returns
+    /// -------
+    /// result : RangeMOCIndex
+    ///     The intersection of the two indexes.
+    fn intersection(&self, other: &RangeMOCIndex) -> Self {
+        RangeMOCIndex {
+            region: self.region.intersection(&other.region),
+        }
+    }
+
+    /// Compute the set difference of two indexes
+    ///
+    /// The set difference contains all elements that are in `self` but not in `other`.
+    ///
+    /// .. math::
+    ///
+    ///    A - B = { x | x \in A \land x \notin B }
+    ///
+    /// Parameters
+    /// ----------
+    /// other : RangeMOCIndex
+    ///     The index to subtract. May have a different depth, in which case the
+    ///     result will use the maximum depth between both indexes.
+    ///
+    /// Returns
+    /// -------
+    /// result : RangeMOCIndex
+    ///     The set difference of the two indexes.
+    fn difference(&self, other: &RangeMOCIndex) -> Self {
+        RangeMOCIndex {
+            region: self.region.difference(&other.region),
+        }
+    }
+
+    /// Compute the symmetric set difference of two indexes
+    ///
+    /// The symmetric set difference contains all elements that are in `self` or `other` but not both:
+    ///
+    /// .. math::
+    ///
+    ///    A \Delta B = (A - B) \cup (B - A)
+    ///
+    /// Parameters
+    /// ----------
+    /// other : RangeMOCIndex
+    ///     The index to subtract. May have a different depth, in which case the
+    ///     result will use the maximum depth between both indexes.
+    ///
+    /// Returns
+    /// -------
+    /// result : RangeMOCIndex
+    ///     The symmetric set difference of the two indexes.
+    fn symmetric_difference(&self, other: &RangeMOCIndex) -> Self {
+        RangeMOCIndex {
+            region: self.region.symmetric_difference(&other.region),
+        }
+    }
+
+    /// The size of the ranges in bytes, minus any overhead.
+    #[getter]
+    fn nbytes(&self) -> u64 {
+        self.region.nbytes() as u64
+    }
+
+    /// The number of items in the index.
+    #[getter]
+    fn size(&self) -> u64 {
+        self.region.size() as u64
+    }
+
+    /// The depth of the index.
+    #[getter]
+    fn depth(&self) -> u8 {
+        self.region.depth()
+    }
+
+    #[getter]
+    fn ellipsoid(&self) -> HashMap<String, f64> {
+        self.region.ellipsoid().to_mapping()
+    }
+
+    pub fn __setstate__(&mut self, state: &[u8]) -> PyResult<()> {
+        // Deserialize the data contained in the PyBytes object
+        // and update the struct with the deserialized values.
+        // serde+bincode version:
+        // *self = deserialize(state).map_err(|err| PyRuntimeError::new_err(err.to_string()))?;
+
+        let reconstructed_region = CellRegion::from_bytes(state);
+
+        *self = RangeMOCIndex {
+            region: reconstructed_region,
+        };
+
+        Ok(())
+    }
+
+    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        // Serialize the struct and return a PyBytes object
+        // containing the serialized data.
+        let serialized = self.region.to_bytes();
+        let bytes = PyBytes::new(py, &serialized);
+        Ok(bytes)
+    }
+
+    pub fn __reduce__(&self, py: Python) -> PyResult<(Py<PyAny>, Py<PyAny>, Py<PyAny>)> {
+        let create = py
+            .import("healpix_geo")?
+            .getattr("nested")?
+            .getattr("create_empty")?;
+        let args = (self.region.depth(),);
+        let state = self.__getstate__(py)?;
+
+        Ok((
+            create.into_pyobject(py)?.unbind().into_any(),
+            args.into_pyobject(py)?.unbind().into_any(),
+            state.into_pyobject(py)?.unbind().into_any(),
+        ))
+    }
+
+    /// Change the internal depth of the index
+    ///
+    /// This may change the region covered by the index if the new depth is smaller than the current depth.
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The new depth
+    ///
+    /// Returns
+    /// -------
+    /// refined : RangeMOCIndex
+    ///     The refined index with a different level
+    fn refine(&self, depth: u8) -> PyResult<Self> {
+        Ok(Self {
+            region: self.region.refine(depth),
+        })
+    }
+
+    /// Retrieve the cell ids from the index.
+    ///
+    /// Returns
+    /// -------
+    /// cell_ids : numpy.ndarray
+    ///     The cell ids contained by the index.
+    fn cell_ids<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<u64>>> {
+        let cell_ids: Vec<u64> = self.region.cell_ids();
+
+        Ok(PyArray1::from_vec(py, cell_ids))
+    }
+
+    /// Extract the underlying connected ranges
+    ///
+    /// Returns
+    /// -------
+    /// ranges: numpy.ndarray
+    ///     The ranges as a :math:`N` x :math:`2` array of dtype ``uint64``.
+    fn ranges<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<u64>>> {
+        let ranges = self.region.ranges();
+        let shape = (ranges.len(), 2);
+        let ranges: Vec<u64> = py.detach(move || {
+            ranges
+                .into_iter()
+                .flat_map(|range| [range.start, range.end])
+                .collect()
+        });
+
+        PyArray1::from_vec(py, ranges).reshape(shape)
+    }
+
+    /// Subset the index using positions
+    ///
+    /// Parameters
+    /// ----------
+    /// indexer : slice of int
+    ///     The integer positions. Currently only supports slices.
+    ///
+    /// Returns
+    /// -------
+    /// subset : RangeMOCIndex
+    ///     The resulting subset.
+    fn isel<'a>(&self, _py: Python<'a>, indexer: IndexKind<'a>) -> PyResult<Self> {
+        let positional_indexer = indexer.into_positional_indexer()?;
+
+        let region = self.region.isel(&positional_indexer);
+        let new_index = Self { region };
+
+        Ok(new_index)
+    }
+
+    /// Subset the index using positions
+    ///
+    /// Parameters
+    /// ----------
+    /// indexer : slice of int or array-like
+    ///     The cell ids or ranges of cell ids to find. If an array, must be of dtype uint64.
+    ///
+    /// Returns
+    /// -------
+    /// subset : RangeMOCIndex
+    ///     The resulting subset.
+    /// indexer : slice of int or array-like
+    ///     The integer positions of the selected cells as a uint64 array.
+    fn sel<'a>(&self, py: Python<'a>, indexer: IndexKind<'a>) -> PyResult<(IndexKind<'a>, Self)> {
+        let label_indexer = indexer.into_label_indexer()?;
+        let (region, positional_indexer) = self.region.sel(&label_indexer);
+
+        let pyindexer = IndexKind::from_positional_indexer(py, positional_indexer)?;
+        let new_index = Self { region };
+
+        Ok((pyindexer, new_index))
+    }
+
+    /// Query by geometry
+    ///
+    /// Parameters
+    /// ----------
+    /// geometry : healpix_geo.geometry.Bbox or geometry-like
+    ///     The geometry to query by. Supported are:
+    ///     - Bbox for true bounding box queries (planar geometry)
+    ///     - shapely objects for spherical geometry queries
+    ///
+    /// Returns
+    /// -------
+    /// slices : list of slice
+    ///     The slices necessary for extracting the subdomain.
+    /// moc : RangeMOCIndex
+    ///     The index for the queried cell ids.
+    fn query<'py>(
+        &self,
+        py: Python<'py>,
+        geometry: &Bound<'py, PyAny>,
+    ) -> PyResult<(Vec<Bound<'py, PySlice>>, Self)> {
+        let geom = GeometryTypes::from_pyobject(py, geometry)?.into_geometry()?;
+        let (positional_slices, new_region) = self.region.query(&geom);
+
+        Ok((
+            positional_slices
+                .into_iter()
+                .map(|x| x.into_pyslice(py))
+                .collect(),
+            RangeMOCIndex { region: new_region },
+        ))
+    }
+}

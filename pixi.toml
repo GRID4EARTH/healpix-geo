@@ -8,11 +8,11 @@ preview = ["pixi-build"]
 python = ["3.11.*", "3.12.*", "3.13.*", "3.14.*"]
 
 [dependencies]
-healpix-geo = { path = "python/healpix-geo" }
+healpix-geo = { path = "healpix-geo-python" }
 
 [tasks.build-wheel]
 cmd = "maturin build -r --compatibility manylinux_2_28 --strip --auditwheel repair"
-cwd = "python/healpix-geo"
+cwd = "healpix-geo-python"
 
 [tasks.build-all-wheels]
 depends-on = [
@@ -36,8 +36,8 @@ shapely = "*"
 cdshealpix = "*"
 
 [feature.tests.tasks]
-tests = { cmd = "pytest --cov=healpix_geo", cwd = "python/healpix-geo", default-environment = "dev" }
-doctests = { cmd = "pytest --doctest-modules python/healpix_geo --ignore python/healpix_geo/tests", default-environment = "dev", cwd = "python/healpix-geo" }
+tests = { cmd = "pytest --cov=healpix_geo", cwd = "healpix-geo-python", default-environment = "dev" }
+doctests = { cmd = "pytest --doctest-modules python/healpix_geo --ignore python/healpix_geo/tests", default-environment = "dev", cwd = "healpix-geo-python" }
 
 [feature.py311.dependencies]
 python = "3.11.*"
@@ -99,7 +99,7 @@ cwd = "."
 
 [feature.templates.tasks.create-environment]
 cmd = "python docs/create_environment.py"
-cwd = "python/healpix-geo"
+cwd = "healpix-geo-python"
 
 [feature.docs.dependencies]
 sphinx = "*"
@@ -120,11 +120,11 @@ jupyterlite-sphinx = ">=0.22.1,<0.23"
 jupyterlite-core = ">=0.7.3,<0.8"
 
 [feature.docs.tasks]
-clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/ _contents", cwd = "python/healpix-geo/docs" }
-build-docs = { cmd = "python -m sphinx -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "python/healpix-geo/docs" }
-autobuild-docs = { cmd = "sphinx-autobuild -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "python/healpix-geo/docs" }
-build-docs-rtd = { cmd = "python -m sphinx -b html -W -T -j auto . $READTHEDOCS_OUTPUT/html", cwd = "python/healpix-geo/docs" }
-host-docs = { cmd = "python -m http.server -b 127.0.0.1 -d _build/html 5447", cwd = "python/healpix-geo/docs" }
+clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/ _contents", cwd = "healpix-geo-python/docs" }
+build-docs = { cmd = "python -m sphinx -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "healpix-geo-python/docs" }
+autobuild-docs = { cmd = "sphinx-autobuild -b html -w warnings.log -W -Tn -j auto . _build/html", cwd = "healpix-geo-python/docs" }
+build-docs-rtd = { cmd = "python -m sphinx -b html -W -T -j auto . $READTHEDOCS_OUTPUT/html", cwd = "healpix-geo-python/docs" }
+host-docs = { cmd = "python -m http.server -b 127.0.0.1 -d _build/html 5447", cwd = "healpix-geo-python/docs" }
 
 build-clean-docs = [{ task = "clean-docs" }, { task = "build-docs" }]
 build-and-host-docs = [{ task = "build-docs" }, { task = "host-docs" }]

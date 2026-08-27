@@ -552,19 +552,6 @@ checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
 name = "healpix-geo"
 version = "0.3.1"
 dependencies = [
- "cdshealpix 0.9.1 (git+https://github.com/cds-astro/cds-healpix-rust.git?rev=d9d017cda85a097b65d200e3c4cccefc54665915)",
- "geodesy",
- "healpix-geo-core",
- "moc",
- "numpy",
- "pyo3",
- "rayon",
-]
-
-[[package]]
-name = "healpix-geo-core"
-version = "0.3.1"
-dependencies = [
  "assertables",
  "cdshealpix 0.9.1 (git+https://github.com/cds-astro/cds-healpix-rust.git?rev=d9d017cda85a097b65d200e3c4cccefc54665915)",
  "geodesy",
@@ -578,6 +565,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "healpix-geo-python"
+version = "0.3.1"
+dependencies = [
+ "cdshealpix 0.9.1 (git+https://github.com/cds-astro/cds-healpix-rust.git?rev=d9d017cda85a097b65d200e3c4cccefc54665915)",
+ "geodesy",
+ "healpix-geo",
+ "moc",
+ "numpy",
+ "pyo3",
+ "rayon",
+]
+
+[[package]]
 name = "healpix-geo-wasm"
 version = "0.3.1"
 dependencies = [
@@ -585,7 +585,7 @@ dependencies = [
  "console_error_panic_hook",
  "geodesy",
  "getrandom 0.4.2",
- "healpix-geo-core",
+ "healpix-geo",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
