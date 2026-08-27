@@ -5,9 +5,14 @@
 
    healpix_geo.nested.RangeMOCIndex.empty
    healpix_geo.nested.RangeMOCIndex.from_cell_ids
+   healpix_geo.nested.RangeMOCIndex.from_compacted
+   healpix_geo.nested.RangeMOCIndex.from_ranges
    healpix_geo.nested.RangeMOCIndex.full_domain
 
    healpix_geo.nested.RangeMOCIndex.cell_ids
+   healpix_geo.nested.RangeMOCIndex.ranges
+
+   healpix_geo.nested.RangeMOCIndex.refine
    healpix_geo.nested.RangeMOCIndex.isel
    healpix_geo.nested.RangeMOCIndex.sel
    healpix_geo.nested.RangeMOCIndex.query

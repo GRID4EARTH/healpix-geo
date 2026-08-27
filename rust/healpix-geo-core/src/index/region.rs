@@ -13,7 +13,9 @@ use moc::moc::range::{CellSelection, RangeMOC};
 use moc::moc::{
     CellMOCIntoIterator, CellMOCIterator, HasMaxDepth, RangeMOCIntoIterator, RangeMOCIterator,
 };
-use moc::qty::Hpx;
+use moc::qty::{Hpx, MocQty};
+use num_traits::PrimInt;
+use std::ops::Range;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CellRegion {
@@ -43,6 +45,46 @@ impl CellRegion {
         }
     }
 
+    fn from_ranges_impl(depth: u8, ranges: Vec<Range<u64>>, ellipsoid: Ellipsoid) -> Self {
+        let size = ranges.len();
+        Self {
+            moc: RangeMOC::from_maxdepth_ranges(depth, ranges.into_iter(), Some(size)),
+            ellipsoid,
+        }
+    }
+
+    pub fn from_compacted(depth: u8, cell_ids: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
+        let ranges: Vec<Range<u64>> = cell_ids
+            .into_iter()
+            .map(|hash| {
+                let (compacted_depth, hash_nested) = nested::from_zuniq(hash);
+
+                let shift = Hpx::<u64>::shift_from_depth_max(compacted_depth) as u32;
+
+                let from = hash_nested;
+                let to = from + 1;
+
+                from.unsigned_shl(shift)..to.unsigned_shl(shift)
+            })
+            .collect();
+
+        Self::from_ranges_impl(depth, ranges, ellipsoid)
+    }
+
+    pub fn from_ranges(depth: u8, ranges: Vec<u64>, ellipsoid: Ellipsoid) -> Self {
+        Self::from_ranges_impl(
+            depth,
+            ranges
+                .chunks(2)
+                .map(|chunk| Range {
+                    start: chunk[0],
+                    end: chunk[1],
+                })
+                .collect::<Vec<Range<u64>>>(),
+            ellipsoid,
+        )
+    }
+
     pub fn nbytes(&self) -> usize {
         self.moc.len() * 2 * u64::BITS as usize / 8
     }
@@ -59,12 +101,36 @@ impl CellRegion {
         self.moc.flatten_to_fixed_depth_cells().collect()
     }
 
+    pub fn refine(&self, depth: u8) -> Self {
+        let moc_depth = self.moc.depth_max();
+
+        let moc = if depth == moc_depth {
+            self.moc.clone()
+        } else if depth < moc_depth {
+            self.moc.degraded(depth)
+        } else {
+            let mut moc = self.moc.clone();
+            moc.refine(depth);
+
+            moc
+        };
+
+        Self {
+            moc,
+            ellipsoid: self.ellipsoid.clone(),
+        }
+    }
+
     pub fn cells_at_depth(&self) -> u64 {
         12 * 4u64.pow(self.depth() as u32)
     }
 
     pub fn ellipsoid(&self) -> &Ellipsoid {
         &self.ellipsoid
+    }
+
+    pub fn ranges(&self) -> Vec<Range<u64>> {
+        self.moc.moc_ranges().iter().cloned().collect()
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

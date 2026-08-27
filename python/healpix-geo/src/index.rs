@@ -1,6 +1,6 @@
 use numpy::{
-    PyArray1, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods, PyUntypedArray,
-    PyUntypedArrayMethods, dtype,
+    PyArray1, PyArray2, PyArrayDescr, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods,
+    PyUntypedArray, PyUntypedArrayMethods, dtype,
 };
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -249,6 +249,59 @@ impl RangeMOCIndex {
         Ok(index)
     }
 
+    /// Create an index from the given ranges at level 29
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The maximum depth of the index.
+    /// ranges : numpy.ndarray
+    ///     The ranges to construct the index from as a :math:`N` x :math:`2` array.
+    #[pyo3(signature = (depth, ranges, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_ranges<'py>(
+        _cls: &Bound<'py, PyType>,
+        _py: Python<'py>,
+        depth: u8,
+        ranges: &Bound<'py, PyArray2<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let ranges_ = ranges.to_vec()?;
+        let index = Self {
+            region: CellRegion::from_ranges(depth, ranges_, ellipsoid.into_ellipsoid()?),
+        };
+
+        Ok(index)
+    }
+
+    /// Create an index from the given compacted cells
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The maximum depth of the index
+    /// cell_ids : numpy.ndarray
+    ///     The cell ids in ``zuniq`` indexing scheme as a :math:`N` ``uint64`` array
+    #[pyo3(signature = (depth, cell_ids, ellipsoid=EllipsoidLike::Named("sphere".to_string())))]
+    #[classmethod]
+    fn from_compacted<'py>(
+        _cls: &Bound<'py, PyType>,
+        _py: Python<'py>,
+        depth: u8,
+        cell_ids: &Bound<'py, PyArray1<u64>>,
+        ellipsoid: EllipsoidLike,
+    ) -> PyResult<Self> {
+        let index = Self {
+            region: CellRegion::from_compacted(
+                depth,
+                cell_ids.to_vec()?,
+                ellipsoid.into_ellipsoid()?,
+            ),
+        };
+
+        Ok(index)
+    }
+
     /// Compute the set union of two indexes
     ///
     /// Parameters
@@ -394,6 +447,25 @@ impl RangeMOCIndex {
         ))
     }
 
+    /// Change the internal depth of the index
+    ///
+    /// This may change the region covered by the index if the new depth is smaller than the current depth.
+    ///
+    /// Parameters
+    /// ----------
+    /// depth : int
+    ///     The new depth
+    ///
+    /// Returns
+    /// -------
+    /// refined : RangeMOCIndex
+    ///     The refined index with a different level
+    fn refine(&self, depth: u8) -> PyResult<Self> {
+        Ok(Self {
+            region: self.region.refine(depth),
+        })
+    }
+
     /// Retrieve the cell ids from the index.
     ///
     /// Returns
@@ -404,6 +476,25 @@ impl RangeMOCIndex {
         let cell_ids: Vec<u64> = self.region.cell_ids();
 
         Ok(PyArray1::from_vec(py, cell_ids))
+    }
+
+    /// Extract the underlying connected ranges
+    ///
+    /// Returns
+    /// -------
+    /// ranges: numpy.ndarray
+    ///     The ranges as a :math:`N` x :math:`2` array of dtype ``uint64``.
+    fn ranges<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<u64>>> {
+        let ranges = self.region.ranges();
+        let shape = (ranges.len(), 2);
+        let ranges: Vec<u64> = py.detach(move || {
+            ranges
+                .into_iter()
+                .flat_map(|range| [range.start, range.end])
+                .collect()
+        });
+
+        PyArray1::from_vec(py, ranges).reshape(shape)
     }
 
     /// Subset the index using positions

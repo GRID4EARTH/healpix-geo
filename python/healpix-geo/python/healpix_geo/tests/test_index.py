@@ -1,6 +1,7 @@
 import pickle
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import shapely
 
@@ -31,6 +32,110 @@ class TestRangeMOCIndex:
 
         assert index.size == cell_ids.size
         assert index.depth == level
+
+    @pytest.mark.parametrize(
+        ["level", "ranges", "expected"],
+        (
+            pytest.param(
+                2,
+                np.array([[0, 12 * 4**29]], dtype="uint64"),
+                np.arange(12 * 4**2, dtype="uint64"),
+                id="full_domain",
+            ),
+            pytest.param(
+                1,
+                np.array(
+                    [[1 * 4**29, 3 * 4**29], [5 * 4**29, 7 * 4**29]], dtype="uint64"
+                ),
+                np.concat(
+                    [
+                        np.arange(1 * 4**1, 3 * 4**1, dtype="uint64"),
+                        np.arange(5 * 4**1, 7 * 4**1, dtype="uint64"),
+                    ]
+                ),
+                id="ranges_with_gap",
+            ),
+            pytest.param(
+                3,
+                (
+                    np.array(
+                        [
+                            [4, 8],
+                            [9, 10],
+                            [15, 17],
+                            [19, 20],
+                        ],
+                        dtype="uint64",
+                    )
+                    * 4**26
+                ),
+                np.array([4, 5, 6, 7, 9, 15, 16, 19], dtype="uint64"),
+                id="isolated_pixels",
+            ),
+        ),
+    )
+    def test_from_ranges(self, level, ranges, expected) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.from_ranges(level, ranges)
+
+        np.testing.assert_equal(index.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
+        ["level", "cell_ids", "expected"],
+        (
+            (
+                0,
+                np.array(
+                    [864691128455135232, 1441151880758558720, 3170534137668829184],
+                    dtype="uint64",
+                ),
+                np.array([1, 2, 5], dtype="uint64"),
+            ),
+            (
+                3,
+                np.array(
+                    [
+                        216172782113783808,
+                        306244774661193728,
+                        342273571680157696,
+                        378302368699121664,
+                    ],
+                    dtype="uint64",
+                ),
+                np.concat(
+                    [
+                        np.arange(1 * 4**2, 2 * 4**2, dtype="uint64"),
+                        np.arange(8 * 4**1, 11 * 4**1, dtype="uint64"),
+                    ],
+                    axis=0,
+                ),
+            ),
+            (
+                6,
+                np.array([22517998136852480], dtype="uint64"),
+                np.arange(2 * 4**3, 3 * 4**3, dtype="uint64"),
+            ),
+        ),
+    )
+    def test_from_compacted(self, level, cell_ids, expected):
+        index = healpix_geo.nested.RangeMOCIndex.from_compacted(level, cell_ids)
+
+        assert index.depth == level
+        np.testing.assert_equal(index.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
+        ["level", "new_level"],
+        (
+            (25, 2),
+            (2, 6),
+        ),
+    )
+    def test_refine(self, level: int, new_level: int) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.full_domain(level)
+
+        expected = np.arange(12 * 4**new_level, dtype="uint64")
+        refined = index.refine(new_level)
+
+        np.testing.assert_equal(refined.cell_ids(), expected)
 
     @pytest.mark.parametrize(
         ["level", "cell_ids1", "cell_ids2", "expected"],
@@ -142,6 +247,58 @@ class TestRangeMOCIndex:
 
         assert isinstance(actual, healpix_geo.nested.RangeMOCIndex)
         np.testing.assert_equal(actual.cell_ids(), expected)
+
+    @pytest.mark.parametrize(
+        ["level", "cell_ids", "expected"],
+        (
+            pytest.param(
+                2,
+                np.arange(12 * 4**2, dtype="uint64"),
+                np.array([[0, 12 * 4**29]], dtype="uint64"),
+                id="full_domain",
+            ),
+            pytest.param(
+                1,
+                np.concat(
+                    [
+                        np.arange(1 * 4**1, 3 * 4**1, dtype="uint64"),
+                        np.arange(5 * 4**1, 7 * 4**1, dtype="uint64"),
+                    ]
+                ),
+                np.array(
+                    [[1 * 4**29, 3 * 4**29], [5 * 4**29, 7 * 4**29]], dtype="uint64"
+                ),
+                id="ranges_with_gap",
+            ),
+            pytest.param(
+                3,
+                np.array([4, 5, 6, 7, 9, 15, 16, 19], dtype="uint64"),
+                (
+                    np.array(
+                        [
+                            [4, 8],
+                            [9, 10],
+                            [15, 17],
+                            [19, 20],
+                        ],
+                        dtype="uint64",
+                    )
+                    * 4**26
+                ),
+                id="isolated_pixels",
+            ),
+        ),
+    )
+    def test_ranges(
+        self,
+        level: int,
+        cell_ids: npt.NDArray[np.uint64],
+        expected: npt.NDArray[np.uint64],
+    ) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.from_cell_ids(level, cell_ids)
+
+        actual = index.ranges()
+        np.testing.assert_equal(actual, expected)
 
     @pytest.mark.parametrize(
         ["level", "cell_ids"],
