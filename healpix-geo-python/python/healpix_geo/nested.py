@@ -25,155 +25,6 @@ def create_empty(depth):
     return RangeMOCIndex.empty(depth)
 
 
-def base_cell_relationship(
-    base_cell: int, direction: Direction
-) -> tuple[int, npt.NDArray[np.int32], npt.NDArray[np.int32]] | None:
-    """Return the adjacent base cell and relative coordinate orientation.
-
-    Parameters
-    ----------
-    base_cell : int
-        Source base cell id in the closed range ``[0, 11]``.
-    direction : {"S", "SW", "W", "NW", "N", "NE", "E", "SE"}
-        Direction of the target cell in the base cell's local coordinate system.
-
-    Returns
-    -------
-    target_cell : int
-        The id of the target base cell.
-    displacement_i, displacement_j : array-like of int32
-        The change in direction between the base vectors of the source and target base cells.
-
-    Examples
-    --------
-    >>> from healpix_geo.nested import base_cell_relationship
-    >>> base_cell_relationship(0, "N")
-    >>> base_cell_relationship(4, "N") is None
-    """
-    return healpix_geo.nested.base_cell_relationship(base_cell, direction)
-
-
-def healpix_to_base_cell_coordinates(cell_ids, depth, num_threads=0):
-    """Convert cell ids to base cell-local coordinates.
-
-    This is an integer-only topology operation. At ``depth``, each of the 12
-    base faces is a ``2**depth`` by ``2**depth`` grid. Output shapes are
-    preserved.
-
-    Parameters
-    ----------
-    cell_ids : array-like of int
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
-    depth : int or array-like of int
-        The HEALPix cell depth given as scalar or a `np.uint8` numpy array. If
-        an array, must have the same shape as ``cell_ids``.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
-
-    Returns
-    -------
-    base_cell : `numpy.ndarray`
-        Base cell ids as a ``numpy.ndarray` of ``uint8``.
-    i, j : `numpy.ndarray`
-        Base cell-local coordinates as ``numpy.ndarray`` objects of `numpy.uint32`.
-
-    Examples
-    --------
-    >>> from healpix_geo.nested import healpix_to_base_cell_coordinates
-    >>> base_cells, i, j = healpix_to_base_cell_coordinates([0, 3, 4, 47], 1)
-    >>> base_cells
-    >>> i
-    >>> j
-    """
-    _check_depth(depth)
-    cell_ids = np.atleast_1d(cell_ids)
-
-    if not isinstance(depth, int):
-        depth = np.astype(np.atleast_1d(depth), np.uint8)
-
-        if depth.shape != cell_ids.shape:
-            raise ValueError(
-                "A array valued depth must have the same shape as the cell ids"
-            )
-
-    _check_ipixels(data=cell_ids, depth=depth)
-
-    cell_ids = np.ascontiguousarray(cell_ids, dtype=np.uint64)
-    num_threads = np.uint16(num_threads)
-
-    return healpix_geo.nested.healpix_to_base_cell_coordinates(
-        cell_ids, depth, num_threads
-    )
-
-
-def base_cell_coordinates_to_healpix(base_cell, i, j, depth, num_threads=0):
-    """Convert base cell-local coordinates to cell ids.
-
-    ``base_cell``, ``i``, ``j``, and an array-valued ``depth`` must have the
-    same shape. Coordinates must lie inside the selected base face.
-
-    Parameters
-    ----------
-    base_cell : array-like of int
-        Base cell id in the closed range ``[0, 11]``.
-    i, j : array-like of int
-        Base cell-local coordinates in the range of ``[0, 2**depth - 1]``.
-    depth : int or array-like of int
-        The HEALPix cell depth given as a scalar or a `np.uint8` numpy array.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
-
-    Returns
-    -------
-    ipix : `numpy.ndarray`
-        A numpy array containing all the HEALPix cell indexes stored as `np.uint64`.
-
-    Examples
-    --------
-    >>> from healpix_geo.nested import base_cell_coordinates_to_healpix
-    >>> base_cell_coordinates_to_healpix([0, 0, 1, 11], [0, 1, 0, 1], [0, 1, 0, 1], 1)
-    array([ 0,  3,  4, 47], dtype=uint64)
-    """
-    _check_depth(depth)
-    base_cell = np.atleast_1d(base_cell)
-    i = np.atleast_1d(i)
-    j = np.atleast_1d(j)
-
-    if base_cell.shape != i.shape or base_cell.shape != j.shape:
-        raise ValueError(
-            "all arrays must have the same shape. Got"
-            f" base_cell={base_cell.shape}, i={i.shape}, and j={j.shape}."
-        )
-    if not isinstance(depth, int):
-        depth = np.atleast_1d(depth)
-        if base_cell.shape != depth.shape:
-            raise ValueError(
-                f"a array-valued depth must have the same shape as the other arrays. Got {depth.shape}"
-            )
-
-    if np.any((base_cell < 0) | (base_cell > 11)):
-        raise ValueError("Base cell must be in the [0, 11] closed range")
-
-    nside = 2**depth
-    if np.any((i < 0) | (i >= nside)):
-        raise ValueError("i must be in the [0, 2**depth - 1] closed range")
-    if np.any((j < 0) | (j >= nside)):
-        raise ValueError("j must be in the [0, 2**depth - 1] closed range")
-
-    num_threads = np.uint16(num_threads)
-    return healpix_geo.nested.base_cell_coordinates_to_healpix(
-        np.ascontiguousarray(base_cell, dtype=np.uint8),
-        np.ascontiguousarray(i, dtype=np.uint32),
-        np.ascontiguousarray(j, dtype=np.uint32),
-        depth,
-        num_threads,
-    )
-
-
 def to_ring(
     ipix: npt.NDArray[np.uint64], depth: DepthType, num_threads: int = 0
 ) -> npt.NDArray[np.uint64]:
@@ -490,6 +341,155 @@ def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
 
     return _healpix_geo_python.nested.cartesian_to_healpix(
         depth, x, y, z, ellipsoid, num_threads
+    )
+
+
+def base_cell_relationship(
+    base_cell: int, direction: Direction
+) -> tuple[int, npt.NDArray[np.int32], npt.NDArray[np.int32]] | None:
+    """Return the adjacent base cell and relative coordinate orientation.
+
+    Parameters
+    ----------
+    base_cell : int
+        Source base cell id in the closed range ``[0, 11]``.
+    direction : {"S", "SW", "W", "NW", "N", "NE", "E", "SE"}
+        Direction of the target cell in the base cell's local coordinate system.
+
+    Returns
+    -------
+    target_cell : int
+        The id of the target base cell.
+    displacement_i, displacement_j : array-like of int32
+        The change in direction between the base vectors of the source and target base cells.
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import base_cell_relationship
+    >>> base_cell_relationship(0, "N")
+    >>> base_cell_relationship(4, "N") is None
+    """
+    return healpix_geo.nested.base_cell_relationship(base_cell, direction)
+
+
+def healpix_to_base_cell_coordinates(cell_ids, depth, num_threads=0):
+    """Convert cell ids to base cell-local coordinates.
+
+    This is an integer-only topology operation. At ``depth``, each of the 12
+    base faces is a ``2**depth`` by ``2**depth`` grid. Output shapes are
+    preserved.
+
+    Parameters
+    ----------
+    cell_ids : array-like of int
+        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    depth : int or array-like of int
+        The HEALPix cell depth given as scalar or a `np.uint8` numpy array. If
+        an array, must have the same shape as ``cell_ids``.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    base_cell : `numpy.ndarray`
+        Base cell ids as a ``numpy.ndarray` of ``uint8``.
+    i, j : `numpy.ndarray`
+        Base cell-local coordinates as ``numpy.ndarray`` objects of `numpy.uint32`.
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import healpix_to_base_cell_coordinates
+    >>> base_cells, i, j = healpix_to_base_cell_coordinates([0, 3, 4, 47], 1)
+    >>> base_cells
+    >>> i
+    >>> j
+    """
+    _check_depth(depth)
+    cell_ids = np.atleast_1d(cell_ids)
+
+    if not isinstance(depth, int):
+        depth = np.astype(np.atleast_1d(depth), np.uint8)
+
+        if depth.shape != cell_ids.shape:
+            raise ValueError(
+                "A array valued depth must have the same shape as the cell ids"
+            )
+
+    _check_ipixels(data=cell_ids, depth=depth)
+
+    cell_ids = np.ascontiguousarray(cell_ids, dtype=np.uint64)
+    num_threads = np.uint16(num_threads)
+
+    return healpix_geo.nested.healpix_to_base_cell_coordinates(
+        cell_ids, depth, num_threads
+    )
+
+
+def base_cell_coordinates_to_healpix(base_cell, i, j, depth, num_threads=0):
+    """Convert base cell-local coordinates to cell ids.
+
+    ``base_cell``, ``i``, ``j``, and an array-valued ``depth`` must have the
+    same shape. Coordinates must lie inside the selected base face.
+
+    Parameters
+    ----------
+    base_cell : array-like of int
+        Base cell id in the closed range ``[0, 11]``.
+    i, j : array-like of int
+        Base cell-local coordinates in the range of ``[0, 2**depth - 1]``.
+    depth : int or array-like of int
+        The HEALPix cell depth given as a scalar or a `np.uint8` numpy array.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    ipix : `numpy.ndarray`
+        A numpy array containing all the HEALPix cell indexes stored as `np.uint64`.
+
+    Examples
+    --------
+    >>> from healpix_geo.nested import base_cell_coordinates_to_healpix
+    >>> base_cell_coordinates_to_healpix([0, 0, 1, 11], [0, 1, 0, 1], [0, 1, 0, 1], 1)
+    array([ 0,  3,  4, 47], dtype=uint64)
+    """
+    _check_depth(depth)
+    base_cell = np.atleast_1d(base_cell)
+    i = np.atleast_1d(i)
+    j = np.atleast_1d(j)
+
+    if base_cell.shape != i.shape or base_cell.shape != j.shape:
+        raise ValueError(
+            "all arrays must have the same shape. Got"
+            f" base_cell={base_cell.shape}, i={i.shape}, and j={j.shape}."
+        )
+    if not isinstance(depth, int):
+        depth = np.atleast_1d(depth)
+        if base_cell.shape != depth.shape:
+            raise ValueError(
+                f"a array-valued depth must have the same shape as the other arrays. Got {depth.shape}"
+            )
+
+    if np.any((base_cell < 0) | (base_cell > 11)):
+        raise ValueError("Base cell must be in the [0, 11] closed range")
+
+    nside = 2**depth
+    if np.any((i < 0) | (i >= nside)):
+        raise ValueError("i must be in the [0, 2**depth - 1] closed range")
+    if np.any((j < 0) | (j >= nside)):
+        raise ValueError("j must be in the [0, 2**depth - 1] closed range")
+
+    num_threads = np.uint16(num_threads)
+    return healpix_geo.nested.base_cell_coordinates_to_healpix(
+        np.ascontiguousarray(base_cell, dtype=np.uint8),
+        np.ascontiguousarray(i, dtype=np.uint32),
+        np.ascontiguousarray(j, dtype=np.uint32),
+        depth,
+        num_threads,
     )
 
 
