@@ -59,7 +59,7 @@ jobs:
           fi
 
   linux:
-    name: linux ${{ matrix.target }}
+    name: linux ${{ matrix.platform.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -110,7 +110,7 @@ jobs:
           path: dist
 
   musllinux:
-    name: musllinux ${{ matrix.target }}
+    name: musllinux ${{ matrix.platform.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -155,7 +155,7 @@ jobs:
           path: dist
 
   windows:
-    name: windows ${{ matrix.target }}
+    name: windows ${{ matrix.platform.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
@@ -196,7 +196,7 @@ jobs:
           path: dist
 
   macos:
-    name: macos ${{ matrix.target }}
+    name: macos ${{ matrix.platform.target }}
     needs: detect-ci-trigger
     if: |
       github.event_name == 'release'
