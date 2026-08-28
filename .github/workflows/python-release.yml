@@ -42,7 +42,7 @@ jobs:
       - name: Detect label
         id: detect-trigger-label
         env:
-          LABEL_FOUND: ${{ contains(github.event.pull_request.labels.*.name, 'build-wheels') }}
+          LABEL_FOUND: ${{ contains(github.event.pull_request.labels.*.name, 'build-wheel') || contains(github.event.pull_request.labels.*.name, 'release') }}
         run: |
           echo "label-found=$LABEL_FOUND" >> "$GITHUB_OUTPUT"
 
