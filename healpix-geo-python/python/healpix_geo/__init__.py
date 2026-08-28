@@ -1,7 +1,7 @@
 import numpy as np
 
 import healpix_geo.ellipsoid  # noqa: F401
-from healpix_geo import geometry, healpix_geo, nested, ring, zuniq
+from healpix_geo import _healpix_geo_python, geometry, nested, ring, zuniq
 from healpix_geo.geometry import Bbox
 from healpix_geo.mesh import vertex_to_lonlat
 
@@ -48,7 +48,7 @@ def cartesian_to_lonlat(x, y, z, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.cartesian_to_lonlat(x, y, z, ellipsoid, num_threads)
+    return _healpix_geo_python.cartesian_to_lonlat(x, y, z, ellipsoid, num_threads)
 
 
 def lonlat_to_cartesian(longitude, latitude, ellipsoid="sphere", num_threads=0):
@@ -90,7 +90,9 @@ def lonlat_to_cartesian(longitude, latitude, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.lonlat_to_cartesian(longitude, latitude, ellipsoid, num_threads)
+    return _healpix_geo_python.lonlat_to_cartesian(
+        longitude, latitude, ellipsoid, num_threads
+    )
 
 
 __all__ = [
