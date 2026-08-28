@@ -9,7 +9,7 @@ build:
     - clang
   jobs:
     post_checkout:
-      - sh ci/run_rtd.sh
+      - sh ci/skip_rtd.sh
       - git fetch --unshallow || true
     create_environment:
       - asdf plugin add pixi
