@@ -111,7 +111,7 @@ jobs:
       - name: Create rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: "py${{ matrix.python-version }}"
+          prefix-key: "py"
 
       - name: setup environment
         uses: prefix-dev/setup-pixi@f00437f565399d418b0acc85936d12c1fb668347 # v0.10.1
