@@ -24,6 +24,6 @@ def resolve(name: str) -> EllipsoidLike:
     ValueError
         If the name is unknown.
     """
-    from healpix_geo.healpix_geo import resolve_ellipsoid
+    from healpix_geo._healpix_geo_python import resolve_ellipsoid
 
     return resolve_ellipsoid(name)

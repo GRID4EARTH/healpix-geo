@@ -52,7 +52,7 @@ mod geometry_ {
 }
 
 #[pymodule]
-#[pyo3(name = "healpix_geo")]
+#[pyo3(name = "_healpix_geo_python")]
 mod healpix_geo {
     #[pymodule_export]
     use super::nested;

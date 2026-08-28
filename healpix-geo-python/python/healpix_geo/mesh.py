@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from healpix_geo import healpix_geo
+from healpix_geo import _healpix_geo_python
 from healpix_geo.utils import _check_depth
 
 if TYPE_CHECKING:
@@ -73,4 +73,6 @@ def vertex_to_lonlat(
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.vertex_to_lonlat(depth, vertex_ids, ellipsoid, num_threads)
+    return _healpix_geo_python.vertex_to_lonlat(
+        depth, vertex_ids, ellipsoid, num_threads
+    )

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import marray
 import numpy as np
 
-from healpix_geo import healpix_geo
+from healpix_geo import _healpix_geo_python
 from healpix_geo.utils import _check_depth, _check_ipixels, _check_ring
 
 if TYPE_CHECKING:
@@ -68,7 +68,7 @@ def to_nested(
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.to_nested(ipix, depth, num_threads)
+    return _healpix_geo_python.ring.to_nested(ipix, depth, num_threads)
 
 
 def to_zuniq(
@@ -113,7 +113,7 @@ def to_zuniq(
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.to_zuniq(ipix, depth, num_threads)
+    return _healpix_geo_python.ring.to_zuniq(ipix, depth, num_threads)
 
 
 def healpix_to_lonlat(ipix, depth, ellipsoid="sphere", num_threads=0):
@@ -164,7 +164,9 @@ def healpix_to_lonlat(ipix, depth, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.healpix_to_lonlat(depth, ipix, ellipsoid, num_threads)
+    return _healpix_geo_python.ring.healpix_to_lonlat(
+        depth, ipix, ellipsoid, num_threads
+    )
 
 
 def lonlat_to_healpix(longitude, latitude, depth, ellipsoid="sphere", num_threads=0):
@@ -215,7 +217,7 @@ def lonlat_to_healpix(longitude, latitude, depth, ellipsoid="sphere", num_thread
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.lonlat_to_healpix(
+    return _healpix_geo_python.ring.lonlat_to_healpix(
         depth, longitude, latitude, ellipsoid, num_threads
     )
 
@@ -271,7 +273,9 @@ def healpix_to_cartesian(ipix, depth, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.healpix_to_cartesian(depth, ipix, ellipsoid, num_threads)
+    return _healpix_geo_python.ring.healpix_to_cartesian(
+        depth, ipix, ellipsoid, num_threads
+    )
 
 
 def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
@@ -331,7 +335,9 @@ def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.cartesian_to_healpix(depth, x, y, z, ellipsoid, num_threads)
+    return _healpix_geo_python.ring.cartesian_to_healpix(
+        depth, x, y, z, ellipsoid, num_threads
+    )
 
 
 def vertices(ipix, depth, ellipsoid, step=1, num_threads=0):
@@ -399,7 +405,7 @@ def vertices(ipix, depth, ellipsoid, step=1, num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.ring.vertices(depth, ipix, ellipsoid, step, num_threads)
+    return _healpix_geo_python.ring.vertices(depth, ipix, ellipsoid, step, num_threads)
 
 
 def vertex_indices(
@@ -455,7 +461,7 @@ def vertex_indices(
     _check_ipixels(data=ipix, depth=depth)
     ipix = np.astype(ipix, np.uint64)
 
-    return healpix_geo.ring.vertex_indices(depth, ipix, num_threads)
+    return _healpix_geo_python.ring.vertex_indices(depth, ipix, num_threads)
 
 
 def bilinear_interpolation(
@@ -538,7 +544,7 @@ def bilinear_interpolation(
 
     num_threads = np.uint16(num_threads)
 
-    ipix, weights = healpix_geo.ring.bilinear_interpolation(
+    ipix, weights = _healpix_geo_python.ring.bilinear_interpolation(
         depth, longitude, latitude, ellipsoid, num_threads
     )
 
@@ -589,7 +595,7 @@ def neighbours(
     ipix = ipix.astype(np.uint64)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.ring.neighbours(depth, ipix, connectivity, num_threads)
+    return _healpix_geo_python.ring.neighbours(depth, ipix, connectivity, num_threads)
 
 
 def kth_neighbours(ipix, depth, ring, num_threads=0):
@@ -646,7 +652,7 @@ def kth_neighbours(ipix, depth, ring, num_threads=0):
     _check_ring(depth, ring)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.ring.kth_neighbours(depth, ipix, ring, num_threads)
+    return _healpix_geo_python.ring.kth_neighbours(depth, ipix, ring, num_threads)
 
 
 def kth_neighbourhood(ipix, depth, ring, num_threads=0):
@@ -711,7 +717,7 @@ def kth_neighbourhood(ipix, depth, ring, num_threads=0):
     _check_ring(depth, ring)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.ring.kth_neighbourhood(depth, ipix, ring, num_threads)
+    return _healpix_geo_python.ring.kth_neighbourhood(depth, ipix, ring, num_threads)
 
 
 def angular_distances(from_, to_, depth, num_threads=0):
@@ -767,7 +773,7 @@ def angular_distances(from_, to_, depth, num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    distances = healpix_geo.ring.angular_distances(
+    distances = _healpix_geo_python.ring.angular_distances(
         depth, from_, np.reshape(to_, intermediate_shape), num_threads
     )
 
@@ -800,7 +806,9 @@ def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):
     """
     _check_depth(depth)
 
-    return healpix_geo.ring.zone_coverage(depth, bbox, ellipsoid=ellipsoid, flat=flat)
+    return _healpix_geo_python.ring.zone_coverage(
+        depth, bbox, ellipsoid=ellipsoid, flat=flat
+    )
 
 
 def box_coverage(center, size, angle, depth, *, ellipsoid="sphere", flat=True):
@@ -838,7 +846,7 @@ def box_coverage(center, size, angle, depth, *, ellipsoid="sphere", flat=True):
     if not isinstance(size, tuple):
         size = tuple(size)
 
-    return healpix_geo.ring.box_coverage(
+    return _healpix_geo_python.ring.box_coverage(
         depth, center, size, angle, ellipsoid=ellipsoid, flat=flat
     )
 
@@ -872,7 +880,7 @@ def polygon_coverage(vertices, depth, *, ellipsoid="sphere", flat=True):
     """
     _check_depth(depth)
 
-    return healpix_geo.ring.polygon_coverage(
+    return _healpix_geo_python.ring.polygon_coverage(
         depth, vertices, ellipsoid=ellipsoid, flat=flat
     )
 
@@ -915,7 +923,7 @@ def cone_coverage(
     if not isinstance(center, tuple):
         center = tuple(center)
 
-    return healpix_geo.ring.cone_coverage(
+    return _healpix_geo_python.ring.cone_coverage(
         depth, center, radius, delta_depth=delta_depth, ellipsoid=ellipsoid, flat=flat
     )
 
@@ -968,7 +976,7 @@ def elliptical_cone_coverage(
     if not isinstance(ellipse_geometry, tuple):
         ellipse_geometry = tuple(ellipse_geometry)
 
-    return healpix_geo.ring.elliptical_cone_coverage(
+    return _healpix_geo_python.ring.elliptical_cone_coverage(
         depth,
         center,
         ellipse_geometry,

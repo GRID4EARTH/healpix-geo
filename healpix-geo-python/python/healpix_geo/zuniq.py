@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import marray
 import numpy as np
 
-from healpix_geo import healpix_geo
+from healpix_geo import _healpix_geo_python
 from healpix_geo.utils import _check_depth
 
 if TYPE_CHECKING:
@@ -60,7 +60,7 @@ def to_nested(
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.to_nested(ipix, num_threads)
+    return _healpix_geo_python.zuniq.to_nested(ipix, num_threads)
 
 
 def to_ring(
@@ -107,7 +107,7 @@ def to_ring(
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.to_ring(ipix, num_threads)
+    return _healpix_geo_python.zuniq.to_ring(ipix, num_threads)
 
 
 def healpix_to_lonlat(ipix, ellipsoid, num_threads=0):
@@ -153,7 +153,7 @@ def healpix_to_lonlat(ipix, ellipsoid, num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.healpix_to_lonlat(ipix, ellipsoid, num_threads)
+    return _healpix_geo_python.zuniq.healpix_to_lonlat(ipix, ellipsoid, num_threads)
 
 
 def lonlat_to_healpix(longitude, latitude, depth, ellipsoid="sphere", num_threads=0):
@@ -206,7 +206,7 @@ def lonlat_to_healpix(longitude, latitude, depth, ellipsoid="sphere", num_thread
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.lonlat_to_healpix(
+    return _healpix_geo_python.zuniq.lonlat_to_healpix(
         depth, longitude, latitude, ellipsoid, num_threads
     )
 
@@ -257,7 +257,7 @@ def healpix_to_cartesian(ipix, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.healpix_to_cartesian(ipix, ellipsoid, num_threads)
+    return _healpix_geo_python.zuniq.healpix_to_cartesian(ipix, ellipsoid, num_threads)
 
 
 def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
@@ -318,7 +318,7 @@ def cartesian_to_healpix(x, y, z, depth, ellipsoid="sphere", num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.cartesian_to_healpix(
+    return _healpix_geo_python.zuniq.cartesian_to_healpix(
         depth, x, y, z, ellipsoid, num_threads
     )
 
@@ -384,7 +384,7 @@ def vertices(ipix, ellipsoid, step=1, num_threads=0):
 
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.zuniq.vertices(ipix, ellipsoid, step, num_threads)
+    return _healpix_geo_python.zuniq.vertices(ipix, ellipsoid, step, num_threads)
 
 
 def vertex_indices(
@@ -435,7 +435,7 @@ def vertex_indices(
     """
     ipix = np.astype(np.atleast_1d(ipix), np.uint64)
 
-    return healpix_geo.zuniq.vertex_indices(ipix, num_threads)
+    return _healpix_geo_python.zuniq.vertex_indices(ipix, num_threads)
 
 
 def bilinear_interpolation(
@@ -523,7 +523,7 @@ def bilinear_interpolation(
 
     num_threads = np.uint16(num_threads)
 
-    ipix, weights = healpix_geo.zuniq.bilinear_interpolation(
+    ipix, weights = _healpix_geo_python.zuniq.bilinear_interpolation(
         depth, longitude, latitude, ellipsoid, num_threads
     )
 
@@ -567,7 +567,7 @@ def neighbours(
     ipix = np.astype(np.atleast_1d(ipix), np.uint64)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.zuniq.neighbours(ipix, connectivity, num_threads)
+    return _healpix_geo_python.zuniq.neighbours(ipix, connectivity, num_threads)
 
 
 def kth_neighbours(ipix, ring, num_threads=0):
@@ -635,7 +635,7 @@ def kth_neighbours(ipix, ring, num_threads=0):
     ipix = np.astype(np.atleast_1d(ipix), np.uint64)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.zuniq.kth_neighbours(ipix, ring, num_threads)
+    return _healpix_geo_python.zuniq.kth_neighbours(ipix, ring, num_threads)
 
 
 def kth_neighbourhood(ipix, ring, num_threads=0):
@@ -732,7 +732,7 @@ def kth_neighbourhood(ipix, ring, num_threads=0):
     ipix = np.astype(np.atleast_1d(ipix), np.uint64)
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.zuniq.kth_neighbourhood(ipix, ring, num_threads)
+    return _healpix_geo_python.zuniq.kth_neighbourhood(ipix, ring, num_threads)
 
 
 def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):
@@ -758,7 +758,9 @@ def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):
     """
     _check_depth(depth)
 
-    return healpix_geo.zuniq.zone_coverage(depth, bbox, ellipsoid=ellipsoid, flat=flat)
+    return _healpix_geo_python.zuniq.zone_coverage(
+        depth, bbox, ellipsoid=ellipsoid, flat=flat
+    )
 
 
 def box_coverage(center, size, angle, depth, *, ellipsoid="sphere", flat=True):
@@ -793,7 +795,7 @@ def box_coverage(center, size, angle, depth, *, ellipsoid="sphere", flat=True):
     if not isinstance(size, tuple):
         size = tuple(size)
 
-    return healpix_geo.zuniq.box_coverage(
+    return _healpix_geo_python.zuniq.box_coverage(
         depth, center, size, angle, ellipsoid=ellipsoid, flat=flat
     )
 
@@ -824,7 +826,7 @@ def polygon_coverage(vertices, depth, *, ellipsoid="sphere", flat=True):
     """
     _check_depth(depth)
 
-    return healpix_geo.zuniq.polygon_coverage(
+    return _healpix_geo_python.zuniq.polygon_coverage(
         depth, vertices, ellipsoid=ellipsoid, flat=flat
     )
 
@@ -864,7 +866,7 @@ def cone_coverage(
     if not isinstance(center, tuple):
         center = tuple(center)
 
-    return healpix_geo.zuniq.cone_coverage(
+    return _healpix_geo_python.zuniq.cone_coverage(
         depth, center, radius, delta_depth=delta_depth, ellipsoid=ellipsoid, flat=flat
     )
 
@@ -915,7 +917,7 @@ def elliptical_cone_coverage(
     if not isinstance(ellipse_geometry, tuple):
         ellipse_geometry = tuple(ellipse_geometry)
 
-    return healpix_geo.zuniq.elliptical_cone_coverage(
+    return _healpix_geo_python.zuniq.elliptical_cone_coverage(
         depth,
         center,
         ellipse_geometry,
