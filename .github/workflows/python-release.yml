@@ -6,9 +6,7 @@
 name: Build wheels
 
 on:
-  release:
-    types:
-      - published
+  push:
     tags:
       - "python-v*"
   pull_request:

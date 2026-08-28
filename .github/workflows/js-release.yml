@@ -2,13 +2,10 @@ name: wasm
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  release:
-    types: ["published"]
     tags:
       - "js-v*"
+  pull_request:
+    branches: ["main"]
 
 concurrency:
   group: ${{ github.workflow }}.${{ github.ref }}
