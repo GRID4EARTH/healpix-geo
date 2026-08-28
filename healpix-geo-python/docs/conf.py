@@ -43,8 +43,8 @@ root_doc = "index"
 # enabled extensions
 extensions = [
     "sphinx.ext.autosummary",
-    "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx_design",
     "jupyterlite_sphinx",
@@ -83,11 +83,17 @@ napoleon_numpy_docstring = True
 napoleon_use_param = False
 napoleon_use_rtype = False
 napoleon_preprocess_types = True
+napoleon_attr_annotations = False
 napoleon_type_aliases = {
     # healpix-geo
     "ellipsoid-like": ":term:`ellipsoid-like`",
     "geometry-like": ":term:`geometry-like`",
+    # generic
+    "mapping": ":term:`mapping`",
+    # numpy
     "array-like": ":py:class:`numpy.ndarray`",
+    "numpy.uint64": ":py:attr:`numpy.uint64`",
+    "numpy.float64": ":py:attr:`numpy.float64`",
 }
 
 # -- jupyterlite-sphinx ------------------------------------------------------

@@ -24,7 +24,7 @@ def vertex_to_lonlat(
 
     Parameters
     ----------
-    vertex_ids : array-like of uint64
+    vertex_ids : array-like of numpy.uint64
         The given vertex ids.
     depth : int
         The depth of the cells the vertices are computed for.
