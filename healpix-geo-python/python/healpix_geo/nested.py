@@ -394,7 +394,7 @@ def healpix_to_base_cell_coordinates(cell_ids, depth, num_threads=0):
     cell_ids = np.ascontiguousarray(cell_ids, dtype=np.uint64)
     num_threads = np.uint16(num_threads)
 
-    return healpix_geo.nested.healpix_to_base_cell_coordinates(
+    return _healpix_geo_python.nested.healpix_to_base_cell_coordinates(
         cell_ids, depth, num_threads
     )
 
@@ -456,7 +456,7 @@ def base_cell_coordinates_to_healpix(base_cell, i, j, depth, num_threads=0):
         raise ValueError("j must be in the [0, 2**depth - 1] closed range")
 
     num_threads = np.uint16(num_threads)
-    return healpix_geo.nested.base_cell_coordinates_to_healpix(
+    return _healpix_geo_python.nested.base_cell_coordinates_to_healpix(
         np.ascontiguousarray(base_cell, dtype=np.uint8),
         np.ascontiguousarray(i, dtype=np.uint32),
         np.ascontiguousarray(j, dtype=np.uint32),
