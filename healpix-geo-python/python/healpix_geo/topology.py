@@ -32,9 +32,17 @@ def base_cell_relationship(
 
     Examples
     --------
-    >>> from healpix_geo import base_cell_relationship
-    >>> base_cell_relationship(0, "N")
-    >>> base_cell_relationship(4, "N") is None
+    >>> from healpix_geo.topology import base_cell_relationship
+    >>> target_cell, delta_i, delta_j = base_cell_relationship(0, "N")
+    >>> target_cell
+    2
+    >>> delta_i
+    array([-1,  0], dtype=int8)
+    >>> delta_j
+    array([ 0, -1], dtype=int8)
+    >>> target_cell, _, _ = base_cell_relationship(4, "N")
+    >>> target_cell is None
+    True
     """
     if not isinstance(base_cell, int):
         raise TypeError("base_cell must be an integer")

@@ -375,8 +375,11 @@ def healpix_to_base_cell_coordinates(cell_ids, depth, num_threads=0):
     >>> from healpix_geo.nested import healpix_to_base_cell_coordinates
     >>> base_cells, i, j = healpix_to_base_cell_coordinates([0, 3, 4, 47], 1)
     >>> base_cells
+    array([ 0,  0,  1, 11], dtype=uint8)
     >>> i
+    array([0, 1, 0, 1], dtype=uint32)
     >>> j
+    array([0, 1, 0, 1], dtype=uint32)
     """
     _check_depth(depth)
     cell_ids = np.atleast_1d(cell_ids)
