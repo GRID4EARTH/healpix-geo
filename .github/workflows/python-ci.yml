@@ -200,6 +200,7 @@ jobs:
         with:
           environments: "${{ matrix.env }}"
           pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
+          cache-key: "pixi-doctests-"
           cache: true
           frozen: true
 
