@@ -6,6 +6,7 @@ mod geometry;
 mod index;
 mod indexing_schemes;
 mod mesh;
+mod topology;
 mod traits;
 
 #[pymodule]
@@ -15,11 +16,12 @@ mod nested {
 
     #[pymodule_export]
     use crate::indexing_schemes::nested::{
-        angular_distances, base_cell_relationship, bilinear_interpolation, box_coverage,
-        cartesian_to_healpix, cone_coverage, elliptical_cone_coverage, healpix_to_cartesian,
-        healpix_to_lonlat, internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix,
-        neighbours, pix2xyf, polygon_coverage, siblings, to_ring, to_zuniq, vertex_indices,
-        vertices, xyf2pix, zone_coverage, zoom_to,
+        angular_distances, base_cell_coordinates_to_healpix, bilinear_interpolation, box_coverage,
+        cartesian_to_healpix, cone_coverage, elliptical_cone_coverage,
+        healpix_to_base_cell_coordinates, healpix_to_cartesian, healpix_to_lonlat,
+        internal_boundary, kth_neighbourhood, kth_neighbours, lonlat_to_healpix, neighbours,
+        polygon_coverage, siblings, to_ring, to_zuniq, vertex_indices, vertices, zone_coverage,
+        zoom_to,
     };
 }
 
@@ -70,6 +72,9 @@ mod healpix_geo {
     use crate::geometry::{cartesian_to_lonlat, lonlat_to_cartesian};
     #[pymodule_export]
     use crate::mesh::vertex_to_lonlat;
+
+    #[pymodule_export]
+    use crate::topology::base_cell_relationship;
 
     #[pymodule_export]
     use crate::ellipsoid::resolve_ellipsoid;

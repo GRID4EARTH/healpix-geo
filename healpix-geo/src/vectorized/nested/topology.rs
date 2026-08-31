@@ -85,9 +85,8 @@ mod tests {
         let actual = healpix_to_base_cell_coordinates(&pixels, Depth::Scalar(&depth), 1);
 
         let expected: Vec<_> = (0..12)
-            .into_iter()
-            .zip(vec![0; 12].into_iter())
-            .zip(vec![0; 12].into_iter())
+            .zip(vec![0; 12])
+            .zip(vec![0; 12])
             .map(|((base_cell, i), j)| (base_cell, i, j))
             .collect();
         assert_eq!(actual, expected);
