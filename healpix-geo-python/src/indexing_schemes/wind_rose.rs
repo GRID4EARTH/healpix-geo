@@ -30,7 +30,7 @@ impl FromPyObject<'_, '_> for WindRose {
             "E" => Ok(WindRose::E),
             "SE" => Ok(WindRose::SE),
             _ => Err(PyValueError::new_err(format!(
-                "Direction must be a cardinal or ordinal direction. Got '{extracted}'."
+                "direction must be a cardinal or ordinal direction. Got '{extracted}'."
             ))),
         }
     }

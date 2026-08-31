@@ -36,4 +36,11 @@ def base_cell_relationship(
     >>> base_cell_relationship(0, "N")
     >>> base_cell_relationship(4, "N") is None
     """
+    if not isinstance(base_cell, int):
+        raise TypeError("base_cell must be an integer")
+    elif base_cell not in range(0, 12):
+        raise ValueError(
+            f"base_cell must be an integer between 0 and 11, got {base_cell!r}"
+        )
+
     return _healpix_geo_python.base_cell_relationship(base_cell, direction)
