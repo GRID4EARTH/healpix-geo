@@ -32,7 +32,7 @@ Base cell topology
 .. currentmodule:: healpix_geo.topology
 
 .. autosummary::
-   :toctree: ../generated/
+   :toctree: generated/
 
    base_cell_relationship
 
