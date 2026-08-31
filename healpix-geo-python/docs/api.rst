@@ -29,6 +29,8 @@ Overview
 Base cell topology
 ~~~~~~~~~~~~~~~~~~
 
+.. currentmodule:: healpix_geo.topology
+
 .. autosummary::
    :toctree: ../generated/
 
