@@ -17,6 +17,8 @@ Conversions between geographic coordinates and HEALPix indices.
    lonlat_to_healpix
    healpix_to_cartesian
    cartesian_to_healpix
+   healpix_to_base_cell_coordinates
+   base_cell_coordinates_to_healpix
 
 .. seealso::
    Tutorial complete : :doc:`../tutorials/coordinate_conversion`
@@ -38,18 +40,6 @@ Indexing Scheme Conversions
 
    to_ring
    to_zuniq
-
-Face-local Topology
-~~~~~~~~~~~~~~~~~~~
-
-Integer-only conversion and navigation within HEALPix base faces.
-
-.. autosummary::
-   :toctree: ../generated/
-
-   pix2xyf
-   xyf2pix
-   face_neighbour_transform
 
 Interpolation
 ~~~~~~~~~~~~~
