@@ -59,6 +59,10 @@ jobs:
     outputs:
       cache-key: ${{ steps.pixi-lock.outputs.cache-key }}
       pixi-version: ${{ steps.pixi-lock.outputs.pixi-version }}
+
+    env:
+      BUILD_EDITABLE_PYTHON: false
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -95,6 +99,7 @@ jobs:
       FORCE_COLOR: 3
       ENV: ${{ matrix.env }}
       RUNNER_OS: ${{ matrix.os }}
+      BUILD_EDITABLE_PYTHON: false
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
