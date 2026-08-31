@@ -14,8 +14,8 @@ pub(crate) fn base_cell_relationship<'py>(
     direction: WindRose,
 ) -> PyResult<(
     Option<u8>,
-    Bound<'py, PyArray1<i32>>,
-    Bound<'py, PyArray1<i32>>,
+    Bound<'py, PyArray1<i8>>,
+    Bound<'py, PyArray1<i8>>,
 )> {
     if !(0..=11).contains(&base_cell) {
         Err(PyValueError::new_err(
@@ -25,8 +25,8 @@ pub(crate) fn base_cell_relationship<'py>(
         match implementation::base_cell_relationship(base_cell, direction.into_mainwind()) {
             None => Ok((
                 None,
-                PyArray1::<i32>::zeros(py, [2], false),
-                PyArray1::<i32>::zeros(py, [2], false),
+                PyArray1::<i8>::zeros(py, [2], false),
+                PyArray1::<i8>::zeros(py, [2], false),
             )),
             Some((neighbour, (x1, y1), (x2, y2))) => {
                 let array1 = PyArray1::from_vec(py, vec![x1, y1]);

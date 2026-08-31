@@ -10,7 +10,7 @@ use cdshealpix::compass_point::MainWind;
 pub fn base_cell_relationship(
     base_cell: u8,
     direction: MainWind,
-) -> Option<(u8, (i32, i32), (i32, i32))> {
+) -> Option<(u8, (i8, i8), (i8, i8))> {
     if base_cell >= 12 || direction == MainWind::C {
         return None;
     }
@@ -29,8 +29,8 @@ pub fn base_cell_relationship(
     debug_assert_eq!(target_base_cell, target_i);
     debug_assert_eq!(target_base_cell, target_j);
 
-    let delta_i = (i_axis_i - origin_i, i_axis_j - origin_j);
-    let delta_j = (j_axis_i - origin_i, j_axis_j - origin_j);
+    let delta_i = ((i_axis_i - origin_i) as i8, (i_axis_j - origin_j) as i8);
+    let delta_j = ((j_axis_i - origin_i) as i8, (j_axis_j - origin_j) as i8);
 
     debug_assert!(matches!(delta_i, (1 | -1, 0) | (0, 1 | -1)));
     debug_assert!(matches!(delta_j, (1 | -1, 0) | (0, 1 | -1)));
