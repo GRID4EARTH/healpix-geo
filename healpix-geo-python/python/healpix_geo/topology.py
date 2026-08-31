@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from healpix_geo import healpix_geo
+from healpix_geo import _healpix_geo_python
 
 if TYPE_CHECKING:
     import numpy as np
@@ -36,4 +36,4 @@ def base_cell_relationship(
     >>> base_cell_relationship(0, "N")
     >>> base_cell_relationship(4, "N") is None
     """
-    return healpix_geo.base_cell_relationship(base_cell, direction)
+    return _healpix_geo_python.base_cell_relationship(base_cell, direction)
