@@ -50,6 +50,16 @@ Geometry helpers
    lonlat_to_cartesian
    vertex_to_lonlat
 
+Ragged output
+~~~~~~~~~~~~~
+
+.. currentmodule:: healpix_geo
+
+.. autosummary::
+   :toctree: generated/
+
+   RaggedArray
+
 Common Parameters
 ==================
 

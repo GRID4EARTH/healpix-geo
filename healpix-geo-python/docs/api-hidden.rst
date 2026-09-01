@@ -36,3 +36,11 @@
    healpix_geo.auto.Grid.level
    healpix_geo.auto.Grid.indexing_scheme
    healpix_geo.auto.Grid.ellipsoid
+
+   healpix_geo.RaggedArray.ndim
+   healpix_geo.RaggedArray.shape
+   healpix_geo.RaggedArray.dtype
+
+   healpix_geo.RaggedArray.apply_element_wise
+   healpix_geo.RaggedArray.as_awkward
+   healpix_geo.RaggedArray.as_ragged
