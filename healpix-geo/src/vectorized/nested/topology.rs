@@ -8,10 +8,10 @@ use crate::vectorized::depth::Depth;
 
 use crate::scalar::nested::topology as scalar;
 
-/// Split cell indexes into base-face-local coordinates.
+/// Split cell indexes into base cell-local coordinates.
 ///
 /// Inputs are assumed to have already been validated. The returned vectors have
-/// the same length and contain `(face, i, j)` components in matching order.
+/// the same length and contain `(base_cell, i, j)` components in matching order.
 pub fn healpix_to_base_cell_coordinates(
     ipix: &[u64],
     depth: Depth,
@@ -36,7 +36,7 @@ pub fn healpix_to_base_cell_coordinates(
     result
 }
 
-/// Combine base faces and face-local coordinates into NESTED cell indexes.
+/// Combine base cells and base cell-local coordinates into cell indexes.
 ///
 /// Inputs are assumed to have equal lengths and to have already been validated.
 pub fn base_cell_coordinates_to_healpix(
