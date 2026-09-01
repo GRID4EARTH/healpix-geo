@@ -2,6 +2,7 @@ import numpy as np
 
 import healpix_geo.ellipsoid  # noqa: F401
 from healpix_geo import _healpix_geo_python, geometry, nested, ring, zuniq
+from healpix_geo._healpix_geo_python import RaggedArray
 from healpix_geo.geometry import Bbox
 from healpix_geo.mesh import vertex_to_lonlat
 
@@ -102,6 +103,7 @@ __all__ = [
     "slices",
     "geometry",
     "Bbox",
+    "RaggedArray",
     "vertex_to_lonlat",
     "lonlat_to_cartesian",
     "cartesian_to_lonlat",
