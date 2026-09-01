@@ -127,29 +127,6 @@ jobs:
           cache: true
           frozen: true
 
-      - name: Help finding installed libraries
-        run: |
-          export CONDA_PREFIX=$(pixi run --frozen -e $ENV 'echo $CONDA_PREFIX')
-          if [[ -z "$CONDA_PREFIX" ]]; then
-            echo "CONDA_PREFIX is unset!"
-            exit 1
-          fi
-
-          pushd $CONDA_PREFIX
-          echo "PKG_CONFIG_PATH=$(readlink -f lib/pkgconfig)" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$(readlink -f lib)" >> $GITHUB_ENV
-          popd
-
-      - name: Help the linker on macos
-        if: runner.os == 'MacOS'
-        run: |
-          export CONDA_PREFIX=$(pixi run --frozen -e $ENV 'echo $CONDA_PREFIX')
-
-          if [ ! -d target/debug/deps ]; then
-              mkdir -p target/debug/deps
-              ln -s $CONDA_PREFIX/lib/*.dylib target/debug/deps/
-          fi
-
       - name: editable install
         run: pixi install --frozen
 
@@ -209,29 +186,6 @@ jobs:
           cache-key: "pixi-doctests-"
           cache: true
           frozen: true
-
-      - name: Help finding installed libraries
-        run: |
-          export CONDA_PREFIX=$(pixi run --frozen -e $ENV 'echo $CONDA_PREFIX')
-          if [[ -z "$CONDA_PREFIX" ]]; then
-            echo "CONDA_PREFIX is unset!"
-            exit 1
-          fi
-
-          pushd $CONDA_PREFIX
-          echo "PKG_CONFIG_PATH=$(readlink -f lib/pkgconfig)" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$(readlink -f lib)" >> $GITHUB_ENV
-          popd
-
-      - name: Help the linker on macos
-        if: runner.os == 'MacOS'
-        run: |
-          export CONDA_PREFIX=$(pixi run --frozen -e $ENV 'echo $CONDA_PREFIX')
-
-          if [ ! -d target/debug/deps ]; then
-              mkdir -p target/debug/deps
-              ln -s $CONDA_PREFIX/lib/*.dylib target/debug/deps/
-          fi
 
       - name: editable install
         run: pixi install --frozen
