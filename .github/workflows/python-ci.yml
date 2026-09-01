@@ -123,7 +123,7 @@ jobs:
           frozen: true
 
       - name: editable install
-        run: pixi install --locked -e "$ENV"
+        run: pixi install --frozen -e "$ENV"
 
       - name: Check imports
         run: |
@@ -178,7 +178,7 @@ jobs:
           frozen: true
 
       - name: editable install
-        run: pixi install --locked -e "$ENV"
+        run: pixi install --frozen -e "$ENV"
 
       - name: Check imports
         run: |
