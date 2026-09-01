@@ -16,6 +16,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 geometries = ["shapely>=2"]
+ragged = ["ragged", "awkward"]
 
 [tool.maturin]
 module-name = "healpix_geo._healpix_geo_python"
