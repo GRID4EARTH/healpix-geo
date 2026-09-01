@@ -66,3 +66,33 @@ def test_apply_elementwise(func, expected):
 
     np.testing.assert_allclose(actual.data, expected)
     assert actual.offsets is obj.offsets
+
+
+def test_as_awkward():
+    ak = pytest.importorskip("awkward")
+
+    offsets = np.array([0, 3, 4, 6], dtype="uint64")
+    data = np.linspace(0, 1, 7, dtype="float32")
+    obj = RaggedArray(offsets, data)
+
+    actual = obj.as_awkward()
+    expected = ak.Array(
+        [data[start:stop] for start, stop in zip(offsets[:-1], offsets[1:])]
+    )
+
+    assert ak.to_list(actual) == ak.to_list(expected)
+
+
+def test_as_ragged():
+    ragged = pytest.importorskip("ragged")
+
+    offsets = np.array([0, 3, 4, 6], dtype="uint64")
+    data = np.linspace(0, 1, 7, dtype="float32")
+    obj = RaggedArray(offsets, data)
+
+    actual = obj.as_ragged()
+    expected = ragged.array(
+        [data[start:stop] for start, stop in zip(offsets[:-1], offsets[1:])]
+    )
+
+    assert ragged.all(actual == expected)
