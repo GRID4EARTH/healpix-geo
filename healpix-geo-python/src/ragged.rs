@@ -1,18 +1,15 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyFunction, PyModule};
+use pyo3::types::{PyFunction, PyModule, PyString};
 
-use numpy::{
-    PyArray1, PyArrayDescrMethods, PyArrayDyn, PyArrayMethods, PyUntypedArray,
-    PyUntypedArrayMethods, dtype,
-};
+use numpy::{PyArray1, PyArrayDescrMethods, PyUntypedArray, PyUntypedArrayMethods, dtype};
 
 /// very basic implementation of a ragged array
 #[pyclass(frozen)]
 #[derive(Debug)]
-struct RaggedArray {
+pub(crate) struct RaggedArray {
     #[pyo3(get)]
-    cuts: Py<PyArray1<u64>>,
+    offsets: Py<PyArray1<u64>>,
     #[pyo3(get)]
     data: Py<PyUntypedArray>,
 }
@@ -23,28 +20,51 @@ impl RaggedArray {
     #[new]
     fn create<'py>(
         py: Python<'py>,
-        cuts: &Bound<'py, PyUntypedArray>,
+        offsets: &Bound<'py, PyUntypedArray>,
         data: &Bound<'py, PyUntypedArray>,
     ) -> PyResult<Self> {
-        let cuts_dtype = cuts.dtype();
-        let cuts_ = (if cuts_dtype.is_equiv_to(&dtype::<u64>(py)) {
-            let array = cuts.cast::<PyArrayDyn<u64>>()?;
+        let numpy = PyModule::import(py, "numpy")?;
+        let isdtype = numpy.getattr("isdtype")?;
+        let integer_category = PyString::new(py, "integral");
 
-            array.reshape([array.len()])
+        let py_dtype = offsets.getattr("dtype")?;
+        let rs_dtype = offsets.dtype();
+
+        let shape = offsets.shape();
+        if shape.len() != 1 {
+            Err(PyValueError::new_err(format!(
+                "offsets must be 1-dimensional, got shape {:?}",
+                shape
+            )))?;
+        }
+
+        let offsets_ = (if isdtype
+            .call1((py_dtype, integer_category))?
+            .extract::<bool>()?
+        {
+            if !rs_dtype.is_equiv_to(&dtype::<u64>(py)) {
+                let array = numpy
+                    .getattr("astype")?
+                    .call1((offsets, numpy.getattr("uint64")?))?;
+
+                Ok(array.cast::<PyArray1<u64>>()?.clone())
+            } else {
+                Ok(offsets.cast::<PyArray1<u64>>()?.clone())
+            }
         } else {
             Err(PyValueError::new_err(format!(
-                "cuts must be of dtype uint64, got {cuts_dtype}"
+                "offsets must be of integer dtype, got {rs_dtype}"
             )))
         })?;
 
         Ok(Self {
-            cuts: cuts_.unbind(),
+            offsets: offsets_.unbind(),
             data: data.clone().unbind(),
         })
     }
 
     /// apply a element-wise function
-    fn apply_element_wise<'py>(
+    fn apply_elementwise<'py>(
         &self,
         py: Python<'py>,
         func: &Bound<'py, PyFunction>,
@@ -53,7 +73,7 @@ impl RaggedArray {
         let new_data = result.cast::<PyUntypedArray>()?;
 
         Ok(Self {
-            cuts: self.cuts.clone_ref(py),
+            offsets: self.offsets.clone_ref(py),
             data: new_data.clone().unbind(),
         })
     }
@@ -69,7 +89,7 @@ impl RaggedArray {
         let index64_cls = index.getattr("Index64")?;
         let numpy_array_cls = contents.getattr("NumpyArray")?;
 
-        let offsets = self.cuts.bind(py);
+        let offsets = self.offsets.bind(py);
         let data = self.data.bind(py);
 
         let layout = list_offset_array_cls.call1((
