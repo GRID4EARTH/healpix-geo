@@ -128,7 +128,7 @@ jobs:
           frozen: true
 
       - name: editable install
-        run: pixi install --frozen
+        run: pixi install --locked
 
       - name: Check imports
         run: |
@@ -188,7 +188,7 @@ jobs:
           frozen: true
 
       - name: editable install
-        run: pixi install --frozen
+        run: pixi install --locked
 
       - name: Check imports
         run: |
