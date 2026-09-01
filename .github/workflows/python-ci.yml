@@ -105,11 +105,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Rust
-        run: |
-          rustup update stable
-          rustup default stable
-
       - uses: Parcels-code/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
         with:
           cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
@@ -163,11 +158,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Install Rust
-        run: |
-          rustup update stable
-          rustup default stable
 
       - uses: Parcels-code/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
         with:
