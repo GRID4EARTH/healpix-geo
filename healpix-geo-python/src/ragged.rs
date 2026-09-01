@@ -1,8 +1,10 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyFunction, PyModule, PyString};
+use pyo3::types::{PyFunction, PyModule, PyString, PyTuple};
 
-use numpy::{PyArray1, PyArrayDescrMethods, PyUntypedArray, PyUntypedArrayMethods, dtype};
+use numpy::{
+    PyArray1, PyArrayDescrMethods, PyArrayMethods, PyUntypedArray, PyUntypedArrayMethods, dtype,
+};
 
 /// very basic implementation of a ragged array
 #[pyclass(frozen)]
@@ -12,6 +14,8 @@ pub(crate) struct RaggedArray {
     offsets: Py<PyArray1<u64>>,
     #[pyo3(get)]
     data: Py<PyUntypedArray>,
+
+    shape: [usize; 2],
 }
 
 #[pymethods]
@@ -57,10 +61,38 @@ impl RaggedArray {
             )))
         })?;
 
+        let readonly_offsets = offsets_.readonly();
+
+        let array_shape = [
+            offsets_.len() - 1,
+            readonly_offsets
+                .as_slice()?
+                .windows(2)
+                .map(|window| window[1] - window[0])
+                .max()
+                .unwrap_or(0) as usize,
+        ];
+
         Ok(Self {
             offsets: offsets_.unbind(),
             data: data.clone().unbind(),
+            shape: array_shape,
         })
+    }
+
+    #[getter]
+    fn shape<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyTuple>> {
+        PyTuple::new(py, self.shape)
+    }
+
+    #[getter]
+    fn dtype<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        self.data.bind(py).getattr("dtype")
+    }
+
+    #[getter]
+    fn ndim(&self) -> usize {
+        self.shape.len()
     }
 
     /// apply a element-wise function
@@ -75,6 +107,7 @@ impl RaggedArray {
         Ok(Self {
             offsets: self.offsets.clone_ref(py),
             data: new_data.clone().unbind(),
+            shape: self.shape,
         })
     }
 

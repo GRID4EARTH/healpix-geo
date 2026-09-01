@@ -20,6 +20,9 @@ def test_init(offsets):
     # ragged array is a container and thus must not copy for uint64
     assert offsets.dtype != np.dtype("uint64") or obj.offsets is offsets
     assert obj.data is data
+    assert obj.dtype == data.dtype
+    assert obj.shape == (3, 3)
+    assert obj.ndim == 2
 
 
 @pytest.mark.parametrize(
