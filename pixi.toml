@@ -1,5 +1,3 @@
-# clear cache
-
 [workspace]
 channels = ["conda-forge"]
 name = "healpix-geo"
