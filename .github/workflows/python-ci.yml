@@ -99,7 +99,6 @@ jobs:
       FORCE_COLOR: 3
       ENV: ${{ matrix.env }}
       RUNNER_OS: ${{ matrix.os }}
-      BUILD_EDITABLE_PYTHON: false
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -151,6 +150,9 @@ jobs:
               ln -s $CONDA_PREFIX/lib/*.dylib target/debug/deps/
           fi
 
+      - name: editable install
+        run: pixi install --frozen
+
       - name: Check imports
         run: |
           pixi run \
@@ -179,7 +181,6 @@ jobs:
       FORCE_COLOR: 3
       ENV: ${{ matrix.env }}
       RUNNER_OS: ${{ matrix.os }}
-      BUILD_EDITABLE_PYTHON: false
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -231,6 +232,9 @@ jobs:
               mkdir -p target/debug/deps
               ln -s $CONDA_PREFIX/lib/*.dylib target/debug/deps/
           fi
+
+      - name: editable install
+        run: pixi install --frozen
 
       - name: Check imports
         run: |
