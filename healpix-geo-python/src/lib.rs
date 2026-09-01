@@ -9,6 +9,8 @@ mod mesh;
 mod topology;
 mod traits;
 
+mod ragged;
+
 #[pymodule]
 mod nested {
     #[pymodule_export]
@@ -78,4 +80,7 @@ mod healpix_geo {
 
     #[pymodule_export]
     use crate::ellipsoid::resolve_ellipsoid;
+
+    #[pymodule_export]
+    use crate::ragged::RaggedArray;
 }
