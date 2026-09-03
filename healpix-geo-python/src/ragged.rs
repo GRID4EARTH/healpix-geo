@@ -8,6 +8,14 @@ use numpy::{
 };
 
 /// very basic implementation of a ragged array
+///
+/// Attributes
+/// ----------
+/// offsets : numpy.ndarray of numpy.uint64
+///     The offsets of each row, such that ``zip(offsets[:-1], offsets[1:])`` contains the start and stop
+///     values that can be used to index ``data``.
+/// data : numpy.ndarray
+///     The data of the array.
 #[pyclass(frozen)]
 #[derive(Debug)]
 pub(crate) struct RaggedArray {
@@ -167,22 +175,34 @@ impl RaggedArray {
         })
     }
 
+    /// The rectangular shape of the array
     #[getter]
     fn shape<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyTuple>> {
         PyTuple::new(py, self.shape)
     }
 
+    /// The numpy dtype of the array
     #[getter]
     fn dtype<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         self.data.bind(py).getattr("dtype")
     }
 
+    /// The number of dimensions of the array
+    ///
+    /// This will always be ``2``.
     #[getter]
     fn ndim(&self) -> usize {
         self.shape.len()
     }
 
     /// apply a element-wise function
+    ///
+    /// For anything more elaborate, see the conversion functions or extract the offsets and data.
+    ///
+    /// Parameters
+    /// ----------
+    /// func : callable
+    ///     A function that performs elementwise calculations.
     fn apply_elementwise<'py>(
         &self,
         py: Python<'py>,
