@@ -570,7 +570,7 @@ impl Grid {
         let ellipsoid = options
             .ellipsoid
             .map_or_else(|| Ok(self.ellipsoid.clone()), |e| e.into_ellipsoid())
-            .map_err(|msg| JsError::new(&message).into())?;
+            .map_err(|message| JsError::new(&message).into())?;
 
         Ok(Grid {
             scheme,
