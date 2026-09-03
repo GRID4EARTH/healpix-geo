@@ -319,7 +319,7 @@ describe("Grid parameter replacement", () => {
     expect(replaced.level).to.equal(1);
     expect(replaced.scheme).to.equal(grid.scheme);
     expect(replaced.isSphere).to.equal(true);
-    expect(replaced.ellipsoid.radius).to.equal(6370997.0);
+    expect(replaced.ellipsoid.semiMajorAxis).to.equal(6370997.0);
   });
 
   test("replacing the scheme", () => {
@@ -329,7 +329,7 @@ describe("Grid parameter replacement", () => {
     expect(replaced.level).to.equal(grid.level);
     expect(replaced.scheme).to.equal("zuniq");
     expect(replaced.isSphere).to.equal(true);
-    expect(replaced.ellipsoid.radius).to.equal(6370997.0);
+    expect(replaced.ellipsoid.semiMajorAxis).to.equal(6370997.0);
   });
 
   test("replacing the ellipsoid", () => {
