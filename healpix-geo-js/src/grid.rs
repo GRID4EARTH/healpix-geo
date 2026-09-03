@@ -144,6 +144,26 @@ export type GridOptions = {
 };
 "#;
 
+#[derive(Deserialize, Debug)]
+pub(crate) struct PartialGridOptions {
+    #[serde(default)]
+    scheme: Option<Scheme>,
+    #[serde(default)]
+    level: Option<u8>,
+    #[serde(default)]
+    ellipsoid: Option<EllipsoidLike>,
+}
+
+/// The options object accepted by the `Grid` constructor.
+#[wasm_bindgen(typescript_custom_section)]
+const PARTIAL_GRID_OPTIONS: &'static str = r#"
+export type PartialGridOptions = {
+    scheme?: "nested" | "ring" | "zuniq";
+    level?: number;
+    ellipsoid?: EllipsoidInput | null;
+};
+"#;
+
 /// A HEALPix grid at a fixed refinement level on a fixed reference body.
 ///
 /// Constructed with `new Grid(options)`. The scheme dispatch, the level, and
@@ -532,6 +552,30 @@ impl Grid {
         crate::ellipsoid::Ellipsoid {
             inner: self.ellipsoid.clone(),
         }
+    }
+
+    /// create a new grid with the given parameters replaced
+    ///
+    /// Note that this cannot replace the ellipsoid with the default sphere. Instead,
+    /// create the ellipsoid manually using the constructor.
+    pub fn replace(
+        &self,
+        #[wasm_bindgen(unchecked_param_type = "PartialGridOptions")] options: JsValue,
+    ) -> Result<Self, JsValue> {
+        let options: PartialGridOptions = from_value(options)?;
+
+        let scheme = options.scheme.unwrap_or(self.scheme);
+        let level = options.level.unwrap_or(self.level);
+
+        let ellipsoid = options
+            .ellipsoid
+            .map_or_else(|| Ok(self.ellipsoid.clone()), |e| e.into_ellipsoid())?;
+
+        Ok(Grid {
+            scheme,
+            level,
+            ellipsoid,
+        })
     }
 
     /// Single vertex of the given cell
