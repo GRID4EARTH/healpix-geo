@@ -569,8 +569,10 @@ impl Grid {
 
         let ellipsoid = options
             .ellipsoid
-            .map_or_else(|| Ok(self.ellipsoid.clone()), |e| e.into_ellipsoid())
-            .map_err(|message| JsError::new(&message).into())?;
+            .map(|e| e.into_ellipsoid())
+            .transpose()
+            .map_err(|message: String| JsError::new(&message))?
+            .unwrap_or_else(|| self.ellipsoid.clone());
 
         Ok(Grid {
             scheme,
