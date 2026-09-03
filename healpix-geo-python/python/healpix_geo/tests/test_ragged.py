@@ -99,3 +99,29 @@ def test_as_ragged():
     )
 
     assert ragged.all(actual == expected)
+
+
+def test_as_numpy():
+    offsets = np.array([0, 3, 4, 6], dtype="uint64")
+    data = np.arange(7, dtype="int64")
+    obj = RaggedArray(offsets, data)
+
+    actual = obj.as_numpy()
+    expected = np.array([[0, 1, 2], [3, -1, -1], [4, 5, -1]], dtype="int64")
+
+    np.testing.assert_equal(actual, expected)
+
+
+@pytest.mark.parametrize(
+    "data",
+    (
+        pytest.param(np.linspace(0, 1, 7, dtype="float16"), id="float16"),
+        pytest.param(np.arange(7, dtype="complex64"), id="complex64"),
+    ),
+)
+def test_as_numpy_errors(data):
+    offsets = np.array([0, 3, 4, 6], dtype="uint64")
+
+    obj = RaggedArray(offsets, data)
+    with pytest.raises(ValueError, match="unsupported data dtype"):
+        obj.as_numpy()
