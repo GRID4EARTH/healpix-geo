@@ -101,15 +101,19 @@ def test_as_ragged():
     assert ragged.all(actual == expected)
 
 
-def test_as_numpy():
+def test_as_masked_array():
     offsets = np.array([0, 3, 4, 6], dtype="uint64")
     data = np.arange(7, dtype="int64")
     obj = RaggedArray(offsets, data)
 
-    actual = obj.as_numpy()
-    expected = np.array([[0, 1, 2], [3, -1, -1], [4, 5, -1]], dtype="int64")
+    actual = obj.as_masked_array()
+    expected_data = np.array([[0, 1, 2], [3, 0, 0], [4, 5, 0]], dtype="int64")
+    expected_mask = np.array(
+        [[False, False, False], [False, True, True], [False, False, True]], dtype="bool"
+    )
 
-    np.testing.assert_equal(actual, expected)
+    np.testing.assert_equal(actual.data, expected_data)
+    np.testing.assert_equal(actual.mask, expected_mask)
 
 
 @pytest.mark.parametrize(
@@ -119,9 +123,9 @@ def test_as_numpy():
         pytest.param(np.arange(7, dtype="complex64"), id="complex64"),
     ),
 )
-def test_as_numpy_errors(data):
+def test_as_masked_array_errors(data):
     offsets = np.array([0, 3, 4, 6], dtype="uint64")
 
     obj = RaggedArray(offsets, data)
-    with pytest.raises(ValueError, match="unsupported data dtype"):
-        obj.as_numpy()
+    with pytest.raises(TypeError, match="Unsupported data dtype"):
+        obj.as_masked_array()
