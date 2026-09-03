@@ -18,6 +18,32 @@ pub(crate) struct RaggedArray {
     shape: [usize; 2],
 }
 
+fn copy_into_rectangular<T: Copy>(
+    offsets: &[u64],
+    data_in: &[T],
+    data_out: &mut [T],
+    shape: [usize; 2],
+) {
+    for (row, (in_start, in_stop)) in offsets[..offsets.len() - 1]
+        .iter()
+        .zip(offsets[1..].iter())
+        .enumerate()
+    {
+        let in_start: usize = *in_start as usize;
+        let in_stop: usize = *in_stop as usize;
+
+        let row_size: isize = (in_stop as isize) - (in_start as isize);
+        if row_size <= 0 {
+            continue;
+        }
+        let row_size = row_size as usize;
+        let out_start = row * shape[0];
+        let out_stop = out_start + row_size;
+
+        data_out[out_start..out_stop].copy_from_slice(&data_in[in_start..in_stop]);
+    }
+}
+
 #[pymethods]
 impl RaggedArray {
     /// construct the ragged array from offsets and data
@@ -109,6 +135,108 @@ impl RaggedArray {
             data: new_data.clone().unbind(),
             shape: self.shape,
         })
+    }
+
+    /// convert to a rectangular numpy array
+    fn as_numpy<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyUntypedArray>> {
+        let bound_data = self.data.bind(py);
+        let offsets_ = self.offsets.bind(py);
+        if offsets_.len() == 2 {
+            return Ok(bound_data.into());
+        }
+
+        // steps:
+        // 1. create an array like self.data, pre-filled with a fill value
+        // 2. convert the array to readwrite, then to a mutable slice
+        // 3. call copy_into_rectangular
+        // 4. return
+
+        let offsets = offsets_.readonly();
+
+        let data_dtype = bound_data.dtype();
+        let buffer_size = self.shape[0] * self.shape[1];
+        if data_dtype.is_equiv_to(&dtype::<bool>(py))
+            || data_dtype.is_equiv_to(&dtype::<i8>(py))
+            || data_dtype.is_equiv_to(&dtype::<u8>(py))
+        {
+            let mut buffer = vec![-1i8; buffer_size];
+
+            let cast = bound_data.cast::<PyArray1<i8>>()?;
+            let source = cast.readonly();
+
+            copy_into_rectangular(
+                offsets.as_slice()?,
+                source.as_slice()?,
+                &mut buffer,
+                self.shape,
+            );
+
+            Ok(PyArray1::from_vec(py, buffer)
+                .reshape(self.shape)?
+                .as_untyped()
+                .clone())
+        } else if data_dtype.is_equiv_to(&dtype::<i16>(py))
+            || data_dtype.is_equiv_to(&dtype::<u16>(py))
+        {
+            let mut buffer = vec![-1i16; buffer_size];
+
+            let cast = bound_data.cast::<PyArray1<i16>>()?;
+            let source = cast.readonly();
+
+            copy_into_rectangular(
+                offsets.as_slice()?,
+                source.as_slice()?,
+                &mut buffer,
+                self.shape,
+            );
+
+            Ok(PyArray1::from_vec(py, buffer)
+                .reshape(self.shape)?
+                .as_untyped()
+                .clone())
+        } else if data_dtype.is_equiv_to(&dtype::<i32>(py))
+            || data_dtype.is_equiv_to(&dtype::<u32>(py))
+        {
+            let mut buffer = vec![-1i32; buffer_size];
+
+            let cast = bound_data.cast::<PyArray1<i32>>()?;
+            let source = cast.readonly();
+
+            copy_into_rectangular(
+                offsets.as_slice()?,
+                source.as_slice()?,
+                &mut buffer,
+                self.shape,
+            );
+
+            Ok(PyArray1::from_vec(py, buffer)
+                .reshape(self.shape)?
+                .as_untyped()
+                .clone())
+        } else if data_dtype.is_equiv_to(&dtype::<i64>(py))
+            || data_dtype.is_equiv_to(&dtype::<u64>(py))
+        {
+            let mut buffer = vec![-1i64; buffer_size];
+
+            let cast = bound_data.cast::<PyArray1<i64>>()?;
+            let source = cast.readonly();
+
+            copy_into_rectangular(
+                offsets.as_slice()?,
+                source.as_slice()?,
+                &mut buffer,
+                self.shape,
+            );
+
+            Ok(PyArray1::from_vec(py, buffer)
+                .reshape(self.shape)?
+                .as_untyped()
+                .clone())
+        } else {
+            Err(PyValueError::new_err(
+                "unsupported data dtype: only boolean and integer dtypes are supported right now",
+            ))
+        }
     }
 
     /// convert to a awkward array
