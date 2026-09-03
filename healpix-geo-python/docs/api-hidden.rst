@@ -40,8 +40,6 @@
    healpix_geo.RaggedArray.ndim
    healpix_geo.RaggedArray.shape
    healpix_geo.RaggedArray.dtype
-   healpix_geo.RaggedArray.offsets
-   healpix_geo.RaggedArray.data
 
    healpix_geo.RaggedArray.apply_elementwise
    healpix_geo.RaggedArray.as_awkward
