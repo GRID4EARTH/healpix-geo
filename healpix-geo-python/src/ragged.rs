@@ -223,6 +223,10 @@ impl RaggedArray {
     }
 
     /// convert to a awkward array
+    ///
+    /// Notes
+    /// -----
+    /// Requires `awkward` to be installed.
     fn as_awkward<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let awkward = PyModule::import(py, "awkward")?;
         let contents = awkward.getattr("contents")?;
@@ -245,6 +249,10 @@ impl RaggedArray {
     }
 
     /// convert to a ragged array
+    ///
+    /// Notes
+    /// -----
+    /// Requires `ragged` to be installed.
     fn as_ragged<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let ragged = PyModule::import(py, "ragged")?;
         let array_cls = ragged.getattr("array")?;
