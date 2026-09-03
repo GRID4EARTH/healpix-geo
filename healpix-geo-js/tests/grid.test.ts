@@ -310,3 +310,35 @@ describe("Grid ellipsoid state reuse", () => {
     );
   });
 });
+
+describe("Grid parameter replacement", () => {
+  test("replacing the level", () => {
+    const grid = new Grid({ scheme: "nested", level: 29 });
+    const replaced = grid.replace({ level: 1 });
+
+    expect(replaced.level).to.equal(1);
+    expect(replaced.scheme).to.equal(grid.scheme);
+    expect(replaced.isSphere).to.equal(true);
+    expect(replaced.ellipsoid.radius).to.equal(6370997.0);
+  });
+
+  test("replacing the scheme", () => {
+    const grid = new Grid({ scheme: "nested", level: 29 });
+    const replaced = grid.replace({ scheme: "zuniq" });
+
+    expect(replaced.level).to.equal(grid.level);
+    expect(replaced.scheme).to.equal("zuniq");
+    expect(replaced.isSphere).to.equal(true);
+    expect(replaced.ellipsoid.radius).to.equal(6370997.0);
+  });
+
+  test("replacing the ellipsoid", () => {
+    const grid = new Grid({ scheme: "nested", level: 29 });
+    const replaced = grid.replace({ ellipsoid: wgs84 });
+
+    expect(replaced.level).to.equal(grid.level);
+    expect(replaced.scheme).to.equal(grid.scheme);
+    expect(replaced.isSphere).to.equal(false);
+    expect(replaced.ellipsoid.semiMajorAxis).to.equal(wgs84.semi_major_axis);
+  });
+});
