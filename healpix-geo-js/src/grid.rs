@@ -137,8 +137,9 @@ pub(crate) struct GridOptions {
 /// The options object accepted by the `Grid` constructor.
 #[wasm_bindgen(typescript_custom_section)]
 const GRID_OPTIONS: &'static str = r#"
+export type IndexingScheme = "nested" | "ring" | "zuniq";
 export type GridOptions = {
-    scheme: "nested" | "ring" | "zuniq";
+    scheme: IndexingScheme;
     level: number;
     ellipsoid?: EllipsoidInput | null;
 };
@@ -158,7 +159,7 @@ pub(crate) struct PartialGridOptions {
 #[wasm_bindgen(typescript_custom_section)]
 const PARTIAL_GRID_OPTIONS: &'static str = r#"
 export type PartialGridOptions = {
-    scheme?: "nested" | "ring" | "zuniq";
+    scheme?: IndexingScheme;
     level?: number;
     ellipsoid?: EllipsoidInput | null;
 };
