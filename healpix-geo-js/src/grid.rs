@@ -155,7 +155,7 @@ pub(crate) struct PartialGridOptions {
     ellipsoid: Option<EllipsoidLike>,
 }
 
-/// The options object accepted by the `Grid` constructor.
+/// The options object accepted by the `Grid.replace` function
 #[wasm_bindgen(typescript_custom_section)]
 const PARTIAL_GRID_OPTIONS: &'static str = r#"
 export type PartialGridOptions = {
