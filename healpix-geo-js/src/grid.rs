@@ -504,7 +504,7 @@ impl Grid {
     ///
     /// Narrowed to the literal union so that `other.toScheme(cell,
     /// grid.scheme)` type-checks and `switch (grid.scheme)` is exhaustive.
-    #[wasm_bindgen(getter, unchecked_return_type = "\"nested\" | \"ring\" | \"zuniq\"")]
+    #[wasm_bindgen(getter, unchecked_return_type = "IndexingScheme")]
     pub fn scheme(&self) -> String {
         self.scheme.name().to_string()
     }
@@ -684,7 +684,7 @@ impl Grid {
     pub fn to_scheme(
         &self,
         cell: u64,
-        #[wasm_bindgen(unchecked_param_type = "\"nested\" | \"ring\" | \"zuniq\"")] scheme: &str,
+        #[wasm_bindgen(unchecked_param_type = "IndexingScheme")] scheme: &str,
         level: Option<f64>,
     ) -> Result<u64, JsValue> {
         Scheme::parse(scheme)
