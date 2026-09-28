@@ -3,6 +3,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "es2021",
+    "lib": ["es2021", "esnext.disposable", "dom", "dom.iterable"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noImplicitAny": true,
