@@ -113,6 +113,30 @@ fn create_masked_array<'py>(
     xp.getattr("asarray")?.call((array,), Some(&kwargs))
 }
 
+impl RaggedArray {
+    pub(crate) fn new<'py>(
+        offsets: &Bound<'py, PyArray1<u64>>,
+        data: &Bound<'py, PyUntypedArray>,
+    ) -> PyResult<Self> {
+        let readonly_offsets = offsets.readonly();
+        let shape = [
+            readonly_offsets.len() - 1,
+            readonly_offsets
+                .as_slice()?
+                .windows(2)
+                .map(|window| window[1] - window[0])
+                .max()
+                .unwrap_or(0) as usize,
+        ];
+
+        Ok(Self {
+            offsets: offsets.clone().unbind(),
+            data: data.clone().unbind(),
+            shape,
+        })
+    }
+}
+
 #[pymethods]
 impl RaggedArray {
     /// construct the ragged array from offsets and data

@@ -808,6 +808,76 @@ def test_cone_coverage(scheme, expected_cell_ids, expected_depths, expected_cove
     np.testing.assert_equal(fully_covered, expected_coverage)
 
 
+@pytest.mark.parametrize("ellipsoid", ["sphere", "WGS84"])
+@pytest.mark.parametrize("flat", [True, False])
+@pytest.mark.parametrize("num_threads", [0, 1, 4, 32])
+def test_cone_coverage_many_matches_scalar(ellipsoid, flat, num_threads):
+    centers = np.array(
+        [
+            [45.0, 45.0],
+            [179.999, 0.0],
+            [-179.999, 0.0],
+            [12.0, 89.9],
+            [12.0, -89.9],
+        ]
+    )
+    radius = 0.5
+    depth = 8
+    delta_depth = 1
+
+    offsets, cell_ids, depths, fully_covered = healpix_geo.nested.cone_coverage_many(
+        centers,
+        radius,
+        depth,
+        ellipsoid=ellipsoid,
+        delta_depth=delta_depth,
+        flat=flat,
+        num_threads=num_threads,
+    )
+
+    assert offsets.dtype == np.dtype("uint64")
+    np.testing.assert_equal(offsets.shape, (len(centers) + 1,))
+    for index, center in enumerate(centers):
+        start, end = offsets[index : index + 2]
+        expected = healpix_geo.nested.cone_coverage(
+            center,
+            radius,
+            depth,
+            ellipsoid=ellipsoid,
+            delta_depth=delta_depth,
+            flat=flat,
+        )
+        np.testing.assert_array_equal(cell_ids[start:end], expected[0])
+        np.testing.assert_array_equal(depths[start:end], expected[1])
+        np.testing.assert_array_equal(fully_covered[start:end], expected[2])
+
+
+def test_cone_coverage_many_empty():
+    result = healpix_geo.nested.cone_coverage_many(
+        np.empty((0, 2)), 0.5, 8, ellipsoid="WGS84"
+    )
+
+    np.testing.assert_array_equal(result[0], np.array([0], dtype="uint64"))
+    for array in result[1:]:
+        assert array.size == 0
+
+
+@pytest.mark.parametrize(
+    "centers",
+    [np.array([45.0, 45.0]), np.empty((2, 3)), np.empty((2, 2, 1))],
+)
+def test_cone_coverage_many_rejects_invalid_centers(centers):
+    with pytest.raises(ValueError, match="shape \\(N, 2\\)"):
+        healpix_geo.nested.cone_coverage_many(centers, 0.5, 8)
+
+
+def test_cone_coverage_many_rejects_negative_threads():
+    with pytest.raises(ValueError, match="num_threads must be non-negative"):
+        healpix_geo.nested.cone_coverage_many(
+            np.array([[45.0, 45.0]]), 0.5, 8, num_threads=-1
+        )
+
+
 @pytest.mark.parametrize(
     ["scheme", "expected_cell_ids", "expected_depths", "expected_coverage"],
     (
