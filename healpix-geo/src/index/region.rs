@@ -11,7 +11,8 @@ use moc::deser::json::from_json_aladin;
 use moc::moc::cell::CellMOC;
 use moc::moc::range::{CellSelection, RangeMOC};
 use moc::moc::{
-    CellMOCIntoIterator, CellMOCIterator, HasMaxDepth, RangeMOCIntoIterator, RangeMOCIterator,
+    CellMOCIntoIterator, CellMOCIterator, HasMaxDepth, IntoBMOC, RangeMOCIntoIterator,
+    RangeMOCIterator,
 };
 use moc::qty::{Hpx, MocQty};
 use num_traits::PrimInt;
@@ -131,6 +132,17 @@ impl CellRegion {
 
     pub fn ranges(&self) -> Vec<Range<u64>> {
         self.moc.moc_ranges().iter().cloned().collect()
+    }
+
+    pub fn compacted_cell_ids(&self) -> Vec<(u64, u8)> {
+        self.moc
+            .clone()
+            .into_range_moc_iter()
+            .cells()
+            .into_bmoc()
+            .into_iter()
+            .map(|c| (c.hash, c.depth))
+            .collect()
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

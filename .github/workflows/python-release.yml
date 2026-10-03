@@ -42,7 +42,7 @@ jobs:
       - name: Detect label
         id: detect-trigger-label
         env:
-          LABEL_FOUND: ${{ contains(github.event.pull_request.labels.*.name, 'build-wheel') || contains(github.event.pull_request.labels.*.name, 'release') }}
+          LABEL_FOUND: ${{ contains(github.event.pull_request.labels.*.name, 'build-wheels') || contains(github.event.pull_request.labels.*.name, 'release') }}
         run: |
           echo "label-found=$LABEL_FOUND" >> "$GITHUB_OUTPUT"
 
@@ -237,6 +237,83 @@ jobs:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
 
+  emscripten:
+    needs: detect-ci-trigger
+    if: |
+      (github.event_name == 'push' && github.ref_type == 'tag')
+      || (
+        github.event_name == 'pull_request'
+        && needs.detect-ci-trigger.outputs.triggered == 'true'
+      )
+    runs-on: ubuntu-latest
+
+    env:
+      # All of Pyodide 314.0.x share PyEmscripten ABI 2026_0, so one wheel serves
+      # the line
+      PYODIDE_VERSION: "314.0.4"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          # pyodide-build runs the host interpreter, which must match the target
+          python-version: "3.14"
+
+      - name: Install the cross-build environment
+        run: |
+          python -m pip install pyodide-build
+          pyodide xbuildenv install "$PYODIDE_VERSION"
+
+      - name: Read the pyodide config
+        id: pyodide-config
+        run: |
+          {
+            echo "rust-toolchain=$(pyodide config get rust_toolchain)"
+            echo "emscripten-version=$(pyodide config get emscripten_version)"
+            echo "abi-version=$(pyodide config get pyodide_abi_version)"
+            echo "rustflags=$(pyodide config get rustflags)"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
+        with:
+          version: ${{ steps.pyodide-config.outputs.emscripten-version }}
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        env:
+          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS: ${{ steps.pyodide-config.outputs.rustflags }}
+          MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ steps.pyodide-config.outputs.abi-version }}
+        with:
+          target: wasm32-unknown-emscripten
+          args: --release --out ../dist --interpreter 3.14
+          sccache: "false"
+          rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
+          working-directory: healpix-geo-python
+
+      # cdshealpix has no Pyodide wheel yet, so the modules that
+      # compare against it are excluded
+      # TODO: Drop the two --ignore and the -k once the following PR is merged and
+      # and the next release comes then add it to the pip install instead.
+      # https://github.com/cds-astro/cds-healpix-python/pull/53#issuecomment-5758749246
+      - name: Run the tests in the Pyodide runtime
+        run: |
+          T=healpix-geo-python/python/healpix_geo/tests
+          pyodide venv .venv-pyodide
+          .venv-pyodide/bin/pip install dist/*.whl pytest marray shapely
+          .venv-pyodide/bin/python -m pytest -q "$T" \
+            --ignore="$T/test_inference.py" \
+            --ignore="$T/test_neighbours.py" \
+            -k "not test_query"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wheels-emscripten
+          path: dist
+
   # sdist:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -265,7 +342,7 @@ jobs:
       attestations: write # generate the artifact attestation
       artifact-metadata: write # create the artifact storage record
     if: github.event_name == 'push' && github.ref_type == 'tag'
-    needs: [linux, musllinux, windows, macos]
+    needs: [linux, musllinux, windows, macos, emscripten]
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

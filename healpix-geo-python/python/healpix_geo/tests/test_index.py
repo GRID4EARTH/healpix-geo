@@ -301,6 +301,83 @@ class TestRangeMOCIndex:
         np.testing.assert_equal(actual, expected)
 
     @pytest.mark.parametrize(
+        ["level", "cell_ids", "expected"],
+        (
+            pytest.param(
+                2,
+                np.arange(12 * 4**2, dtype="uint64"),
+                # all base cells
+                np.array(
+                    [
+                        288230376151711744,
+                        864691128455135232,
+                        1441151880758558720,
+                        2017612633061982208,
+                        2594073385365405696,
+                        3170534137668829184,
+                        3746994889972252672,
+                        4323455642275676160,
+                        4899916394579099648,
+                        5476377146882523136,
+                        6052837899185946624,
+                        6629298651489370112,
+                    ],
+                    dtype="uint64",
+                ),
+                id="full_domain",
+            ),
+            # base cells 1, 2, 5, 6
+            pytest.param(
+                1,
+                np.concat(
+                    [
+                        np.arange(1 * 4**1, 3 * 4**1, dtype="uint64"),
+                        np.arange(5 * 4**1, 7 * 4**1, dtype="uint64"),
+                    ]
+                ),
+                np.array(
+                    [
+                        864691128455135232,
+                        1441151880758558720,
+                        3170534137668829184,
+                        3746994889972252672,
+                    ],
+                    dtype="uint64",
+                ),
+                id="ranges_with_gap",
+            ),
+            # one compacted cell
+            pytest.param(
+                3,
+                np.array([4, 5, 6, 7, 9, 15, 16, 19], dtype="uint64"),
+                (
+                    np.array(
+                        [
+                            54043195528445952,
+                            85568392920039424,
+                            139611588448485376,
+                            148618787703226368,
+                            175640385467449344,
+                        ],
+                        dtype="uint64",
+                    )
+                ),
+                id="isolated_pixels",
+            ),
+        ),
+    )
+    def test_compacted_cell_ids(
+        self,
+        level: int,
+        cell_ids: npt.NDArray[np.uint64],
+        expected: npt.NDArray[np.uint64],
+    ) -> None:
+        index = healpix_geo.nested.RangeMOCIndex.from_cell_ids(level, cell_ids)
+
+        actual = index.compacted_cell_ids()
+        np.testing.assert_equal(actual, expected)
+
+    @pytest.mark.parametrize(
         ["level", "cell_ids"],
         (
             pytest.param(0, np.arange(12, dtype="uint64"), id="base cells"),

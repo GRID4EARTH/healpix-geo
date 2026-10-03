@@ -17,6 +17,7 @@ use healpix_geo::index::{
     Array, CellRegion, ConcreteSlice, LabelIndexer, PositionalIndexer, Slice,
 };
 use healpix_geo::index::{GeometryQuery, Indexing, SetOperations};
+use healpix_geo::scalar::nested;
 
 trait IntoPySlice {
     fn into_pyslice<'py>(self, py: Python<'py>) -> Bound<'py, PySlice>;
@@ -495,6 +496,26 @@ impl RangeMOCIndex {
         });
 
         PyArray1::from_vec(py, ranges).reshape(shape)
+    }
+
+    /// Retrieve the compacted cell ids
+    ///
+    /// For now, the cell ids will always be in the ``zuniq`` scheme.
+    ///
+    /// Returns
+    /// -------
+    /// compacted: numpy.ndarray
+    ///     The compacted cell ids as array of dtype ``uint64``.
+    fn compacted_cell_ids<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<u64>>> {
+        let compacted: Vec<u64> = py.detach(move || {
+            self.region
+                .compacted_cell_ids()
+                .into_iter()
+                .map(|(hash, depth)| nested::conversion::to_zuniq(&hash, &depth))
+                .collect()
+        });
+
+        Ok(PyArray1::from_vec(py, compacted))
     }
 
     /// Subset the index using positions
