@@ -24,6 +24,17 @@ pub fn cone_coverage(
         return Vec::new();
     }
 
+    // Building a thread pool costs more than a small cone query, so serial
+    // work (including every single-center call) bypasses it.
+    if nthreads == 1 || centers.len() == 1 {
+        return centers
+            .iter()
+            .map(|&center| {
+                scalar::cone_coverage(center, radius, layer, ellipsoid, delta_depth, flat)
+            })
+            .collect();
+    }
+
     let mut result = Vec::<Coverage>::with_capacity(centers.len());
 
     maybe_parallelize!(nthreads, centers, result, |&center| {
@@ -59,6 +70,27 @@ mod tests {
         assert_eq!(
             cone_coverage(&centers, 0.5, layer, &ellipsoid, 1, false, 4),
             expected
+        );
+    }
+
+    #[test]
+    fn cone_coverage_serial_paths_match_scalar() {
+        let centers = vec![(45.0, 45.0), (179.999, 0.0), (12.0, 89.9)];
+        let layer = cdshealpix::nested::get(8);
+        let ellipsoid = Ellipsoid::Sphere(ReferenceSphere::new(GeodesyEllipsoid::new(1.0, 0.0)));
+
+        let expected: Vec<Coverage> = centers
+            .iter()
+            .map(|&center| scalar::cone_coverage(center, 0.5, layer, &ellipsoid, 1, false))
+            .collect();
+
+        assert_eq!(
+            cone_coverage(&centers, 0.5, layer, &ellipsoid, 1, false, 1),
+            expected
+        );
+        assert_eq!(
+            cone_coverage(&centers[..1], 0.5, layer, &ellipsoid, 1, false, 0),
+            expected[..1].to_vec()
         );
     }
 
