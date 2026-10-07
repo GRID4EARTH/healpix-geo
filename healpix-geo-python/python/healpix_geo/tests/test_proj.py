@@ -17,7 +17,9 @@ pyproj = pytest.importorskip("pyproj")
 # vertices are moved this fraction of the way towards their cell centre
 # before projecting; see `project_cells`
 NUDGE = 1e-7
-RTOL = 1e-6
+# the nudge shrinks every cell by NUDGE of its size; allow an order of
+# magnitude more, relative to the cell size
+RTOL = 10 * NUDGE
 
 ELLIPSOIDS = ["unitsphere", "sphere", "WGS84", "GRS80"]
 
@@ -39,7 +41,7 @@ def project_cells(crs, ipix, depth, ellipsoid, lon_0=0.0):
     a polar facet boundary or the map edge) has no unique image. Nudging every
     vertex towards its own cell centre puts the whole cell on its own facet.
     """
-    transformer = pyproj.Transformer.from_crs("EPSG:4326", crs, always_xy=True)
+    transformer = pyproj.Transformer.from_crs(crs.geodetic_crs, crs, always_xy=True)
     # the plane is 2πR wide; x(lon_0 + 90°) = πR / 2
     width = 4 * transformer.transform(lon_0 + 90.0, 0.0)[0]
 
@@ -64,7 +66,7 @@ def project_cells(crs, ipix, depth, ellipsoid, lon_0=0.0):
 @pytest.mark.parametrize("lon_0", [0.0, 90.0])
 def test_cells_are_squares(ellipsoid, depth, lon_0):
     ipix = np.arange(12 * 4**depth, dtype="uint64")
-    x, y, _, _, width = project_cells(
+    x, y, cx, cy, width = project_cells(
         proj_healpix(ellipsoid, lon_0), ipix, depth, ellipsoid, lon_0
     )
 
@@ -77,8 +79,14 @@ def test_cells_are_squares(ellipsoid, depth, lon_0):
     np.testing.assert_allclose(diagonal_02, side, rtol=RTOL)
     np.testing.assert_allclose(diagonal_13, side, rtol=RTOL)
 
+    # `healpix_to_lonlat` must give the centre of the square; centres can be 0
+    # on the plane, so compare relative to the cell size
+    np.testing.assert_allclose(cx, x.mean(axis=1), rtol=0, atol=RTOL * side)
+    np.testing.assert_allclose(cy, y.mean(axis=1), rtol=0, atol=RTOL * side)
+
 
 def test_cells_are_not_squares_for_other_lon_0():
+    """Sensitivity check for `test_cells_are_squares`."""
     # the facets only line up with the cells if lon_0 is a multiple of 90°
     depth = 1
     ipix = np.arange(12 * 4**depth, dtype="uint64")
@@ -127,7 +135,7 @@ def test_inverse_projection(ellipsoid):
     x, y, _, _, _ = project_cells(crs, ipix, depth, ellipsoid)
 
     # centres of the squares on the plane, back through PROJ's inverse
-    inverse = pyproj.Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
+    inverse = pyproj.Transformer.from_crs(crs, crs.geodetic_crs, always_xy=True)
     lon, lat = inverse.transform(x.mean(axis=1), y.mean(axis=1))
 
     actual = nested.lonlat_to_healpix(lon, lat, depth, ellipsoid=ellipsoid)
