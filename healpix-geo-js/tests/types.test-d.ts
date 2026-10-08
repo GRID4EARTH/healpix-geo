@@ -1,5 +1,5 @@
 import type { EllipsoidInput, GridOptions } from "../pkg/healpix_geo.js";
-import { Ellipsoid, Grid } from "../pkg/healpix_geo.js";
+import { Ellipsoid, Grid, morton } from "../pkg/healpix_geo.js";
 import { describe, expectTypeOf, test } from "vitest";
 
 // The generated `.d.ts` is the API surface TypeScript consumers actually see.
@@ -43,7 +43,7 @@ describe("generated index.d.ts", () => {
   test("the Grid constructor takes typed options, not `any`", () => {
     expectTypeOf(Grid).constructorParameters.toEqualTypeOf<[GridOptions]>();
     expectTypeOf<GridOptions["scheme"]>().toEqualTypeOf<
-      "nested" | "ring" | "zuniq"
+      "nested" | "ring" | "zuniq" | "morton"
     >();
     expectTypeOf<GridOptions["level"]>().toEqualTypeOf<number>();
     expectTypeOf<GridOptions["ellipsoid"]>().toEqualTypeOf<
@@ -54,14 +54,16 @@ describe("generated index.d.ts", () => {
   test("the scheme getter is narrowed to the literal union", () => {
     // widened to `string`, `other.toScheme(cell, grid.scheme)` does not
     // type-check and `switch (grid.scheme)` gets no exhaustiveness check
-    expectTypeOf<Grid["scheme"]>().toEqualTypeOf<"nested" | "ring" | "zuniq">();
+    expectTypeOf<Grid["scheme"]>().toEqualTypeOf<
+      "nested" | "ring" | "zuniq" | "morton"
+    >();
     expectTypeOf<Grid["level"]>().toEqualTypeOf<number>();
   });
 
   test("toScheme narrows its target and takes an optional level", () => {
     expectTypeOf<Grid["toScheme"]>()
       .parameter(1)
-      .toEqualTypeOf<"nested" | "ring" | "zuniq">();
+      .toEqualTypeOf<"nested" | "ring" | "zuniq" | "morton">();
     expectTypeOf<Grid["toScheme"]>()
       .parameter(2)
       .toEqualTypeOf<number | null | undefined>();
@@ -80,5 +82,16 @@ describe("generated index.d.ts", () => {
     expectTypeOf<Grid["bitCombineTable"]>().toEqualTypeOf<
       (size: number) => BigUint64Array
     >();
+  });
+
+  test("the morton statics exchange bigint ids", () => {
+    expectTypeOf(morton.level).toEqualTypeOf<(cell: bigint) => number>();
+    expectTypeOf(morton.ancestor).toEqualTypeOf<
+      (cell: bigint, level: number) => bigint
+    >();
+    expectTypeOf(morton.contains).toEqualTypeOf<
+      (ancestor: bigint, descendant: bigint) => boolean
+    >();
+    expectTypeOf(morton.isPoint).toEqualTypeOf<(cell: bigint) => boolean>();
   });
 });

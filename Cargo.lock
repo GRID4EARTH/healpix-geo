@@ -557,6 +557,7 @@ dependencies = [
  "geodesy",
  "itertools 0.15.0",
  "moc",
+ "mortie-core",
  "num-traits",
  "rayon",
  "rstest",
@@ -823,6 +824,12 @@ dependencies = [
  "stc-s",
  "thiserror 2.0.18",
 ]
+
+[[package]]
+name = "mortie-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2fa0663e80de62960e7d2c0979e7442e48d41e57e27e76872e8c209b492eb39"
 
 [[package]]
 name = "ndarray"
