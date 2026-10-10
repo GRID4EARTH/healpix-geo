@@ -1,0 +1,46 @@
+{
+  "title": "healpix-geo",
+  "upload_type": "software",
+  "license": "Apache-2.0",
+  "grants": [
+    {
+      "id": "10.13039/501100000844::4000147951/25/I-NS"
+    }
+  ],
+  "creators": [
+    {
+      "name": "Magin, Justus",
+      "orcid": "0000-0002-4254-8002"
+    },
+    {
+      "name": "Richard, Pablo",
+      "orcid": "0000-0002-5441-8213"
+    },
+    {
+      "name": "Fouilloux, Anne",
+      "orcid": "0000-0002-1784-2920"
+    },
+    {
+      "name": "Odaka, Tina Erica",
+      "orcid": "0000-0002-1500-0156"
+    },
+    {
+      "name": "Gueguen, Camille",
+      "orcid": "0009-0008-3748-9395"
+    },
+    {
+      "name": "Kmoch, Alexander",
+      "orcid": "0000-0003-4386-4450"
+    },
+    {
+      "name": "Stuurman, Aart"
+    }
+  ],
+  "contributors": [
+    {
+      "name": "Cap, Etienne",
+      "orcid": "0009-0007-0360-0692",
+      "type": "ProjectMember"
+    }
+  ]
+}

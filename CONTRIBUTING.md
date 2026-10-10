@@ -1,27 +1,34 @@
 # Contributing to healpix-geo
 
-Thank you for your interest in contributing! This project is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0), and all contributions are under this license.
+Thank you for your interest in contributing. GRID4EARTH development is primarily supported by
+ESA-funded activities, and external contributions are welcome.
 
-## How to Contribute
+## How to contribute
 
-- Report bugs or request features via [GitHub Issues](https://github.com/GRID4EARTH/healpix-geo/issues).
-- For all non-trivial contributions, please start a discussion with the maintainers by opening an [issue](https://github.com/GRID4EARTH/healpix-geo/issues/new) to ensure alignment with project goals and future plans.
+- Report bugs or request features through
+  [GitHub Issues](https://github.com/GRID4EARTH/healpix-geo/issues).
+- For non-trivial changes, open an
+  [issue](https://github.com/GRID4EARTH/healpix-geo/issues/new) before starting work so the
+  approach can be discussed with the maintainers.
+- Fork the repository and create a feature branch for each change.
+- Add or update tests and documentation where appropriate.
+- Open a pull request with a clear title and description, and link the related issue.
 
-### Discussion Before Submitting
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the branch model and the workflow for changes that
+span multiple GRID4EARTH repositories.
 
-- **Mandatory Pre-Submission Discussion**: For all non-trivial contributions, open an issue or start a discussion with maintainers about your proposed changes. This allows maintainers to provide feedback, suggest directions, and ensure your efforts align with the project's roadmap.
-- **Collaboration**: Engage constructively with maintainers during this phase to refine and improve your proposal.
-- Fork the repository and create feature branches for your changes.
-- Add tests and documentation for your contributions.
-- Submit pull requests with clear titles and descriptions, referencing related issues.
-
-## Pull Request Guidelines
+## Pull request guidelines
 
 - Keep commits focused and descriptive.
-- Ensure all tests pass and maintain code style.
-- Maintain open communication with maintainers during the review process.
-- By contributing, you agree to license your changes under Apache 2.0.
+- Run the relevant tests and formatting checks before submitting.
+- Respond to review feedback and keep the pull request focused on its stated purpose.
 
 ## Code of Conduct
 
-All contributors should respect the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+All contributors should respect the
+[Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+
+## License
+
+The project is licensed under the [Apache License 2.0](LICENSE). By contributing, you agree that
+your contributions will be licensed under the same terms.
