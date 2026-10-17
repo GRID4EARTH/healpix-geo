@@ -40,9 +40,9 @@ def assert_matches_scalar(scalar_rows, batched):
     assert len(offsets) == len(scalar_rows) + 1
     for index, expected in enumerate(scalar_rows):
         start, end = offsets[index : index + 2]
-        np.testing.assert_array_equal(cell_ids[start:end], expected[0])
-        np.testing.assert_array_equal(depths[start:end], expected[1])
-        np.testing.assert_array_equal(fully_covered[start:end], expected[2])
+        np.testing.assert_array_equal(cell_ids[start:end], expected[0].data)
+        np.testing.assert_array_equal(depths[start:end], expected[1].data)
+        np.testing.assert_array_equal(fully_covered[start:end], expected[2].data)
 
 
 def main():

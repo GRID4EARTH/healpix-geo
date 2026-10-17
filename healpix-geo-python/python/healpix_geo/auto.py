@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
 
 from healpix_geo.typing import EllipsoidLike
+
+if TYPE_CHECKING:
+    from healpix_geo import RaggedArray
 
 
 def _dispatch_module(indexing_scheme: str) -> ModuleType:
@@ -771,7 +774,8 @@ def cone_coverage(
     delta_level: int = 0,
     flat: bool = True,
 ) -> (
-    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
+    tuple["RaggedArray", "RaggedArray", "RaggedArray"]
+    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
     | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
 ):
     """Search the cells covering the given cone
@@ -782,6 +786,7 @@ def cone_coverage(
     ----------
     center : numpy.ndarray or tuple of float
         The center of the box, either as a 2-sized array or as a 2-tuple of float.
+        ``nested`` also accepts multiple centers with shape ``(N, 2)``.
     radius : float
         The radius of the cone, in degree.
     grid : Grid
@@ -791,12 +796,13 @@ def cone_coverage(
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    levels : numpy.ndarray
+    cell_ids : numpy.ndarray or healpix_geo.RaggedArray
+        The rasterized cell ids. ``nested`` returns a
+        :class:`healpix_geo.RaggedArray` with one row per center.
+    levels : numpy.ndarray or healpix_geo.RaggedArray
         The refinement levels of the cell ids. If ``flat is True``, these will all have the
         same value. Only returned for ``nested`` and ``ring``.
-    fully_covered : numpy.ndarray
+    fully_covered : numpy.ndarray or healpix_geo.RaggedArray
         Boolean array marking whether the cells are fully covered by the circle.
     """
     module = _dispatch_module(grid.indexing_scheme)

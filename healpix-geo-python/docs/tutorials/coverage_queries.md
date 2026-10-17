@@ -29,32 +29,29 @@ lat_center = 48.8566
 radius_deg = 1.0  # radius in degrees (~111 km)
 depth = 8
 
-cells = cone_coverage((lon_center, lat_center), radius_deg, depth, ellipsoid="WGS84")
+cell_ids, depths, covered = cone_coverage(
+    (lon_center, lat_center), radius_deg, depth, ellipsoid="WGS84"
+)
 
-print(f"Number of cells in the radius: {len(cells)}")
+print(f"Number of cells in the radius: {cell_ids.data.size}")
 ```
+
+The three results are `RaggedArray` objects with one row per center. They
+share a single offsets array, and a single center gives a single row, so
+`data` holds its cells.
 
 #### Query many centers together
 
-Pass an `(N, 2)` array to the same function to evaluate cones in native
-parallel code. The radius is shared by all centers. The three results are
-`RaggedArray` objects: rows may have different lengths, and share a single
-offsets array without padding. Single-center `(2,)` inputs still return
-three ordinary NumPy arrays.
+Pass an `(N, 2)` array to the same function to evaluate cones in parallel.
+The radius is shared by all centers, and rows may have different lengths.
 
 ```{code-cell} python
 centers = np.array([[2.3522, 48.8566], [179.999, 0.0], [12.0, 89.9]])
-cell_ids, depths, covered = cone_coverage(
-    centers, 0.5, 8, ellipsoid="WGS84", num_threads=8
-)
+cell_ids, depths, covered = cone_coverage(centers, 0.5, 8, ellipsoid="WGS84")
 start, stop = cell_ids.offsets[:2]
 paris_cells = cell_ids.data[start:stop]
 print(f"Cells intersecting the first cone: {paris_cells.size}")
 ```
-
-Rows retain exactly the order and values of individual scalar calls.
-`num_threads=0` selects available parallelism, capped at eight workers.
-Empty `(0, 2)` and single-row `(1, 2)` arrays retain the batched return type.
 
 ### 2. Box Coverage
 
