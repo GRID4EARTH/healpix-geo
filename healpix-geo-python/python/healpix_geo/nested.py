@@ -1139,6 +1139,27 @@ def cone_coverage(
     The three results share one offsets array, and a single ``(2,)`` center
     gives a single row. Row ``i`` is
     ``result.data[result.offsets[i]:result.offsets[i + 1]]``.
+
+    Examples
+    --------
+    >>> import healpix_geo.nested
+    >>> import numpy as np
+    >>> cell_ids, depths, fully_covered = healpix_geo.nested.cone_coverage(
+    ...     (45.0, 45.0), 5.0, 2
+    ... )
+    >>> cell_ids.offsets
+    array([0, 4], dtype=uint64)
+    >>> cell_ids.data
+    array([ 3,  6,  9, 12], dtype=uint64)
+
+    >>> centers = np.array([[45.0, 45.0], [0.0, 0.0]])
+    >>> cell_ids, depths, fully_covered = healpix_geo.nested.cone_coverage(
+    ...     centers, 5.0, 2
+    ... )
+    >>> cell_ids.offsets
+    array([0, 4, 8], dtype=uint64)
+    >>> cell_ids.data[cell_ids.offsets[1] : cell_ids.offsets[2]]
+    array([67, 70, 73, 76], dtype=uint64)
     """
     _check_depth(depth)
 
