@@ -284,8 +284,16 @@ impl RaggedArray {
 
     /// convert to a rectangular numpy array
     ///
-    /// This is a view on ``data``, for example of shape ``(1, n)`` for a
-    /// single row. Raises a ``ValueError`` if the rows have different lengths.
+    /// Returns
+    /// -------
+    /// array : numpy.ndarray
+    ///     A view on ``data`` with shape ``(rows, columns)``, for example
+    ///     ``(1, n)`` for a single row.
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the rows have different lengths. Use ``as_masked_array`` instead.
     fn as_numpy<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let offsets = self.offsets.bind(py).readonly();
         let offsets = offsets.as_slice()?;
