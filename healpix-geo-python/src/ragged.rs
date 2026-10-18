@@ -1,6 +1,6 @@
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyFunction, PyModule, PyString, PyTuple};
+use pyo3::types::{PyDict, PyFunction, PyModule, PySlice, PyString, PyTuple};
 
 use numpy::{
     PyArray1, PyArray2, PyArrayDescrMethods, PyArrayMethods, PyUntypedArray, PyUntypedArrayMethods,
@@ -83,7 +83,7 @@ fn copy_into_rectangular<T: Copy>(
 
         let row_elements = in_stop - in_start;
 
-        let out_start = row * shape[0];
+        let out_start = row * shape[1];
         let out_stop = out_start + row_elements;
 
         let row_stop = out_start + shape[1];
@@ -224,11 +224,14 @@ impl RaggedArray {
         let offsets = self.offsets.bind(py);
         if offsets.len() == 2 {
             let numpy = PyModule::import(py, "numpy")?;
+            let bounds = offsets.readonly();
+            let bounds = bounds.as_slice()?;
+            let row = data.get_item(PySlice::new(py, bounds[0] as isize, bounds[1] as isize, 1))?;
 
             create_masked_array(
                 numpy
                     .getattr("reshape")?
-                    .call1((data, self.shape))?
+                    .call1((row, self.shape))?
                     .cast::<PyUntypedArray>()?,
                 &PyArray2::<bool>::zeros(py, self.shape, false),
             )
