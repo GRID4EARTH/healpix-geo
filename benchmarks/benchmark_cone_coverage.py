@@ -3,7 +3,7 @@
 The default workload models the 15,069-center Level-20 geometry construction
 observed in a roughly 600 m healpix-analyse Gaussian-filter patch. Run with:
 
-    python benchmarks/benchmark_cone_coverage_many.py
+    python benchmarks/benchmark_cone_coverage.py
 """
 
 from __future__ import annotations

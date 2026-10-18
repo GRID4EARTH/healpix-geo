@@ -1114,6 +1114,9 @@ def cone_coverage(
         The radius of the cone, in degree, shared by all centers.
     depth : int
         The maximum depth of the cells to be returned.
+    delta_depth : int, default: 0
+        Perform the computation at depth ``depth + delta_depth`` to refine the
+        approximation. ``depth + delta_depth`` must not exceed 29.
     ellipsoid : ellipsoid-like, default: "sphere"
         Reference ellipsoid to evaluate healpix on. If the reference ellipsoid
         is spherical, this will return the same result as

@@ -57,7 +57,7 @@ mod tests {
     use geodesy::ellps::Ellipsoid as GeodesyEllipsoid;
 
     #[test]
-    fn cone_coverage_many_matches_scalar() {
+    fn cone_coverage_matches_scalar() {
         let centers = vec![(45.0, 45.0), (179.999, 0.0), (12.0, 89.9)];
         let layer = cdshealpix::nested::get(8);
         let ellipsoid = Ellipsoid::Sphere(ReferenceSphere::new(GeodesyEllipsoid::new(1.0, 0.0)));
@@ -95,7 +95,7 @@ mod tests {
     }
 
     #[test]
-    fn cone_coverage_many_accepts_empty_input() {
+    fn cone_coverage_accepts_empty_input() {
         let layer = cdshealpix::nested::get(8);
         let ellipsoid = Ellipsoid::Sphere(ReferenceSphere::new(GeodesyEllipsoid::new(1.0, 0.0)));
 

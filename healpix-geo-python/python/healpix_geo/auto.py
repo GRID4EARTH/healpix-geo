@@ -785,7 +785,7 @@ def cone_coverage(
     Parameters
     ----------
     center : numpy.ndarray or tuple of float
-        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+        The center of the cone, either as a 2-sized array or as a 2-tuple of float.
         ``nested`` also accepts multiple centers with shape ``(N, 2)``.
     radius : float
         The radius of the cone, in degree.
