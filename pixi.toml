@@ -25,6 +25,8 @@ depends-on = [
 [feature.dev.dependencies]
 ipython = "*"
 jupyterlab = ">=4.5.5,<5"
+pyright = "*"
+ty = "*"
 
 [feature.dev.pypi-dependencies]
 pytest-accept = ">=0.2.3, <0.3"
@@ -40,6 +42,9 @@ ragged = ">=0.3.0"
 [feature.tests.tasks]
 tests = { cmd = "pytest --cov=healpix_geo", cwd = "healpix-geo-python", default-environment = "dev" }
 doctests = { cmd = "pytest --doctest-modules python/healpix_geo --ignore python/healpix_geo/tests", default-environment = "dev", cwd = "healpix-geo-python" }
+
+[feature.dev.tasks]
+pyright = { cmd = "pyright healpix-geo-python/python", default-environment = "dev" }
 
 [feature.py311.dependencies]
 python = "3.11.*"

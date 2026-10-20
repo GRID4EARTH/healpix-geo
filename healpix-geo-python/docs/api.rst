@@ -60,26 +60,56 @@ Ragged output
 
    RaggedArray
 
+
+.. _common-parameters:
+
 Common Parameters
-==================
+=================
 
-healpix-geo functions shares common parameters :
+All healpix-geo functions accept :external+numpy:term:`array-like<array_like>`
+inputs that will be checked and converted to the appropriate dtype. This allows:
 
-Geographical coordinates
-~~~~~~~~~~~~~~~~~~~~~~~~~
+- Scalars (automatically converted to 1D arrays)
+- N-dimensional NumPy arrays
+- (Nested) sequences of arrays or scalars
 
-- **lon** (*array-like*) : Longitude(s) in degrees [-180, 180]
-- **lat** (*array-like*) : Latitude(s) in degrees [-90, 90]
+Some functions will take in multiple arrays. They will not be
+:external+numpy:ref:`broadcasted<array-broadcasting-in-numpy>`, and must have
+the same shape.
+
+All functions are **vectorized** and will preserve the shape of inputs, excepted
+for scalars that will be converted to a 1D array.
 
 HEALPix indices
 ~~~~~~~~~~~~~~~
 
-- **ipix** (*array-like of int*) : Indice(s) of HEALPix cell
-- **depth** (*int*) : resolution level [0, 29]
+- **ipix** (input: *array-like of int*, output: :class:`~numpy.ndarray` of
+  :attr:`~numpy.uint64`) : Indices of HEALPix cells. Signed integers are allowed
+  as input (*i.e.* array-like of either builtin :class:`int` or
+  :class:`numpy.integer`). All inputs will be checked for negative values in
+  *zuniq* indexing and for values outside the range :math:`[0, 12\times
+  4^{depth}[` otherwise.
+
+- **depth/level** (input: *int or array-like of int*, output:
+  :class:`~numpy.ndarray` of :attr:`~numpy.uint8`) : Resolution level in the range
+  :math:`[0, 29]`.
 
   - 0 = coarser (12 cells)
   - 29 = finer (~1.2 cm)
   - See :doc:`healpix/levels` for the complete table
+
+Geographical coordinates
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **lon** (input: *array-like of float*, output: :class:`~numpy.ndarray` of
+  :attr:`~numpy.float64`) : Longitude(s) in decimal degrees [-180, 180].
+  Positive towards East. 0° is Greenwich meridian.
+- **lat** (input: *array-like of float*, output: :class:`~numpy.ndarray` of
+  :attr:`~numpy.float64`) : Latitude(s) in decimal degrees [-90, 90]. Positive
+  towards North. 0° is equator.
+- **x**, **y**, **z** (input: *array-like of float*, output:
+  :class:`~numpy.ndarray` of :attr:`~numpy.float64`) : Cartesian coordinates, in
+  meters.
 
 Ellipsoids
 ~~~~~~~~~~
@@ -90,6 +120,9 @@ Ellipsoids
   - ``"GRS80"`` : Geodesic System of reference 1980
   - ``"WGS72"`` : Old standard GPS
   - ``"sphere"`` : Perfect sphere
+
+The default is "sphere", in which case most functions will return the same
+result as their equivalent from :external+cdshealpix:doc:`cdshealpix<index>`.
 
 .. tip::
    **Always use** ``ellipsoid="WGS84"`` for real geospatial applications.
@@ -102,21 +135,10 @@ Ellipsoids
 
    ellipsoid.resolve
 
-Conventions
-===========
+Others
+~~~~~~
 
-Return types
-~~~~~~~~~~~~
-
-- Functions returns **numpy arrays**
-- Coordinates are always in **decimal degrees**
-- Indices are always **unsigned integers** (uint64)
-
-Vectorisation
-~~~~~~~~~~~~~
-
-All functions are **vectorized** and accept:
-
-- Scalars (automatically converted to arrays)
-- 1D NumPy arrays
-- Multidimensional NumPy arrays (depending on the function)
+- **num_threads** (*int*) Specifies the number of threads to use for the
+  computation. The default (0) means it will choose the number of threads based
+  on the RAYON_NUM_THREADS environment variable (if set), or the number of
+  logical CPUs (otherwise)

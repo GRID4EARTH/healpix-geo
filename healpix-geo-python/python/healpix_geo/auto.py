@@ -1,11 +1,20 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
-import numpy.typing as npt
 
 from healpix_geo.typing import EllipsoidLike
+from healpix_geo.utils import validate_cell_ids
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    from numpy.typing import NDArray
+
+    from healpix_geo.typing import Array1D, ArrayLikeFloat, ArrayLikeInt
 
 
 def _dispatch_module(indexing_scheme: str) -> ModuleType:
@@ -32,6 +41,18 @@ SchemeType = Literal["nested", "ring", "zuniq"]
 
 @dataclass(frozen=True)
 class Grid:
+    """Describe the parameters of a given grid.
+
+    Parameters
+    ----------
+    level: int, optional
+        The refinement level of the grid.
+    indexing_scheme: {"nested", "ring", "zuniq"}
+        The indexing scheme of the grid.
+    ellipsoid: ellipsoid-like, default: "sphere"
+        The reference ellipsoid of the grid.
+    """
+
     level: int | None
     """The refinement level of the grid."""
 
@@ -41,15 +62,15 @@ class Grid:
     ellipsoid: EllipsoidLike = "sphere"
     """The reference ellipsoid of the grid."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if isinstance(self.ellipsoid, str):
             from healpix_geo.ellipsoid import resolve
 
             # normalize to an object or dict
             object.__setattr__(self, "ellipsoid", resolve(self.ellipsoid))
 
-    def _as_params(self):
-        params = {"ellipsoid": self.ellipsoid}
+    def _as_params(self) -> dict:
+        params: dict[str, Any] = {"ellipsoid": self.ellipsoid}
         if self.indexing_scheme != "zuniq":
             params["depth"] = self.level
 
@@ -57,53 +78,75 @@ class Grid:
 
 
 def convert(
-    ipix: npt.NDArray[np.uint64],
+    ipix: ArrayLikeInt,
     grid: Grid,
     *,
     to: SchemeType,
-    level: npt.NDArray[np.uint8] | None = None,
+    level: int | NDArray[np.uint8] | None = None,
     num_threads: int = 0,
-) -> tuple[npt.NDArray[np.uint64], int | npt.NDArray[np.uint8]]:
+) -> NDArray[np.uint64] | tuple[NDArray[np.uint64], int | NDArray[np.uint8]]:
     """Convert the cell ids to a different indexing scheme
 
     Parameters
     ----------
-    ipix : `numpy.ndarray`
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    ipix : array-like of int
+        The HEALPix cell indices, in the indexing scheme specified by `grid`.
     grid : Grid
         The definition of the HEALPix grid.
     to : {"nested", "ring", "zuniq"}
         The indexing scheme to convert to. If equal to the grid object's
         indexing scheme the input cell ids will be returned unmodified.
-    level : `numpy.ndarray`, optional
+    level : int or `numpy.ndarray`, optional
         The levels in case the cells have a different sizes.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    converted : `numpy.ndarray`
-        The converted cell indexes as a `np.uint64` numpy array.
-    levels : int or `numpy.ndarray`
-        The refinement level of the cell indexes. If the input scheme was
-        ``"nested"`` or ``"ring"`` and `level` was not passed this will be the
-        grid object's refinement level, otherwise an array of refinement levels.
+    converted : numpy.ndarray of numpy.uint64
+        The HEALPix cell indices in the target indexing scheme, with the same shape as
+        the input.
+    levels : int or numpy.ndarray of numpy.uint8
+        The refinement level of the cell indices. Not returned if the output and input
+        schemes are identical.
+
+        - For ``nested`` and ``ring``: the `grid` object refinement level
+        - For ``zuniq``: an array of refinement levels
+
+    Raises
+    ------
+    ValueError
+        If `ipix` has negative values for ``zuniq``, or outside the range
+        :math:`[0, 12 \\times 4^{level}[` for ``nested`` and ``ring``.
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `level` is specified for ``zuniq`` or no level is specified for ``nested`` or
+        ``ring``, neither via `grid.level` or `level`
+    ValueError
+        If `to` indexing scheme is unknown.
     """
     base_indexing_schemes = {"nested", "ring"}
     if grid.indexing_scheme == to:
-        return ipix
+        return validate_cell_ids(ipix)
 
-    params = {"num_threads": num_threads}
+    params: dict[str, Any] = {"num_threads": num_threads}
     if grid.indexing_scheme not in base_indexing_schemes and level is not None:
         raise ValueError(
             f"indexing scheme {grid.indexing_scheme} already contains"
-            " the refinement level in the cell indexes"
+            " the refinement level in the cell indices"
         )
     elif grid.indexing_scheme in base_indexing_schemes:
         if level is None:
             level = grid.level
+        if level is None:
+            raise ValueError(
+                "A level must be supplied via `grid.level` or `level` for "
+                f"target indexing scheme '{to}' (received None)."
+            )
         params["depth"] = level
 
     module = _dispatch_module(grid.indexing_scheme)
@@ -115,29 +158,39 @@ def convert(
     if grid.indexing_scheme not in {"nested", "ring"} and to in {"nested", "ring"}:
         return result
     else:
-        return result, level
+        return result, level  # type: ignore[invalid-return-type]
 
 
 def healpix_to_lonlat(
-    ipix: npt.NDArray[np.uint64], grid: Grid, *, num_threads: int = 0
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    r"""Get the longitudes and latitudes of the center of some HEALPix cells.
+    ipix: ArrayLikeInt, grid: Grid, *, num_threads: int = 0
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Get the longitudes and latitudes of the center of some HEALPix cells.
 
     Parameters
     ----------
-    ipix : `numpy.ndarray`
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    ipix : array-like of int
+        The HEALPix cell indices, in the indexing scheme specified by `grid`.
     grid : Grid
         The definition of the HEALPix grid.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    lon, lat : array-like
-        The coordinates of the center of the HEALPix cells given as a longitude, latitude tuple.
+    lon, lat : numpy.ndarray of numpy.float64
+        The longitude and latitude of the HEALPix cells centers, in degrees,
+        with the same shape as the input.
+
+    Raises
+    ------
+    ValueError
+        If `ipix` has negative values for ``zuniq``, or outside the range
+        :math:`[0, 12 \\times 4^{level}[` for ``nested`` and ``ring``.
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
 
     Examples
     --------
@@ -157,38 +210,47 @@ def healpix_to_lonlat(
 
 
 def lonlat_to_healpix(
-    lon: npt.NDArray[np.float64],
-    lat: npt.NDArray[np.float64],
+    lon: ArrayLikeFloat,
+    lat: ArrayLikeFloat,
     grid: Grid,
     *,
     num_threads: int = 0,
-) -> npt.NDArray[np.uint64]:
-    r"""Get the HEALPix indexes that contains specific points.
+) -> NDArray[np.uint64]:
+    """Get the HEALPix indices that contains specific points.
 
     Parameters
     ----------
-    lon : array-like
+    lon : array-like of float
         The longitudes of the input points, in degrees.
-    lat : array-like
+    lat : array-like of float
         The latitudes of the input points, in degrees.
     grid : Grid
         The definition of the HEALPix grid.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    ipix : `numpy.ndarray`
-        A numpy array containing all the HEALPix cell indexes stored as `np.uint64`.
+    ipix : numpy.ndarray of numpy.uint64
+        The corresponding HEALPix cells indices, in the indexing scheme specified by
+        `grid`, with the same shape as the inputs.
+
+    Raises
+    ------
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `longitude` and `latitude` do not have the same shape.
 
     Examples
     --------
     >>> import healpix_geo.auto as hg
     >>> import numpy as np
-    >>> lon = np.array([0, 50, 25], dtype="float64")
-    >>> lat = np.array([6, -12, 45], dtype="float64")
+    >>> lon = np.array([0, 50, 25], dtype=np.float64)
+    >>> lat = np.array([6, -12, 45], dtype=np.float64)
     >>> grid = hg.Grid(level=3, indexing_scheme="nested", ellipsoid="WGS84")
     >>> ipix = hg.lonlat_to_healpix(lon, lat, grid)
     >>> ipix
@@ -201,32 +263,35 @@ def lonlat_to_healpix(
 
 
 def healpix_to_cartesian(
-    ipix: npt.NDArray[np.uint64], grid: Grid, num_threads: int = 0
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    r"""Get the cartesian coordinates of the center of the given HEALPix cells.
+    ipix: ArrayLikeInt, grid: Grid, *, num_threads: int = 0
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Get the cartesian coordinates of the center of the given HEALPix cells.
 
     Parameters
     ----------
-    ipix : `numpy.ndarray`
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    ipix : array-like of int
+        The HEALPix cells indices, in the indexing scheme specified by `grid`.
     grid : Grid
         The definition of the HEALPix grid.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    x, y, z : array-like
-        The coordinates of the center of the HEALPix cells.
+    x, y, z : numpy.ndarray of numpy.float64
+        The cartesian coordinates of the center of the HEALPix cells, in meters, with
+        the same shape as the input.
 
     Raises
     ------
     ValueError
-        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth}[`.
+        If `ipix` has negative values for ``zuniq``, or outside the range
+        :math:`[0, 12 \\times 4^{level}[` for ``nested`` and ``ring``.
     ValueError
-        When the name of the ellipsoid is unknown.
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
 
     Examples
     --------
@@ -249,40 +314,43 @@ def healpix_to_cartesian(
 
 
 def cartesian_to_healpix(
-    x: npt.NDArray[np.float64],
-    y: npt.NDArray[np.float64],
-    z: npt.NDArray[np.float64],
+    x: ArrayLikeFloat,
+    y: ArrayLikeFloat,
+    z: ArrayLikeFloat,
     grid: Grid,
+    *,
     num_threads: int = 0,
-) -> npt.NDArray[np.uint64]:
-    r"""Get the HEALPix indexes that contain specific points.
+) -> NDArray[np.uint64]:
+    """Get the HEALPix indices that contain specific points.
 
     Parameters
     ----------
-    x : array-like
+    x : array-like of float
         The x coordinate of the input points, in meters.
-    y : array-like
+    y : array-like of float
         The y coordinate of the input points, in meters.
-    z : array-like
+    z : array-like of float
         The z coordinate of the input points, in meters.
     grid : Grid
         The definition of the HEALPix grid.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    ipix : `numpy.ndarray`
-        A numpy array containing all the HEALPix cell indexes stored as `np.uint64`.
+    ipix : numpy.ndarray of numpy.uint64
+        The corresponding HEALPix cells indices, in the indexing scheme specified by
+        `grid`, with the same shape as the inputs.
 
     Raises
     ------
     ValueError
-        When the number of longitudes and latitudes given do not match.
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
     ValueError
-        When the name of the ellipsoid is unknown.
+        If `x`, `y` and `z` do not have the same shape.
 
     Examples
     --------
@@ -303,33 +371,44 @@ def cartesian_to_healpix(
 
 
 def vertices(
-    ipix: npt.NDArray[np.uint64], grid: Grid, *, step: int = 1, num_threads: int = 0
-) -> (npt.NDArray[np.float64], npt.NDArray[np.float64]):
+    ipix: ArrayLikeInt, grid: Grid, *, step: int = 1, num_threads: int = 0
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Get the longitudes and latitudes of the vertices of some HEALPix cells.
 
     This method returns the 4 vertices of each cell in `ipix`.
 
     Parameters
     ----------
-    ipix : `numpy.ndarray`
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    ipix : array-like of int
+        The HEALPix cell indices, in the indexing scheme specified by `grid`.
     grid : Grid
         The definition of the HEALPix grid.
     step : int, default: 1
-        The number of vertices returned per HEALPix side. By default it is set to 1 meaning that
-        it will only return the vertices of the cell. 2 means that it will return the vertices of
-        the cell plus one more vertex per edge (the center of the edge). More generally, the number
-        of vertices returned is ``4 * step``.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+        The number of subdivision of the cell edges. At 1, only return the 4 corners of
+        the cell. At 2, return the 4 corners of the cell plus the center of each edge.
+        And so on. The number of vertices returned is ``4 * step``.
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    longitude, latitude : array-like
-        The coordinates of the 4 vertices of the HEALPix cells.
-        `lon` and `lat` are of shape :math:`N` x :math:`4` numpy arrays where N is the number of HEALPix cell given in `ipix`.
+    longitude, latitude : numpy.ndarray of numpy.float64
+        The coordinates of the vertices of the HEALPix cells, in degrees, with the same
+        shape is the input plus one axis of size ``4 * step``. If `ipix` is of shape S,
+        the output will be of shape ``(*S, 4 * step)``.
+
+    Raises
+    ------
+    ValueError
+        If `ipix` has negative values for ``zuniq``, or outside the range
+        :math:`[0, 12 \\times 4^{level}[` for ``nested`` and ``ring``.
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If the name of the ellipsoid is unknown.
 
     Examples
     --------
@@ -426,38 +505,49 @@ def vertices(
 
 
 def bilinear_interpolation(
-    longitude: npt.NDArray[np.floating],
-    latitude: npt.NDArray[np.floating],
+    longitude: ArrayLikeFloat,
+    latitude: ArrayLikeFloat,
     grid: Grid,
     *,
     num_threads: int = 0,
 ) -> tuple[Any, Any]:
     """Get the cell ids and weights necessary to bilinearly interpolate the given values.
 
+    The returned array are masked where the weights are zero. They are created using
+    `marray <https://pypi.org/project/marray/>`__ and thus are compatible with the
+    Python array API standard.
+
     Parameters
     ----------
-    longitude : array-like
+    longitude : array-like of float
         The longitudes of the input points, in degrees.
-    latitude : array-like
+    latitude : array-like of float
         The latitudes of the input points, in degrees.
     grid : Grid
         The definition of the HEALPix grid.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    cell_ids : array-like
-        The neighbours above and below the given points as a :math:`N` x :math:`4` masked array.
-    weights : array-like
-        The associated weights as a :math:`N` x :math:`4` masked array.
+    cell_ids : masked numpy.ndarray of numpy.uint64
+        The indices of the HEALPix cells around the given points, in the indexing
+        scheme specified by `grid`, with the same shape as the inputs plus one axis
+        of size 4. If the inputs have shape S the output will be of shape ``(*S, 4)``.
+        The array is masked where the weights are zero.
+    weights : masked numpy.ndarray of numpy.float64
+        The interpolation weights, with the same shape as the inputs plus one axis of
+        size 4. The array is masked where the weights are zero.
 
     Raises
     ------
     ValueError
-        When the HEALPix cell indexes given have values out of :math:`[0, 4^{29 - depth})`.
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `longitude` and `latitude` do not have the same shape.
 
     Examples
     --------
@@ -472,8 +562,8 @@ def bilinear_interpolation(
 
     Define coordinates
 
-    >>> lon = np.array([-15.0, -10.0, -5.0, 0.0, 5.0], dtype="float64")
-    >>> lat = np.array([30.0, 35.0, 40.0, 45.0, 50.0], dtype="float64")
+    >>> lon = np.array([-15.0, -10.0, -5.0, 0.0, 5.0], dtype=np.float64)
+    >>> lat = np.array([30.0, 35.0, 40.0, 45.0, 50.0], dtype=np.float64)
 
     Compute interpolation weights
 
@@ -514,32 +604,48 @@ def bilinear_interpolation(
 
 
 def kth_neighbours(
-    ipix: npt.NDArray[np.uint64], grid: Grid, *, ring: int, num_threads: int = 0
-) -> npt.NDArray[np.int64]:
+    ipix: ArrayLikeInt, grid: Grid, *, ring: int, num_threads: int = 0
+) -> NDArray[np.int64]:
     """Get the kth ring neighbouring cells of some HEALPix cells.
 
-    This method returns a :math:`N` x :math:`8 k` `np.uint64` numpy array containing the neighbours of each cell of the :math:`N` sized `ipix` array.
-    This method is wrapped around the `kth_neighbours <https://docs.rs/cdshealpix/0.9.1/cdshealpix/nested/struct.Layer.html#method.kth_neighbours>`__
+    This method returns an array containing the ``8 * ring`` neighbours of each input
+    cell. This method is wrapped around the `kth_neighbours
+    <https://docs.rs/cdshealpix/0.9.1/cdshealpix/nested/struct.Layer.html#method.kth_neighbours>`__
     method of the `cdshealpix Rust crate <https://crates.io/crates/cdshealpix>`__.
 
     Parameters
     ----------
-    ipix : `numpy.ndarray`
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    ipix : array-like of int
+        The HEALPix cell indices, in the indexing scheme specified by `grid`.
     grid : Grid
         The definition of the HEALPix grid.
     ring : int
-        The number of rings. `ring=0` returns just the input cell ids, `ring=1` returns the 8 (or 7) immediate
-        neighbours, `ring=2` returns the 16 neighbours of the immediate neighbours, and so on.
+        The number of rings. `ring=0` returns just the input cell ids, `ring=1` returns
+        the 8 (or 7) immediate neighbours, `ring=2` returns the 16 neighbours of the
+        immediate neighbours, and so on.
     num_threads : int, default: 0
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    neighbours : `numpy.ndarray`
-        A :math:`N` x :math:`8 k` `np.int64` numpy array containing the kth ring neighbours of each cell.
+    neighbours : numpy.ndarray of numpy.int64
+        The HEALPix cell indices of the kth ring neighbours of each cell, with the same
+        shape as the input plus one axis of size ``8 * ring``. If `ipix` has shape S,
+        the output will be of shape ``(*S, 8 * ring)``. Missing neighbours will be
+        represented by -1.
+
+    Raises
+    ------
+    ValueError
+        If `ipix` has negative values for ``zuniq``, or outside the range
+        :math:`[0, 12 \\times 4^{level}[` for ``nested`` and ``ring``.
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `ring` is outside its valid range :math:`[0, 2^{level}[`
 
     Examples
     --------
@@ -574,34 +680,53 @@ def kth_neighbours(
 
 
 def kth_neighbourhood(
-    ipix: npt.NDArray[np.uint64], grid: Grid, *, ring: int, num_threads: int = 0
-) -> npt.NDArray[np.int64]:
+    ipix: ArrayLikeInt, grid: Grid, *, ring: int, num_threads: int = 0
+) -> NDArray[np.int64]:
     """Get the kth ring neighbouring cells of some HEALPix cells.
 
-    This method returns a :math:`N` x :math:`(2 k + 1)^2` `np.uint64` numpy array containing the neighbours of each cell of the :math:`N` sized `ipix` array.
-    This method is wrapped around the `kth_neighbourhood <https://docs.rs/cdshealpix/0.1.5/cdshealpix/nested/struct.Layer.html#method.kth_neighbourhood>`__
+    This method returns an array containing the :math:`(2\\cdot\\mathrm{ring}+1)^2`
+    neighbours of each input cell. The "center" neighbour at index
+    :math:`2\\cdot\\mathrm{ring}\\cdot(\\mathrm{ring}+1)` corresponds to the input cell
+    (the 5th cell for ``ring=1`` for instance).
+
+    This method is wrapped around the `kth_neighbourhood
+    <https://docs.rs/cdshealpix/0.1.5/cdshealpix/nested/struct.Layer.html#method.kth_neighbourhood>`__
     method from the `cdshealpix Rust crate <https://crates.io/crates/cdshealpix>`__.
 
     Parameters
     ----------
-    ipix : `numpy.ndarray`
-        The HEALPix cell indexes given as a `np.uint64` numpy array.
+    ipix : array-like of int
+        The HEALPix cell indices, in the indexing scheme specified by `grid`.
     grid : Grid
         The definition of the HEALPix grid.
     ring : int
-        The number of rings. `ring=0` returns just the input cell ids, `ring=1` returns the 8 (or 7) immediate
-        neighbours, `ring=2` returns the 8 (or 7) immediate neighbours plus their immediate neighbours (a total of 24 cells), and so on.
+        The number of rings. ``ring=0`` returns just the input cell ids, `ring=1`
+        returns the 8 (or 7) immediate neighbours, ``ring=2`` returns the 8 (or 7)
+        immediate neighbours plus their immediate neighbours (a total of 24 cells), and
+        so on.
     num_threads : int, default: 0
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    neighbours : `numpy.ndarray`
-        A :math:`N` x :math:`(2 k + 1)^2` `np.int64` numpy array containing the kth ring neighbours of each cell.
-        The :math:`5^{th}` element corresponds to the index of HEALPix cell from which the neighbours are evaluated.
-        All its 8 neighbours occup the remaining elements of the line.
+    neighbours : numpy.ndarray of numpy.int64
+        The HEALPix cell indices of the kth ring neighbours of each cell, with the same
+        shape as the input plus one axis of size :math:`(2\\cdot\\mathrm{ring} + 1)^2`.
+        If `ipix` has shape S, the output will be of shape ``(*S, (2 * ring + 1)**2)``.
+        Missing neighbours will be represented by -1.
+
+    Raises
+    ------
+    ValueError
+        If `ipix` has negative values for ``zuniq``, or outside the range
+        :math:`[0, 12 \\times 4^{level}[` for ``nested`` and ``ring``.
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `ring` is outside its valid range :math:`[0, 2^{level}[`
 
     Examples
     --------
@@ -653,29 +778,40 @@ def kth_neighbourhood(
 def zone_coverage(
     bbox: tuple[float, float, float, float], grid: Grid, *, flat: bool = True
 ) -> (
-    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
-    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+    tuple[Array1D[np.uint64], Array1D[np.uint8], Array1D[np.bool]]
+    | tuple[Array1D[np.uint64], Array1D[np.bool]]
 ):
     """Search the cells covering the given bounding box
 
     Parameters
     ----------
     bbox : tuple of float
-        The 2D bounding box to rasterize.
+        The 2D bounding box to rasterize in order: ``[lon_min, lat_min, lon_max,
+        lat_max]``, in degrees.
     grid : Grid
-        The definition of the HEALPix grid.
+        The definition of the HEALPix grid. The grid level will be the maximum level of
+        cells to be returned.
     flat : bool, default: True
-        If ``True``, the cells returned will all be at the passed depth.
+        If ``True``, the cells returned will all be at the passed grid level.
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    levels : numpy.ndarray
-        The refinement levels of the cell ids. If ``flat is True``, these will all have the
-        same value. Only returned for ``nested`` and ``ring``.
-    fully_covered : numpy.ndarray
+    cell_ids : numpy.ndarray of numpy.uint64
+        The HEALPix cell indices covered at least partially by the bounding box, in the
+        indexing scheme specified by `grid`.
+    levels : numpy.ndarray of numpy.uint8
+        The refinement levels of the cell ids. If `flat` is True, these will all have
+        the same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray of numpy.bool
         Boolean array marking whether the cells are fully covered by the bounding box.
+
+    Raises
+    ------
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `bbox` is not of length 4.
     """
     module = _dispatch_module(grid.indexing_scheme)
     return module.zone_coverage(
@@ -684,40 +820,52 @@ def zone_coverage(
 
 
 def box_coverage(
-    center: tuple[float, float] | npt.NDArray[np.float64],
-    size: tuple[float, float] | npt.NDArray[np.float64],
+    center: tuple[float, float] | Array1D[np.floating],
+    size: tuple[float, float] | Array1D[np.floating],
     angle: float,
     grid: Grid,
     *,
     flat: bool = True,
 ) -> (
-    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
-    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+    tuple[Array1D[np.uint64], Array1D[np.uint8], Array1D[np.bool]]
+    | tuple[Array1D[np.uint64], Array1D[np.bool]]
 ):
     """Search the cells covering the given box.
 
     Parameters
     ----------
-    center : numpy.ndarray or tuple of float
-        The center of the box, either as a 2-sized array or as a 2-tuple of float.
-    size : numpy.ndarray or tuple of float
-        The size of the box, in degree.
+    center : tuple of float or numpy.ndarray of float
+        The center of the box, in degrees, either as a 2-sized array or as a 2-tuple of
+        float.
+    size : tuple of float or numpy.ndarray of float
+        The size of the box, in degrees, either as a 2-sized array of as a 2-tuple of
+        float.
     angle : float
         The angle by which the box is rotated, in degree.
     grid : Grid
-        The definition of the HEALPix grid.
+        The definition of the HEALPix grid. The grid level will be the maximum level of
+        cells to be returned.
     flat : bool, default: True
-        If ``True``, the cells returned will all be at the passed depth.
+        If ``True``, the cells returned will all be at the passed grid level.
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    levels : numpy.ndarray
-        The refinement levels of the cell ids. If ``flat is True``, these will all have the
-        same value. Only returned for ``nested`` and ``ring``.
-    fully_covered : numpy.ndarray
-        Boolean array marking whether the cells are fully covered by the box.
+    cell_ids : numpy.ndarray of numpy.uint64
+        The HEALPix cell indices covered at least partially by the bounding box, in the
+        indexing scheme specified by `grid`.
+    levels : numpy.ndarray of numpy.uint8
+        The refinement levels of the cell ids. If `flat` is True, these will all have
+        the same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray of numpy.bool
+        Boolean array marking whether the cells are fully covered by the bounding box.
+
+    Raises
+    ------
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `center` and `size` are not one-dimensional of length 2.
     """
     module = _dispatch_module(grid.indexing_scheme)
     return module.box_coverage(
@@ -731,31 +879,41 @@ def box_coverage(
 
 
 def polygon_coverage(
-    vertices: npt.NDArray[np.float64], grid: Grid, *, flat: bool = True
+    vertices: ArrayLikeFloat, grid: Grid, *, flat: bool = True
 ) -> (
-    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
-    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+    tuple[Array1D[np.uint64], Array1D[np.uint8], Array1D[np.bool]]
+    | tuple[Array1D[np.uint64], Array1D[np.bool]]
 ):
     """Search the cells covering the given polygon.
 
     Parameters
     ----------
-    vertices : numpy.ndarray
-        The vertices of the polygon without holes. Must be an array of shape ``(n, 2)``.
+    vertices : array-like of float
+        The vertices of the polygon without holes. Must be of shape ``(N, 2)``.
     grid : Grid
-        The definition of the HEALPix grid.
+        The definition of the HEALPix grid. The grid level will be the maximum level of
+        cells to be returned.
     flat : bool, default: True
-        If ``True``, the cells returned will all be at the passed depth.
+        If ``True``, the cells returned will all be at the passed grid level.
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    levels : numpy.ndarray
-        The refinement levels of the cell ids. If ``flat is True``, these will all have the
-        same value. Only returned for ``nested`` and ``ring``.
-    fully_covered : numpy.ndarray
+    cell_ids : numpy.ndarray of numpy.uint64
+        The HEALPix cell indices covered at least partially by the polygon, in the
+        indexing scheme specified by `grid`.
+    levels : numpy.ndarray of numpy.uint8
+        The refinement levels of the cell ids. If `flat` is True, these will all have
+        the same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray of numpy.bool
         Boolean array marking whether the cells are fully covered by the polygon.
+
+    Raises
+    ------
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `vertices` is not of shape (N, 2).
     """
     module = _dispatch_module(grid.indexing_scheme)
     return module.polygon_coverage(
@@ -764,15 +922,15 @@ def polygon_coverage(
 
 
 def cone_coverage(
-    center: tuple[float, float] | npt.NDArray[np.float64],
+    center: tuple[float, float] | Array1D[np.floating],
     radius: float,
     grid: Grid,
     *,
     delta_level: int = 0,
     flat: bool = True,
 ) -> (
-    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
-    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+    tuple[Array1D[np.uint64], Array1D[np.uint8], Array1D[np.bool]]
+    | tuple[Array1D[np.uint64], Array1D[np.bool]]
 ):
     """Search the cells covering the given cone
 
@@ -780,24 +938,35 @@ def cone_coverage(
 
     Parameters
     ----------
-    center : numpy.ndarray or tuple of float
-        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    center : tuple of float or numpy.ndarray of float
+        The center of the cone, in degrees, either as a 2-sized array or as a 2-tuple of
+        float.
     radius : float
-        The radius of the cone, in degree.
+        The radius of the cone, in degrees.
     grid : Grid
-        The definition of the HEALPix grid.
+        The definition of the HEALPix grid. The grid level will be the maximum level of
+        cells to be returned.
     flat : bool, default: True
-        If ``True``, the cells returned will all be at the passed depth.
+        If ``True``, the cells returned will all be at the passed grid level.
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    levels : numpy.ndarray
-        The refinement levels of the cell ids. If ``flat is True``, these will all have the
-        same value. Only returned for ``nested`` and ``ring``.
-    fully_covered : numpy.ndarray
-        Boolean array marking whether the cells are fully covered by the circle.
+    cell_ids : numpy.ndarray of numpy.uint64
+        The HEALPix cell indices covered at least partially by the cone, in the
+        indexing scheme specified by `grid`.
+    levels : numpy.ndarray of numpy.uint8
+        The refinement levels of the cell ids. If `flat` is True, these will all have
+        the same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray of numpy.bool
+        Boolean array marking whether the cells are fully covered by the cone.
+
+    Raises
+    ------
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `center` is not one-dimensional of length 2.
     """
     module = _dispatch_module(grid.indexing_scheme)
     return module.cone_coverage(
@@ -811,44 +980,57 @@ def cone_coverage(
 
 
 def elliptical_cone_coverage(
-    center,
-    ellipse_geometry,
-    position_angle,
-    grid,
+    center: tuple[float, float] | Array1D[np.floating],
+    ellipse_geometry: tuple[float, float] | Array1D[np.floating],
+    position_angle: float,
+    grid: Grid,
     *,
-    delta_level=0,
-    ellipsoid="sphere",
-    flat=True,
+    delta_level: int = 0,
+    flat: bool = True,
 ) -> (
-    tuple[npt.NDArray[np.uint64], npt.NDArray[np.uint8], npt.NDArray[np.bool]]
-    | tuple[npt.NDArray[np.uint64], npt.NDArray[np.bool]]
+    tuple[Array1D[np.uint64], Array1D[np.uint8], Array1D[np.bool]]
+    | tuple[Array1D[np.uint64], Array1D[np.bool]]
 ):
     """Search the cells covering the given elliptical cone.
 
-    Elliptical cone in this case refers to an ellipse on the surface of the reference ellipsoid.
+    Elliptical cone in this case refers to an ellipse on the surface of the reference
+    ellipsoid.
 
     Parameters
     ----------
-    center : numpy.ndarray or tuple of float
-        The center of the box, either as a 2-sized array or as a 2-tuple of float.
-    ellipse_geometry : numpy.ndarray or tuple of float
-        The semimajor and semimajor axis, as a 2-sized array or as a 2-tuple of float.
+    center : tuple of float or numpy.ndarray of float
+        The center of the cone, in degrees, either as a 2-sized array or as a 2-tuple of
+        float.
+    ellipse_geometry : tuple of float or numpy.ndarray of float
+        The semimajor and semimajor axis, in degrees, as a 2-sized array or as a 2-tuple
+        of float.
     position_angle : float
-        The orientation of the ellipse.
+        The orientation of the ellipse, in degrees.
     grid : Grid
-        The definition of the HEALPix grid.
+        The definition of the HEALPix grid. The grid level will be the maximum level of
+        cells to be returned.
     flat : bool, default: True
-        If ``True``, the cells returned will all be at the passed depth.
+        If ``True``, the cells returned will all be at the passed grid level.
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    levels : numpy.ndarray
-        The refinement levels of the cell ids. If ``flat is True``, these will all have the
-        same value. Only returned for ``nested`` and ``ring``.
-    fully_covered : numpy.ndarray
+    cell_ids : numpy.ndarray of numpy.uint64
+        The HEALPix cell indices covered at least partially by the ellipse, in the
+        indexing scheme specified by `grid`.
+    levels : numpy.ndarray of numpy.uint8
+        The refinement levels of the cell ids. If `flat` is True, these will all have
+        the same value. Only returned for ``nested`` and ``ring``.
+    fully_covered : numpy.ndarray of numpy.bool
         Boolean array marking whether the cells are fully covered by the ellipse.
+
+    Raises
+    ------
+    ValueError
+        If `grid.level` is outside the range [0, 29] for ``nested`` or ``ring`` indexing
+        schemes.
+    ValueError
+        If `center` and `ellipse_geometry` are not one-dimensional of length 2.
+
     """
     module = _dispatch_module(grid.indexing_scheme)
     return module.elliptical_cone_coverage(

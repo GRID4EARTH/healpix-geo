@@ -91,8 +91,16 @@ napoleon_type_aliases = {
     # generic
     "mapping": ":term:`mapping`",
     # numpy
-    "array-like": ":py:class:`numpy.ndarray`",
+    "array-like": ":ref:`array-like<common-parameters>`",
+    "numpy.int8": ":py:attr:`numpy.int8`",
+    "numpy.int16": ":py:attr:`numpy.int16`",
+    "numpy.int32": ":py:attr:`numpy.int32`",
+    "numpy.int64": ":py:attr:`numpy.int64`",
+    "numpy.uint8": ":py:attr:`numpy.uint8`",
+    "numpy.uint16": ":py:attr:`numpy.uint16`",
+    "numpy.uint32": ":py:attr:`numpy.uint32`",
     "numpy.uint64": ":py:attr:`numpy.uint64`",
+    "numpy.float32": ":py:attr:`numpy.float32`",
     "numpy.float64": ":py:attr:`numpy.float64`",
 }
 

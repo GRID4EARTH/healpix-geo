@@ -1,32 +1,51 @@
 import numpy as np
+from numpy.typing import NDArray
 
 import healpix_geo.ellipsoid  # noqa: F401
 from healpix_geo import _healpix_geo_python, geometry, nested, ring, zuniq
 from healpix_geo._healpix_geo_python import RaggedArray
 from healpix_geo.geometry import Bbox
 from healpix_geo.mesh import vertex_to_lonlat
+from healpix_geo.typing import ArrayLikeFloat, EllipsoidLike
+from healpix_geo.utils import check_same_shape
 
 
-def cartesian_to_lonlat(x, y, z, ellipsoid="sphere", num_threads=0):
+def cartesian_to_lonlat(
+    x: ArrayLikeFloat,
+    y: ArrayLikeFloat,
+    z: ArrayLikeFloat,
+    *,
+    ellipsoid: EllipsoidLike = "sphere",
+    num_threads: int = 0,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Convert cartesian coordinates to geographic coordinates on the surface of the ellipsoid.
 
-    This drops the height coordinate, resulting in a lossy conversion for coordinates that are not on the surface.
+    This drops the height coordinate, resulting in a lossy conversion for coordinates
+    that are not on the surface.
 
     Parameters
     ----------
-    x, y, z : array-like
-        The cartesian coordinates in meters. All arrays must have the exactly same shape (no broadcasting).
+    x, y, z : array-like of float
+        The cartesian coordinates in meters. All arrays must have the exactly same shape
+        (no broadcasting).
     ellipsoid : ellipsoid-like, default: "sphere"
         The ellipsoid to evaluate the coordinates on.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    lon, lat : array-like
-        The equivalent geographic coordinates.
+    lon, lat : numpy.ndarray of numpy.float64
+        The equivalent geographic coordinates, with the same shape as the inputs.
+
+    Raises
+    ------
+    ValueError
+        If `x`, `y` and `z` do not have the same shape.
+    ValueError
+        If the name of the ellipsoid is unknown.
 
     Examples
     --------
@@ -42,34 +61,47 @@ def cartesian_to_lonlat(x, y, z, ellipsoid="sphere", num_threads=0):
     >>> lat
     array([41.93785391, 19.55202227, 19.55202227])
     """
+    x = np.atleast_1d(x).astype(np.float64)
+    y = np.atleast_1d(y).astype(np.float64)
+    z = np.atleast_1d(z).astype(np.float64)
 
-    x = np.atleast_1d(x).astype("float64")
-    y = np.atleast_1d(y).astype("float64")
-    z = np.atleast_1d(z).astype("float64")
-
-    num_threads = np.uint16(num_threads)
+    check_same_shape(x=x, y=y, z=z)
 
     return _healpix_geo_python.cartesian_to_lonlat(x, y, z, ellipsoid, num_threads)
 
 
-def lonlat_to_cartesian(longitude, latitude, ellipsoid="sphere", num_threads=0):
+def lonlat_to_cartesian(
+    longitude: ArrayLikeFloat,
+    latitude: ArrayLikeFloat,
+    *,
+    ellipsoid: EllipsoidLike = "sphere",
+    num_threads: int = 0,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Convert geographic coordinates to cartesian coordinates.
 
     Parameters
     ----------
-    longitude, latitude : array-like
-        The geographic coordinates in degrees. All arrays must have the exactly same shape (no broadcasting).
+    longitude, latitude : array-like of float
+        The geographic coordinates in degrees. All arrays must have the exactly same
+        shape (no broadcasting).
     ellipsoid : ellipsoid-like, default: "sphere"
         The ellipsoid to evaluate the coordinates on.
-    num_threads : int, optional
-        Specifies the number of threads to use for the computation. Default to 0 means
-        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
-        or the number of logical CPUs (otherwise)
+    num_threads : int, optional, default: 0
+        Specifies the number of threads to use for the computation. The default (0)
+        means it will choose the number of threads based on the RAYON_NUM_THREADS
+        environment variable (if set), or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    x, y, z : array-like
-        The equivalent cartesian coordinates.
+    x, y, z : numpy.ndarray of numpy.float64
+        The equivalent cartesian coordinates, with the same shape as the inputs.
+
+    Raises
+    ------
+    ValueError
+        If `longitude` and `latitude` do not have the same shape.
+    ValueError
+        If the name of the ellipsoid is unknown.
 
     Examples
     --------
@@ -86,10 +118,10 @@ def lonlat_to_cartesian(longitude, latitude, ellipsoid="sphere", num_threads=0):
     >>> z
     array([4240471.60204581, 2121029.8965948 , 2121029.8965948 ])
     """
-    longitude = np.atleast_1d(longitude).astype("float64")
-    latitude = np.atleast_1d(latitude).astype("float64")
+    longitude = np.atleast_1d(longitude).astype(np.float64)
+    latitude = np.atleast_1d(latitude).astype(np.float64)
 
-    num_threads = np.uint16(num_threads)
+    check_same_shape(longitude=longitude, latitude=latitude)
 
     return _healpix_geo_python.lonlat_to_cartesian(
         longitude, latitude, ellipsoid, num_threads
@@ -100,7 +132,6 @@ __all__ = [
     "nested",
     "ring",
     "zuniq",
-    "slices",
     "geometry",
     "Bbox",
     "RaggedArray",
