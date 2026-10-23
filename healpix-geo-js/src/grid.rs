@@ -808,6 +808,13 @@ mod tests {
 
         let valid = healpix::nested::to_zuniq(4, 164);
         assert!(grid.vertex_impl(valid, 0.5, 0.5).is_ok());
+
+        // the same guard runs before the zuniq -> morton re-encode, which
+        // trusts its input in the core crate
+        for bad in [0, 2, u64::MAX] {
+            assert!(grid.to_scheme_impl(bad, Scheme::Morton, None).is_err());
+        }
+        assert!(grid.to_scheme_impl(valid, Scheme::Morton, None).is_ok());
     }
 
     #[test]

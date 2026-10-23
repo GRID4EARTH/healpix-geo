@@ -124,7 +124,7 @@ mod tests {
         for (hash, depth) in crossing_cases() {
             let zuniq = healpix::nested::to_zuniq(depth, hash);
 
-            let word = zuniq_to_morton(&zuniq);
+            let word = zuniq_to_morton(&zuniq).unwrap();
             assert_eq!(word, to_morton(&hash, &depth));
             assert_eq!(to_zuniq(&word), Some(zuniq));
         }
