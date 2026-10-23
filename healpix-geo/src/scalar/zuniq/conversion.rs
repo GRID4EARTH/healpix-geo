@@ -13,3 +13,12 @@ pub fn to_ring(hash: &u64) -> (u64, u8) {
 
     (hash_ring, depth)
 }
+
+/// Re-encode a `zuniq` cell id as a Morton word.
+///
+/// Like [`to_nested`], `hash` must be a well-formed `zuniq` id.
+pub fn to_morton(hash: &u64) -> u64 {
+    let (hash_nested, depth) = to_nested(hash);
+
+    mortie_core::from_nested(hash_nested, depth)
+}

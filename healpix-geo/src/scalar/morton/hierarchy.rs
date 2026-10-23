@@ -54,20 +54,20 @@ pub fn contains(ancestor: &u64, descendant: &u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::scalar::morton::conversion::from_nested;
+    use crate::scalar::nested::conversion::{to_morton, to_morton_point};
 
     #[test]
     fn test_depth() {
-        assert_eq!(depth(&from_nested(&0, &0)), 0);
-        assert_eq!(depth(&from_nested(&164, &3)), 3);
-        assert_eq!(depth(&from_nested(&0, &29)), 29);
+        assert_eq!(depth(&to_morton(&0, &0)), 0);
+        assert_eq!(depth(&to_morton(&164, &3)), 3);
+        assert_eq!(depth(&to_morton(&0, &29)), 29);
     }
 
     #[test]
     fn test_ancestor_golden() {
         // derived from the packed-word layout documented in mortie-core
         // ([4-bit prefix][27×2-bit body][6-bit suffix])
-        let word = from_nested(&164, &3);
+        let word = to_morton(&164, &3);
         assert_eq!(ancestor(&word, &1), Some(4035225266123964417));
         assert_eq!(ancestor(&word, &2), Some(4107282860161892354));
         assert_eq!(ancestor(&word, &3), Some(word));
@@ -78,15 +78,15 @@ mod tests {
     #[test]
     fn test_ancestor_matches_nested_truncation() {
         // nested 164 at depth 3 sits under nested 164 >> 2 at depth 2
-        let word = from_nested(&164, &3);
-        assert_eq!(ancestor(&word, &2), Some(from_nested(&(164 >> 2), &2)));
+        let word = to_morton(&164, &3);
+        assert_eq!(ancestor(&word, &2), Some(to_morton(&(164 >> 2), &2)));
     }
 
     #[test]
     fn test_contains() {
-        let child = from_nested(&164, &3);
-        let parent_ = from_nested(&(164 >> 2), &2);
-        let other = from_nested(&((164 >> 2) + 1), &2);
+        let child = to_morton(&164, &3);
+        let parent_ = to_morton(&(164 >> 2), &2);
+        let other = to_morton(&((164 >> 2) + 1), &2);
 
         assert!(contains(&parent_, &child));
         assert!(!contains(&other, &child));
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_contains_requires_a_canonical_ancestor() {
-        let word = from_nested(&164, &3);
+        let word = to_morton(&164, &3);
         let junk = word | (1 << 30); // decodes to the same cell, not canonical
 
         assert!(!contains(&junk, &junk));
@@ -112,18 +112,16 @@ mod tests {
 
     #[test]
     fn test_contains_covers_point_words() {
-        use crate::scalar::morton::conversion::from_nested_point;
-
         let nested = 164u64 << (2 * 26);
-        let point = from_nested_point(&nested);
-        let area = from_nested(&nested, &29);
+        let point = to_morton_point(&nested);
+        let area = to_morton(&nested, &29);
 
         // the depth-29 area cell covering a point contains it, as does every
         // proper ancestor
         assert!(contains(&area, &point));
-        assert!(contains(&from_nested(&164, &3), &point));
-        assert!(contains(&from_nested(&(164 >> 6), &0), &point));
-        assert!(!contains(&from_nested(&165, &3), &point));
+        assert!(contains(&to_morton(&164, &3), &point));
+        assert!(contains(&to_morton(&(164 >> 6), &0), &point));
+        assert!(!contains(&to_morton(&165, &3), &point));
 
         // a point claims no area, so it contains nothing — not even itself
         assert!(!contains(&point, &point));
@@ -132,18 +130,16 @@ mod tests {
 
     #[test]
     fn test_base_cell_contains_everything_under_it() {
-        let base = from_nested(&2, &0);
+        let base = to_morton(&2, &0);
         for depth_ in [1u8, 5, 29] {
-            let first = from_nested(&(2u64 << (2 * depth_ as u32)), &depth_);
+            let first = to_morton(&(2u64 << (2 * depth_ as u32)), &depth_);
             assert!(contains(&base, &first));
         }
-        let elsewhere = from_nested(&(3u64 << 4), &2);
+        let elsewhere = to_morton(&(3u64 << 4), &2);
         assert!(!contains(&base, &elsewhere));
     }
     #[test]
     fn test_preorder_holds_over_area_words_only() {
-        use crate::scalar::morton::conversion::from_nested_point;
-
         // the 27/28/29 seam of base cell 2: a depth-27 cell, its first
         // depth-28 child, a depth-28 cell that child does not contain, the
         // first depth-29 cell under the child, and the point word of that body
@@ -151,11 +147,11 @@ mod tests {
         let nested_28 = 2u64 << (2 * 28);
         let nested_29 = 2u64 << (2 * 29);
 
-        let a27 = from_nested(&nested_27, &27);
-        let a28 = from_nested(&nested_28, &28);
-        let a29 = from_nested(&nested_29, &29);
-        let other = from_nested(&(nested_28 + 3), &28);
-        let point = from_nested_point(&nested_29);
+        let a27 = to_morton(&nested_27, &27);
+        let a28 = to_morton(&nested_28, &28);
+        let a29 = to_morton(&nested_29, &29);
+        let other = to_morton(&(nested_28 + 3), &28);
+        let point = to_morton_point(&nested_29);
 
         // over area words a raw unsigned sort is a preorder walk: a parent
         // lands immediately before its first child, and its subtree is a run

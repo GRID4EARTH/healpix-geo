@@ -1,28 +1,5 @@
 use cdshealpix as healpix;
 
-/// The deepest refinement level a Morton word (or a `zuniq` id) can encode.
-const MAX_DEPTH: u8 = 29;
-
-/// Pack a nested cell index at `depth` into a Morton word.
-///
-/// # Panics
-/// Panics if `depth > 29` or if `hash` is out of range at `depth`.
-pub fn from_nested(hash: &u64, depth: &u8) -> u64 {
-    mortie_core::from_nested(*hash, *depth)
-}
-
-/// Pack a depth-29 nested cell index into a max-encoded *point* word.
-///
-/// A point word marks a raw coordinate cast to maximum resolution with no
-/// area claim; it sorts after every area cell of the same body and unpacks
-/// (via [`to_nested`]) to its depth-29 nested cell like any other word.
-///
-/// # Panics
-/// Panics if `hash` is out of range at depth 29.
-pub fn from_nested_point(hash: &u64) -> u64 {
-    mortie_core::decimal_morton::from_nested_point(*hash)
-}
-
 /// Unpack a Morton word into its nested cell index and depth.
 ///
 /// Returns `None` if the word does not decode (the empty sentinel `0`, or an
@@ -32,16 +9,6 @@ pub fn to_nested(hash: &u64) -> Option<(u64, u8)> {
     mortie_core::to_nested(*hash).map(|(depth, nested)| (nested, depth))
 }
 
-/// Pack a ring cell index at `depth` into a Morton word.
-///
-/// # Panics
-/// Panics if `depth > 29` or if `hash` is out of range at `depth`.
-pub fn from_ring(hash: &u64, depth: &u8) -> u64 {
-    let nested = healpix::nested::get(*depth).from_ring(*hash);
-
-    mortie_core::from_nested(nested, *depth)
-}
-
 /// Unpack a Morton word into its ring cell index and depth.
 ///
 /// Returns `None` if the word does not decode.
@@ -49,30 +16,6 @@ pub fn to_ring(hash: &u64) -> Option<(u64, u8)> {
     let (nested, depth) = to_nested(hash)?;
 
     Some((healpix::nested::get(depth).to_ring(nested), depth))
-}
-
-/// Re-encode a `zuniq` cell id as a Morton word.
-///
-/// Returns `None` if `hash` is not a valid `zuniq` cell id. `cdshealpix`'s
-/// `from_zuniq` is infallible in the type system but panics for those — `0`
-/// underflows the depth computation, and an id whose sentinel bit sits at an
-/// odd position or whose cell index is out of range at the encoded depth
-/// (`u64::MAX`, for instance) blows up further down — so the id is checked
-/// here rather than passed straight through.
-pub fn from_zuniq(hash: &u64) -> Option<u64> {
-    // a well-formed zuniq id has its sentinel bit at 2·(29 − depth); note
-    // that `0` has 64 trailing zeros and is rejected by the upper bound
-    let trailing = hash.trailing_zeros();
-    if !trailing.is_multiple_of(2) || trailing > 2 * u32::from(MAX_DEPTH) {
-        return None;
-    }
-
-    let (depth, nested) = healpix::nested::from_zuniq(*hash);
-    if nested >= 12u64 << (2 * depth) {
-        return None;
-    }
-
-    Some(mortie_core::from_nested(nested, depth))
 }
 
 /// Re-encode a Morton word as a `zuniq` cell id.
@@ -116,17 +59,9 @@ pub fn is_canonical(hash: &u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_from_nested_golden() {
-        // words derived from the packed-word layout documented in
-        // mortie-core ([4-bit prefix][27×2-bit body][6-bit suffix])
-        assert_eq!(from_nested(&0, &0), 1152921504606846976);
-        assert_eq!(from_nested(&0, &2), 1152921504606846978);
-        assert_eq!(from_nested(&164, &3), 4107282860161892355);
-        assert_eq!(from_nested(&3071, &4), 14983475960261640196);
-        assert_eq!(from_nested(&11, &0), 13835058055282163712);
-    }
+    use crate::scalar::nested::conversion::{to_morton, to_morton_point};
+    use crate::scalar::ring::conversion::to_morton as ring_to_morton;
+    use crate::scalar::zuniq::conversion::to_morton as zuniq_to_morton;
 
     /// The low `2 * depth` bits of an arbitrary nonzero tuple pattern.
     ///
@@ -143,7 +78,7 @@ mod tests {
             for base in 0u64..12 {
                 let first = base << (2 * depth as u32); // first cell of the base
                 for hash in [first, first | tail(depth)] {
-                    let word = from_nested(&hash, &depth);
+                    let word = to_morton(&hash, &depth);
 
                     assert_eq!(to_nested(&word), Some((hash, depth)));
                     assert!(is_canonical(&word));
@@ -159,9 +94,9 @@ mod tests {
         let base = 2u64 << (2 * 29);
         let (a, b) = (base | 0b01_10, base | 0b10_01);
 
-        assert_ne!(from_nested(&a, &29), from_nested(&b, &29));
-        assert_eq!(to_nested(&from_nested(&a, &29)), Some((a, 29)));
-        assert_eq!(to_nested(&from_nested(&b, &29)), Some((b, 29)));
+        assert_ne!(to_morton(&a, &29), to_morton(&b, &29));
+        assert_eq!(to_nested(&to_morton(&a, &29)), Some((a, 29)));
+        assert_eq!(to_nested(&to_morton(&b, &29)), Some((b, 29)));
     }
 
     /// A coarse cell plus two deep ones carrying a nonzero suffix tail.
@@ -178,8 +113,8 @@ mod tests {
         for (hash, depth) in crossing_cases() {
             let ring = healpix::nested::get(depth).to_ring(hash);
 
-            let word = from_ring(&ring, &depth);
-            assert_eq!(word, from_nested(&hash, &depth));
+            let word = ring_to_morton(&ring, &depth);
+            assert_eq!(word, to_morton(&hash, &depth));
             assert_eq!(to_ring(&word), Some((ring, depth)));
         }
     }
@@ -189,18 +124,10 @@ mod tests {
         for (hash, depth) in crossing_cases() {
             let zuniq = healpix::nested::to_zuniq(depth, hash);
 
-            let word = from_zuniq(&zuniq).unwrap();
-            assert_eq!(word, from_nested(&hash, &depth));
+            let word = zuniq_to_morton(&zuniq);
+            assert_eq!(word, to_morton(&hash, &depth));
             assert_eq!(to_zuniq(&word), Some(zuniq));
         }
-    }
-
-    #[test]
-    fn test_invalid_zuniq_ids_do_not_re_encode() {
-        // these would panic inside `cdshealpix` if passed straight through
-        assert_eq!(from_zuniq(&0), None);
-        assert_eq!(from_zuniq(&u64::MAX), None);
-        assert_eq!(from_zuniq(&2), None); // sentinel bit at an odd position
     }
 
     #[test]
@@ -216,7 +143,7 @@ mod tests {
     fn test_non_canonical_words_are_rejected() {
         // a depth-3 word with junk below its depth decodes to the same cell
         // but is not the canonical bit pattern
-        let word = from_nested(&164, &3);
+        let word = to_morton(&164, &3);
         let junk = word | (1 << 30);
 
         assert_eq!(to_nested(&junk), to_nested(&word));
@@ -226,8 +153,7 @@ mod tests {
 
     #[test]
     fn test_point_words_are_canonical() {
-        let point = from_nested_point(&(164u64 << (2 * 26)));
-        assert_eq!(point, 4107282860161892400);
+        let point = to_morton_point(&(164u64 << (2 * 26)));
         assert!(is_canonical(&point));
         assert_eq!(to_nested(&point), Some((164u64 << (2 * 26), 29)));
     }
@@ -235,8 +161,8 @@ mod tests {
     #[test]
     fn test_is_point_separates_the_kinds() {
         let nested = 164u64 << (2 * 26);
-        assert!(is_point(&from_nested_point(&nested)));
-        assert!(!is_point(&from_nested(&nested, &29)));
-        assert!(!is_point(&from_nested(&164, &3)));
+        assert!(is_point(&to_morton_point(&nested)));
+        assert!(!is_point(&to_morton(&nested, &29)));
+        assert!(!is_point(&to_morton(&164, &3)));
     }
 }

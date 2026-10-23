@@ -1,7 +1,7 @@
 use cdshealpix as healpix;
 use geodesy::prelude::EllipsoidBase;
 use healpix_geo::ellipsoid::{Ellipsoid as RustEllipsoid, ReferenceBody};
-use healpix_geo::scalar::morton as morton_scalar;
+use healpix_geo::scalar::nested as nested_scalar;
 use healpix_geo::scalar::nested::coordinates as scalar;
 use serde::Deserialize;
 use serde_wasm_bindgen::from_value;
@@ -260,7 +260,7 @@ impl Grid {
             Scheme::Nested => hash,
             Scheme::Ring => healpix::nested::get(self.level).to_ring(hash),
             Scheme::Zuniq => healpix::nested::to_zuniq(self.level, hash),
-            Scheme::Morton => morton_scalar::conversion::from_nested(&hash, &self.level),
+            Scheme::Morton => nested_scalar::conversion::to_morton(&hash, &self.level),
         }
     }
 
@@ -290,7 +290,7 @@ impl Grid {
                 Scheme::Nested => hash,
                 Scheme::Ring => healpix::nested::get(level).to_ring(hash),
                 Scheme::Zuniq => healpix::nested::to_zuniq(level, hash),
-                Scheme::Morton => morton_scalar::conversion::from_nested(&hash, &level),
+                Scheme::Morton => nested_scalar::conversion::to_morton(&hash, &level),
             });
         };
 
@@ -325,7 +325,7 @@ impl Grid {
 
         Ok(match target {
             Scheme::Zuniq => healpix::nested::to_zuniq(level, hash),
-            Scheme::Morton => morton_scalar::conversion::from_nested(&hash, &level),
+            Scheme::Morton => nested_scalar::conversion::to_morton(&hash, &level),
             Scheme::Nested | Scheme::Ring => unreachable!("rejected above"),
         })
     }
@@ -813,7 +813,7 @@ mod tests {
     #[test]
     fn test_morton_uses_encoded_level() {
         // level 0, nested cell 0 encoded as morton, read by a level-4 grid
-        let cell = morton_scalar::conversion::from_nested(&0, &0);
+        let cell = nested_scalar::conversion::to_morton(&0, &0);
         let grid = grid(Scheme::Morton, 4);
 
         let vertex = grid.vertex_impl(cell, 0.0, 0.0).unwrap();
@@ -825,7 +825,7 @@ mod tests {
     fn test_morton_matches_nested_coordinates() {
         let nested_grid = grid(Scheme::Nested, 4);
         let morton_grid = grid(Scheme::Morton, 4);
-        let word = morton_scalar::conversion::from_nested(&164, &4);
+        let word = nested_scalar::conversion::to_morton(&164, &4);
 
         assert_eq!(
             morton_grid.healpix_to_lonlat_impl(&[word]).unwrap(),
@@ -848,13 +848,13 @@ mod tests {
         assert!(grid.vertex_impl(u64::MAX, 0.5, 0.5).is_err());
 
         // a word that decodes but is not the canonical bit pattern
-        let valid = morton_scalar::conversion::from_nested(&164, &3);
+        let valid = nested_scalar::conversion::to_morton(&164, &3);
         assert!(grid.vertex_impl(valid, 0.5, 0.5).is_ok());
         assert!(grid.vertex_impl(valid | (1 << 30), 0.5, 0.5).is_err());
 
         // a max-encoded point word claims no area and aliases the level-29
         // area cell covering it, so it is not a cell id
-        let point = morton_scalar::conversion::from_nested_point(&(164u64 << (2 * 26)));
+        let point = nested_scalar::conversion::to_morton_point(&(164u64 << (2 * 26)));
         assert!(grid.vertex_impl(point, 0.5, 0.5).is_err());
         assert!(grid.to_scheme_impl(point, Scheme::Nested, None).is_err());
     }
@@ -863,7 +863,7 @@ mod tests {
     fn test_to_scheme_morton_encodes_the_grid_level() {
         let nested = grid(Scheme::Nested, 4);
         let id = nested.to_scheme_impl(164, Scheme::Morton, None).unwrap();
-        assert_eq!(id, morton_scalar::conversion::from_nested(&164, &4));
+        assert_eq!(id, nested_scalar::conversion::to_morton(&164, &4));
 
         let morton = grid(Scheme::Morton, 4);
         assert_eq!(
@@ -879,7 +879,7 @@ mod tests {
         let morton = grid(Scheme::Morton, 4);
         let zuniq = grid(Scheme::Zuniq, 4);
 
-        let word = morton_scalar::conversion::from_nested(&5, &0);
+        let word = nested_scalar::conversion::to_morton(&5, &0);
         let id = morton.to_scheme_impl(word, Scheme::Zuniq, None).unwrap();
         assert_eq!(id, healpix::nested::to_zuniq(0, 5));
         assert_eq!(
@@ -900,7 +900,7 @@ mod tests {
 
         assert_eq!(
             nested.to_scheme_impl(5, Scheme::Morton, Some(0.0)).unwrap(),
-            morton_scalar::conversion::from_nested(&5, &0)
+            nested_scalar::conversion::to_morton(&5, &0)
         );
         // the cell id is validated against the override level
         assert!(
@@ -911,7 +911,7 @@ mod tests {
 
         // morton ids already carry their level, even for the identity
         let morton = grid(Scheme::Morton, 4);
-        let id = morton_scalar::conversion::from_nested(&164, &4);
+        let id = nested_scalar::conversion::to_morton(&164, &4);
         assert!(
             morton
                 .to_scheme_impl(id, Scheme::Morton, Some(4.0))
@@ -983,7 +983,7 @@ mod tests {
         assert_eq!(grid(Scheme::Ring, 1).bit_combine_impl(0.0, 1.0).unwrap(), 4);
         assert_eq!(
             grid(Scheme::Morton, 1).bit_combine_impl(0.0, 1.0).unwrap(),
-            morton_scalar::conversion::from_nested(&2, &1)
+            nested_scalar::conversion::to_morton(&2, &1)
         );
         assert_eq!(
             grid(Scheme::Nested, 1).bit_combine_impl(0.0, 1.0).unwrap(),

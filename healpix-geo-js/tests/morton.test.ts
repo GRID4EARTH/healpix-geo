@@ -3,18 +3,18 @@ import { Grid } from "../pkg/healpix_geo.js";
 import { describe, expect, test } from "vitest";
 
 // golden words derived from the packed-word layout documented in mortie-core
-// ([4-bit prefix][27×2-bit body][6-bit suffix]): from_nested(nested, level)
-const BASE0_L0 = 1152921504606846976n; // from_nested(0, 0)
-const CELL164_L3 = 4107282860161892355n; // from_nested(164, 3)
-const CELL41_L2 = 4107282860161892354n; // from_nested(41, 2), the parent of 164@3
-const CELL10_L1 = 4035225266123964417n; // from_nested(10, 1), the parent of 41@2
+// ([4-bit prefix][27×2-bit body][6-bit suffix]): to_morton(nested, level)
+const BASE0_L0 = 1152921504606846976n; // to_morton(0, 0)
+const CELL164_L3 = 4107282860161892355n; // to_morton(164, 3)
+const CELL41_L2 = 4107282860161892354n; // to_morton(41, 2), the parent of 164@3
+const CELL10_L1 = 4035225266123964417n; // to_morton(10, 1), the parent of 41@2
 // the remaining three children of 41@2, and the level-2 cell after it
-const CELL165_L3 = 4125297258671374339n; // from_nested(165, 3)
-const CELL166_L3 = 4143311657180856323n; // from_nested(166, 3)
-const CELL167_L3 = 4161326055690338307n; // from_nested(167, 3)
-const CELL42_L2 = 4179340454199820290n; // from_nested(42, 2)
+const CELL165_L3 = 4125297258671374339n; // to_morton(165, 3)
+const CELL166_L3 = 4143311657180856323n; // to_morton(166, 3)
+const CELL167_L3 = 4161326055690338307n; // to_morton(167, 3)
+const CELL42_L2 = 4179340454199820290n; // to_morton(42, 2)
 // a max-encoded point word and the level-29 area cell covering it:
-// from_nested_point(164 << 52) and from_nested(164 << 52, 29)
+// to_morton_point(164 << 52) and to_morton(164 << 52, 29)
 const POINT_L29 = 4107282860161892400n;
 const AREA_L29 = 4107282860161892381n;
 

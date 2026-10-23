@@ -136,30 +136,30 @@ impl Morton {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use healpix_geo::scalar::morton::conversion::{from_nested, from_nested_point};
+    use healpix_geo::scalar::nested::conversion::{to_morton, to_morton_point};
 
     /// A point word and the level-29 area cell of the same body.
     fn point_and_area() -> (u64, u64) {
         let nested = 164u64 << (2 * 26);
 
-        (from_nested_point(&nested), from_nested(&nested, &29))
+        (to_morton_point(&nested), to_morton(&nested, &29))
     }
 
     #[test]
     fn test_level() {
-        assert_eq!(Morton::level_impl(from_nested(&164, &3)).unwrap(), 3);
-        assert_eq!(Morton::level_impl(from_nested(&2, &0)).unwrap(), 0);
+        assert_eq!(Morton::level_impl(to_morton(&164, &3)).unwrap(), 3);
+        assert_eq!(Morton::level_impl(to_morton(&2, &0)).unwrap(), 0);
         assert!(Morton::level_impl(0).is_err());
         assert!(Morton::level_impl(u64::MAX).is_err());
     }
 
     #[test]
     fn test_ancestor() {
-        let cell = from_nested(&164, &3);
+        let cell = to_morton(&164, &3);
 
         assert_eq!(
             Morton::ancestor_impl(cell, 2.0).unwrap(),
-            from_nested(&41, &2)
+            to_morton(&41, &2)
         );
         assert_eq!(Morton::ancestor_impl(cell, 3.0).unwrap(), cell);
         assert_eq!(Morton::ancestor_impl(cell, 29.0).unwrap(), cell);
@@ -171,8 +171,8 @@ mod tests {
 
     #[test]
     fn test_contains() {
-        let child = from_nested(&164, &3);
-        let parent = from_nested(&41, &2);
+        let child = to_morton(&164, &3);
+        let parent = to_morton(&41, &2);
 
         assert!(Morton::contains_impl(parent, child).unwrap());
         assert!(!Morton::contains_impl(child, parent).unwrap());
@@ -213,7 +213,7 @@ mod tests {
             let covering = Morton::ancestor_impl(area, f64::from(level)).unwrap();
             assert!(Morton::contains_impl(covering, point).unwrap());
         }
-        assert!(!Morton::contains_impl(from_nested(&165, &3), point).unwrap());
+        assert!(!Morton::contains_impl(to_morton(&165, &3), point).unwrap());
 
         // a point claims no area: `false`, not an error
         assert!(!Morton::contains_impl(point, point).unwrap());
@@ -226,7 +226,7 @@ mod tests {
 
         assert!(Morton::is_point_impl(point).unwrap());
         assert!(!Morton::is_point_impl(area).unwrap());
-        assert!(!Morton::is_point_impl(from_nested(&164, &3)).unwrap());
+        assert!(!Morton::is_point_impl(to_morton(&164, &3)).unwrap());
         assert!(Morton::is_point_impl(0).is_err());
         assert!(Morton::is_point_impl(u64::MAX).is_err());
     }
