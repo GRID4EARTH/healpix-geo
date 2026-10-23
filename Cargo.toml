@@ -16,6 +16,7 @@ categories = ["science::geo"]
 [workspace.dependencies]
 cdshealpix = { git = "https://github.com/cds-astro/cds-healpix-rust.git", rev = "d9d017cda85a097b65d200e3c4cccefc54665915" }
 moc = "0.19.2"
+mortie-core = "0.1.0"
 rayon = "1.12.0"
 geodesy = "0.15.0"
 itertools = "0.15.0"

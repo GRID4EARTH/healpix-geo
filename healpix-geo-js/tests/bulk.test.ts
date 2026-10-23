@@ -252,7 +252,7 @@ describe("Grid.bitCombineTable", () => {
     // the table takes its z-order curve from `size`, `bitCombine` from the
     // grid's level — at `size == nside` the two coincide trivially, so the
     // equivalence is only really tested below it
-    for (const scheme of ["nested", "ring", "zuniq"] as const) {
+    for (const scheme of ["nested", "ring", "zuniq", "morton"] as const) {
       const size = 4;
       const grid = new Grid({ scheme, level: 5 }); // nside == 32
 

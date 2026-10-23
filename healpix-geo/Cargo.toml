@@ -14,6 +14,7 @@ cdshealpix = { workspace = true }
 geodesy = { workspace = true }
 itertools = { workspace = true }
 moc = { workspace = true }
+mortie-core = { workspace = true }
 num-traits = "0.2.19"
 rayon = { workspace = true }
 serde = "1.0.228"
