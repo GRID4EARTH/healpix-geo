@@ -1,0 +1,23 @@
+from typing import final
+
+@final
+class Bbox:
+    """bounding box"""
+
+    def __new__(
+        cls, /, lon_min: float, lat_min: float, lon_max: float, lat_max: float
+    ) -> Bbox: ...
+    def __repr__(self, /) -> str: ...
+    @classmethod
+    def from_tuple(cls, /, bbox: tuple[float, float, float, float]) -> Bbox:
+        """Create from tuple (lon_min, lat_min, lon_max, lat_max)."""
+        ...
+
+    @property
+    def lat_max(self, /) -> float: ...
+    @property
+    def lat_min(self, /) -> float: ...
+    @property
+    def lon_max(self, /) -> float: ...
+    @property
+    def lon_min(self, /) -> float: ...

@@ -25,11 +25,16 @@ select = [
   "UP",  # Pyupgrade
   "TID", # flake8-tidy-imports
   "W",
+  "ANN", # flake8-annotations
 ]
 extend-safe-fixes = [
   "TID252", # absolute imports
 ]
 fixable = ["I", "TID252"]
+
+[tool.ruff.lint.per-file-ignores]
+"!healpix-geo-python/python/healpix_geo/**" = ["ANN"]
+"healpix-geo-python/python/healpix_geo/tests/**" = ["ANN"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["healpix_geo"]
@@ -38,3 +43,9 @@ known-third-party = []
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+
+[tool.ty.rules]
+possibly-missing-submodule = "ignore"
+
+[tool.pyright]
+exclude = ["healpix-geo-python/python/healpix_geo/tests"]

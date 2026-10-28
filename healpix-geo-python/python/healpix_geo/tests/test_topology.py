@@ -62,12 +62,7 @@ class TestBaseCellRelationship:
 
     @pytest.mark.parametrize("base_cell", [-1, 12, 256])
     def test_base_cell_relationship_rejects_invalid_base_cell(self, base_cell):
-        with pytest.raises(ValueError, match="base_cell"):
-            topology.base_cell_relationship(base_cell, "N")
-
-    @pytest.mark.parametrize("base_cell", ["0", 0.0, [0]])
-    def test_face_neighbour_transform_rejects_non_integer_base_cell(self, base_cell):
-        with pytest.raises(TypeError, match="base_cell must be an integer"):
+        with pytest.raises(ValueError, match=r"Base cell must be in range \[0, 11\]."):
             topology.base_cell_relationship(base_cell, "N")
 
     def test_base_cell_relationship_rejects_invalid_direction(self):

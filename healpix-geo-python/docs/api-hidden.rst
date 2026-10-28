@@ -10,6 +10,7 @@
    healpix_geo.nested.RangeMOCIndex.full_domain
 
    healpix_geo.nested.RangeMOCIndex.cell_ids
+   healpix_geo.nested.RangeMOCIndex.compacted_cell_ids
    healpix_geo.nested.RangeMOCIndex.ranges
 
    healpix_geo.nested.RangeMOCIndex.refine
