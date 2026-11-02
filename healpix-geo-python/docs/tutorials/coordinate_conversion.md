@@ -34,8 +34,8 @@ from healpix_geo.ring import lonlat_to_healpix as ring_lonlat
 lon, lat = np.array([0.0]), np.array([45.0])
 depth = 8
 
-ipix_nested = nested_lonlat(lon, lat, depth, "WGS84")
-ipix_ring = ring_lonlat(lon, lat, depth, "WGS84")
+ipix_nested = nested_lonlat(lon, lat, depth, ellipsoid="WGS84")
+ipix_ring = ring_lonlat(lon, lat, depth, ellipsoid="WGS84")
 
 print(f"Point (0°, 45°) at depth={depth}:")
 print(f"  Nested: {ipix_nested[0]}")
@@ -86,7 +86,7 @@ sample_cells = range(0, n_cells, max(1, n_cells // 50))
 
 # Nested
 for ipix in sample_cells:
-    lons, lats = nested_vertices(np.array([ipix]), depth, "WGS84")
+    lons, lats = nested_vertices(np.array([ipix]), depth, ellipsoid="WGS84")
     lons_closed = np.append(lons[:, 0], lons[0, 0])
     lats_closed = np.append(lats[:, 0], lats[0, 0])
 
@@ -107,7 +107,7 @@ ax1.grid(True, alpha=0.3)
 
 # Ring
 for ipix in sample_cells:
-    lons, lats = ring_vertices(np.array([ipix]), depth, "WGS84")
+    lons, lats = ring_vertices(np.array([ipix]), depth, ellipsoid="WGS84")
     lons_closed = np.append(lons[:, 0], lons[0, 0])
     lats_closed = np.append(lats[:, 0], lats[0, 0])
 

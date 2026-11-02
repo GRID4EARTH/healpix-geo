@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from healpix_geo.typing import EllipsoidLike
+    from healpix_geo.typing import EllipsoidDict, SphereDict
 
 
-def resolve(name: str) -> EllipsoidLike:
+def resolve(name: str) -> EllipsoidDict | SphereDict:
     """Look up the ellipsoid based on a name
 
     Parameters

@@ -1,7 +1,8 @@
-from typing import Protocol, TypedDict
+from typing import Protocol, TypedDict, TypeVar
 
 import numpy as np
 import numpy.typing as npt
+from numpy._typing._array_like import _DualArrayLike
 
 
 class SphereDict(TypedDict):
@@ -28,3 +29,10 @@ _EllipsoidLike = EllipsoidDict | EllipsoidType
 EllipsoidLike = str | _SphereLike | _EllipsoidLike
 
 DepthType = int | npt.NDArray[np.uint8]
+
+_ScalarT = TypeVar("_ScalarT", bound=np.generic)
+Array1D = np.ndarray[tuple[int], np.dtype[_ScalarT]]
+Array2D = np.ndarray[tuple[int, int], np.dtype[_ScalarT]]
+
+ArrayLikeFloat = _DualArrayLike[np.dtype[np.integer] | np.dtype[np.floating], float]
+ArrayLikeInt = _DualArrayLike[np.dtype[np.integer], int]
