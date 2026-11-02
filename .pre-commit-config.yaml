@@ -26,6 +26,13 @@ repos:
     hooks:
       - id: ruff-check
         args: ["--fix", "--show-fixes"]
+  - repo: https://github.com/facebook/pyrefly-pre-commit
+    rev: 1.4.0
+    hooks:
+      - id: pyrefly-check
+        name: Pyrefly (type checking)
+        pass_filenames: false
+        additional_dependencies: [awkward, marray, numpy, ragged, shapely]
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 26.10.0
     hooks:

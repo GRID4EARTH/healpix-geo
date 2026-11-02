@@ -47,5 +47,19 @@ ban-relative-imports = "all"
 [tool.ty.rules]
 possibly-missing-submodule = "ignore"
 
-[tool.pyright]
-exclude = ["healpix-geo-python/python/healpix_geo/tests"]
+[tool.pyrefly]
+preset = "default"
+
+# pyrefly is having trouble with the project structure
+# (healpix_geo is neither at root or in src/)
+disable-project-excludes-heuristics = true
+search-path = [
+  "healpix-geo-python/python",
+]
+project-includes = [
+  "healpix-geo-python/python/healpix_geo/**/*.py*",
+]
+project-excludes = [
+  "healpix-geo-python/python/healpix_geo/tests",
+  "healpix-geo-python/docs",
+]
