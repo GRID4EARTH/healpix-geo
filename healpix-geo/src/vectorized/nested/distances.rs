@@ -21,13 +21,19 @@ pub fn angular_distances(
     let data: Vec<(&u64, &[u64])> = from.iter().zip(to.chunks(chunks)).collect();
 
     let mut result = Vec::<Vec<f64>>::with_capacity(from.len());
-    maybe_parallelize!(nthreads, data, result, |(from_, to_)| {
-        let first = to_vec3(layer, from_);
-        to_.iter()
-            .map(|h| to_vec3(layer, h))
-            .map(|vec| first.ang_dist(&vec))
-            .collect::<Vec<f64>>()
-    });
+    maybe_parallelize!(
+        nthreads,
+        data,
+        result,
+        |(from_, to_)| {
+            let first = to_vec3(layer, from_);
+            to_.iter()
+                .map(|h| to_vec3(layer, h))
+                .map(|vec| first.ang_dist(&vec))
+                .collect::<Vec<f64>>()
+        },
+        min_len = 16
+    );
 
     result
 }

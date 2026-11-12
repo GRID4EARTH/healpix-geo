@@ -20,26 +20,15 @@ pub fn cone_coverage(
     flat: bool,
     nthreads: usize,
 ) -> Vec<Coverage> {
-    if centers.is_empty() {
-        return Vec::new();
-    }
-
-    // Building a thread pool costs more than a small cone query, so serial
-    // work (including every single-center call) bypasses it.
-    if nthreads == 1 || centers.len() == 1 {
-        return centers
-            .iter()
-            .map(|&center| {
-                scalar::cone_coverage(center, radius, layer, ellipsoid, delta_depth, flat)
-            })
-            .collect();
-    }
-
     let mut result = Vec::<Coverage>::with_capacity(centers.len());
 
-    maybe_parallelize!(nthreads, centers, result, |&center| {
-        scalar::cone_coverage(center, radius, layer, ellipsoid, delta_depth, flat)
-    });
+    maybe_parallelize!(
+        nthreads,
+        centers,
+        result,
+        |&center| { scalar::cone_coverage(center, radius, layer, ellipsoid, delta_depth, flat) },
+        min_len = 1
+    );
 
     result
 }
