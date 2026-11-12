@@ -983,9 +983,9 @@ def test_cone_coverage():
         center=(35.0, 55.0), radius=25.0, grid=grid, flat=True
     )
 
-    np.testing.assert_equal(actual_cell_ids, expected_cell_ids)
-    np.testing.assert_equal(actual_levels, grid.level)
-    np.testing.assert_equal(actual_coverage, expected_coverage)
+    np.testing.assert_equal(actual_cell_ids.data, expected_cell_ids)
+    np.testing.assert_equal(actual_levels.data, grid.level)
+    np.testing.assert_equal(actual_coverage.data, expected_coverage)
 
 
 def test_elliptical_cone_coverage():

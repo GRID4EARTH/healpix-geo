@@ -1092,7 +1092,14 @@ def polygon_coverage(vertices, depth, *, ellipsoid="sphere", flat=True):
 
 
 def cone_coverage(
-    center, radius, depth, *, delta_depth=0, ellipsoid="sphere", flat=True
+    center,
+    radius,
+    depth,
+    *,
+    delta_depth=0,
+    ellipsoid="sphere",
+    flat=True,
+    num_threads=0,
 ):
     """Search the cells covering the given cone
 
@@ -1100,35 +1107,80 @@ def cone_coverage(
 
     Parameters
     ----------
-    center : numpy.ndarray or tuple of float
-        The center of the box, either as a 2-sized array or as a 2-tuple of float.
+    center : array-like of float
+        One longitude/latitude pair with shape ``(2,)``, or multiple pairs
+        with shape ``(N, 2)``, in degrees.
     radius : float
-        The radius of the cone, in degree.
+        The radius of the cone, in degree, shared by all centers.
     depth : int
         The maximum depth of the cells to be returned.
+    delta_depth : int, default: 0
+        Perform the computation at depth ``depth + delta_depth`` to refine the
+        approximation. ``depth + delta_depth`` must not exceed 29.
     ellipsoid : ellipsoid-like, default: "sphere"
         Reference ellipsoid to evaluate healpix on. If the reference ellipsoid
         is spherical, this will return the same result as
         :py:func:`cdshealpix.nested.cone_search`.
     flat : bool, default: True
         If ``True``, the cells returned will all be at the passed depth.
+    num_threads : int, optional
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
 
     Returns
     -------
-    cell_ids : numpy.ndarray
-        The rasterized cell ids.
-    depths : numpy.ndarray
+    cell_ids : healpix_geo.RaggedArray
+        The rasterized cell ids, one row per center.
+    depths : healpix_geo.RaggedArray
         The depths of the cell ids. If ``flat is True``, these will all have the same value.
-    fully_covered : numpy.ndarray
+    fully_covered : healpix_geo.RaggedArray
         Boolean array marking whether the cells are fully covered by the circle.
+
+    Notes
+    -----
+    The three results share one offsets array, and a single ``(2,)`` center
+    gives a single row. Row ``i`` is
+    ``result.data[result.offsets[i]:result.offsets[i + 1]]``.
+
+    Examples
+    --------
+    >>> import healpix_geo.nested
+    >>> import numpy as np
+    >>> cell_ids, depths, fully_covered = healpix_geo.nested.cone_coverage(
+    ...     (45.0, 45.0), 5.0, 2
+    ... )
+    >>> cell_ids.offsets
+    array([0, 4], dtype=uint64)
+    >>> cell_ids.data
+    array([ 3,  6,  9, 12], dtype=uint64)
+
+    >>> centers = np.array([[45.0, 45.0], [0.0, 0.0]])
+    >>> cell_ids, depths, fully_covered = healpix_geo.nested.cone_coverage(
+    ...     centers, 5.0, 2
+    ... )
+    >>> cell_ids.offsets
+    array([0, 4, 8], dtype=uint64)
+    >>> cell_ids.data[cell_ids.offsets[1] : cell_ids.offsets[2]]
+    array([67, 70, 73, 76], dtype=uint64)
     """
     _check_depth(depth)
 
-    if not isinstance(center, tuple):
-        center = tuple(center)
+    center = np.asarray(center, dtype="float64")
+    if center.shape == (2,):
+        center = center[None, :]
+    elif center.ndim != 2 or center.shape[1] != 2:
+        raise ValueError(f"center must have shape (2,) or (N, 2), got {center.shape}")
+    num_threads = np.uint16(num_threads)
 
     return _healpix_geo_python.nested.cone_coverage(
-        depth, center, radius, delta_depth=delta_depth, ellipsoid=ellipsoid, flat=flat
+        depth,
+        np.ascontiguousarray(center),
+        float(radius),
+        delta_depth=delta_depth,
+        ellipsoid=ellipsoid,
+        flat=flat,
+        nthreads=num_threads,
     )
 
 

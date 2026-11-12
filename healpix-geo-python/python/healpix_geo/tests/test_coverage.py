@@ -798,6 +798,9 @@ def test_cone_coverage(scheme, expected_cell_ids, expected_depths, expected_cove
 
     ns = getattr(healpix_geo, scheme)
     result = ns.cone_coverage(center, radius, depth, ellipsoid="WGS84")
+    if scheme == "nested":
+        # single row of the ragged results
+        result = tuple(array.data for array in result)
     if scheme in {"zuniq"}:
         cell_ids, fully_covered = result
     else:
