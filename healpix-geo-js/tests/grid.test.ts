@@ -49,7 +49,7 @@ describe("new Grid", () => {
     expect(() => new Grid({ scheme: "nested", level: 30 })).to.throw(
       /`level` must be in \[0, 29\]/,
     );
-    // @ts-expect-error scheme must be one of the three names
+    // @ts-expect-error scheme must be one of the four names
     expect(() => new Grid({ scheme: "bogus", level: 4 })).to.throw();
   });
 });
@@ -78,7 +78,7 @@ describe("Grid input validation", () => {
   });
 
   test("rejects z-order coordinates outside the base cell", () => {
-    for (const scheme of ["nested", "ring", "zuniq"] as const) {
+    for (const scheme of ["nested", "ring", "zuniq", "morton"] as const) {
       const grid = new Grid({ scheme, level: 1 });
       expect(() => grid.bitCombine(0, 2)).to.throw(/out of range/);
       expect(() => grid.bitCombine(256, 0)).to.throw(/out of range/);
@@ -172,7 +172,7 @@ describe("Grid parity with the scheme statics", () => {
 
   test("uniform loop over all schemes", () => {
     // the motivating gridlook use case: one code path for every scheme
-    for (const scheme of ["nested", "ring", "zuniq"] as const) {
+    for (const scheme of ["nested", "ring", "zuniq", "morton"] as const) {
       const grid = new Grid({ scheme, level: 2 });
       const cell = grid.bitCombine(1, 2);
       const vertex: Coordinate = grid.vertex(cell, 0.5, 0.5);
@@ -274,7 +274,7 @@ describe("Grid.toScheme", () => {
     const zuniq = new Grid({ scheme: "zuniq", level: 4 });
     expect(() => zuniq.toScheme(0n, "nested")).to.throw(/zuniq/);
 
-    // @ts-expect-error the target scheme must be one of the three names
+    // @ts-expect-error the target scheme must be one of the four names
     expect(() => nested.toScheme(0n, "bogus")).to.throw(/scheme/);
   });
 });

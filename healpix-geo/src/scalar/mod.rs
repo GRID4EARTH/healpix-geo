@@ -1,3 +1,4 @@
+pub mod morton;
 pub mod nested;
 pub mod ring;
 pub mod zuniq;
