@@ -308,4 +308,39 @@ impl RaggedArray {
 
         array_cls.call1((awkward_array,))
     }
+
+    /// convert to a rectangular numpy array
+    ///
+    /// Returns
+    /// -------
+    /// array : numpy.ndarray
+    ///     A view on ``data`` with shape ``(rows, columns)``, for example
+    ///     ``(1, n)`` for a single row.
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the rows have different lengths. Use ``as_masked_array`` instead.
+    fn as_numpy<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let offsets = self.offsets.bind(py).readonly();
+        let offsets = offsets.as_slice()?;
+        let [rows, columns] = self.shape;
+
+        if !offsets
+            .windows(2)
+            .all(|window| window[1].checked_sub(window[0]) == Some(columns as u64))
+        {
+            return Err(PyValueError::new_err(
+                "rows have different lengths, use `as_masked_array` instead",
+            ));
+        }
+
+        let start = offsets.first().copied().unwrap_or(0) as isize;
+        let stop = start + (rows * columns) as isize;
+
+        self.data
+            .bind(py)
+            .get_item(PySlice::new(py, start, stop, 1))?
+            .call_method1("reshape", (self.shape,))
+    }
 }
