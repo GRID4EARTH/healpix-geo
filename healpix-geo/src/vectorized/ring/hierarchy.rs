@@ -28,9 +28,13 @@ pub fn neighbours(
 pub fn kth_neighbours(ipix: &[u64], nside: &u32, ring: &u32, nthreads: usize) -> Vec<Vec<i64>> {
     let mut result = Vec::<Vec<i64>>::with_capacity(ipix.len());
 
-    maybe_parallelize!(nthreads, ipix, result, |hash| scalar::kth_neighbours(
-        hash, nside, ring
-    ));
+    maybe_parallelize!(
+        nthreads,
+        ipix,
+        result,
+        |hash| scalar::kth_neighbours(hash, nside, ring),
+        min_len = 16
+    );
 
     result
 }
@@ -38,9 +42,13 @@ pub fn kth_neighbours(ipix: &[u64], nside: &u32, ring: &u32, nthreads: usize) ->
 pub fn kth_neighbourhood(ipix: &[u64], nside: &u32, ring: &u32, nthreads: usize) -> Vec<Vec<i64>> {
     let mut result = Vec::<Vec<i64>>::with_capacity(ipix.len());
 
-    maybe_parallelize!(nthreads, ipix, result, |hash| scalar::kth_neighbourhood(
-        hash, nside, ring
-    ));
+    maybe_parallelize!(
+        nthreads,
+        ipix,
+        result,
+        |hash| scalar::kth_neighbourhood(hash, nside, ring),
+        min_len = 16
+    );
 
     result
 }
