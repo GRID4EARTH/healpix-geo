@@ -3,7 +3,6 @@ mod geometry;
 
 pub mod ellipsoid;
 pub mod grid;
-pub mod morton;
 pub mod nested;
 pub mod ring;
 pub mod zuniq;
@@ -14,7 +13,6 @@ pub use crate::coordinates::Coordinate;
 pub use crate::ellipsoid::{Ellipsoid, EllipsoidLike};
 
 pub use crate::grid::Grid;
-pub use crate::morton::Morton;
 pub use crate::nested::Nested;
 pub use crate::ring::Ring;
 pub use crate::zuniq::Zuniq;
