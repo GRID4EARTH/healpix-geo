@@ -3,6 +3,7 @@ use cdshealpix as healpix;
 
 use numpy::{PyArray1, PyArray2, PyArrayDyn, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::exceptions::PyNotImplementedError;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use crate::indexing_schemes::depth::DepthLike;
@@ -218,4 +219,41 @@ pub(crate) fn bilinear_interpolation<'py>(
     let weights_ = PyArray2::from_vec2(py, &weights)?.reshape(output_shape.as_slice())?;
 
     Ok((ipix_, weights_))
+}
+
+/// Geodesic distances in metres between cell centres on the given reference body.
+///
+/// `to` must have one row per entry of `from`.
+#[pyfunction]
+pub(crate) fn geodesic_distances<'py>(
+    py: Python<'py>,
+    from: &Bound<'py, PyArray1<u64>>,
+    to: &Bound<'py, PyArray2<u64>>,
+    ellipsoid_like: EllipsoidLike,
+    nthreads: u16,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    use healpix_geo::vectorized::zuniq::distances as vectorized;
+
+    let ellipsoid = ellipsoid_like.into_ellipsoid()?;
+    let (rows, cols) = (to.shape()[0], to.shape()[1]);
+    if rows != from.len() {
+        return Err(PyValueError::new_err(format!(
+            "`to` must have one row per entry of `from`, got {} rows for {} entries.",
+            rows,
+            from.len()
+        )));
+    }
+
+    let from_ = from.readonly();
+    let to_ = to.readonly();
+    let from_ = from_.as_slice()?;
+    let to_ = to_.as_slice()?;
+    let distances: Vec<f64> = py.detach(|| {
+        vectorized::geodesic_distances(from_, to_, cols, &ellipsoid, nthreads as usize)
+            .into_iter()
+            .flatten()
+            .collect()
+    });
+
+    PyArray1::from_vec(py, distances).reshape([rows, cols])
 }

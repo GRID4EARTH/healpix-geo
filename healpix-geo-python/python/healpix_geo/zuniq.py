@@ -6,7 +6,7 @@ import marray
 import numpy as np
 
 from healpix_geo import _healpix_geo_python
-from healpix_geo.utils import _check_depth
+from healpix_geo.utils import _check_depth, _prepare_distances
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -733,6 +733,88 @@ def kth_neighbourhood(ipix, ring, num_threads=0):
 
     num_threads = np.uint16(num_threads)
     return _healpix_geo_python.zuniq.kth_neighbourhood(ipix, ring, num_threads)
+
+
+def geodesic_distances(from_, to_, ellipsoid="sphere", num_threads=0):
+    """Compute the geodesic distances between cell centres, in metres.
+
+    Each cell id carries its own depth, so ``from_`` and ``to_`` may mix
+    cells of different depths.
+
+    Parameters
+    ----------
+    from_ : numpy.ndarray
+        The source HEALPix cell indexes given as a ``np.uint64`` numpy array.
+    to_ : numpy.ndarray
+        The destination HEALPix cell indexes. Either the same shape as
+        ``from_``, or with one more trailing dimension holding several
+        destination cells per source cell. Entries equal to ``-1`` are
+        treated as padding.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference body the cell centres and distances are evaluated on.
+    num_threads : int, default: 0
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    distances : numpy.ndarray
+        The distances in metres, with the shape of ``to_``. Padding entries
+        are ``NaN``.
+
+    Raises
+    ------
+    ValueError
+        When the shape of ``from_`` is not compatible with the shape of ``to_``.
+    ValueError
+        When the name of the ellipsoid is unknown.
+
+    See Also
+    --------
+    healpix_geo.zuniq.healpix_to_lonlat
+
+    Notes
+    -----
+    The cell centres are converted to longitude and geographic (geodetic)
+    latitude on ``ellipsoid``, as in ``healpix_to_lonlat``. On an ellipsoid,
+    the distance is the length of the geodesic between the two centres,
+    computed with Karney's algorithm [1]_ (the algorithm behind
+    GeographicLib and PROJ's ``geod_inverse``). On a sphere it is the
+    great-circle distance.
+
+    References
+    ----------
+    .. [1] C. F. F. Karney, "Algorithms for geodesics", J. Geodesy 87, 43–55 (2013),
+       https://doi.org/10.1007/s00190-012-0578-z
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from healpix_geo.nested import to_zuniq
+    >>> from healpix_geo.zuniq import geodesic_distances
+    >>> from_ = to_zuniq(np.array([0, 16]), depth=1)
+    >>> to_ = np.stack(
+    ...     [
+    ...         to_zuniq(np.array([2, 15]), depth=1),
+    ...         to_zuniq(np.array([8, 70]), depth=2),
+    ...     ],
+    ...     axis=-1,
+    ... )
+    >>> distances = geodesic_distances(from_, to_, ellipsoid="WGS84")
+    >>> distances.round()
+    array([[ 3265491.,  2550552.],
+           [10250304.,  2486931.]])
+    """
+    from_, to_, mask, shape = _prepare_distances(from_, to_)
+
+    num_threads = np.uint16(num_threads)
+
+    distances = _healpix_geo_python.zuniq.geodesic_distances(
+        from_, to_, ellipsoid, num_threads
+    )
+
+    return np.where(mask, np.reshape(distances, shape), np.nan)
 
 
 def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):

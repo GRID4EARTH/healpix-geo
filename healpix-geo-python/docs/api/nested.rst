@@ -96,6 +96,7 @@ Calculate distances between HEALPix cells.
    :toctree: ../generated/
 
    angular_distances
+   geodesic_distances
 
 
 Indexes and data structure

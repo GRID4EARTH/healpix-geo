@@ -6,7 +6,12 @@ import marray
 import numpy as np
 
 from healpix_geo import _healpix_geo_python
-from healpix_geo.utils import _check_depth, _check_ipixels, _check_ring
+from healpix_geo.utils import (
+    _check_depth,
+    _check_ipixels,
+    _check_ring,
+    _prepare_distances,
+)
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -988,6 +993,91 @@ def angular_distances(from_, to_, depth, num_threads=0):
     )
 
     return np.where(mask, np.reshape(distances, to_.shape), np.nan)
+
+
+def geodesic_distances(from_, to_, depth, ellipsoid="sphere", num_threads=0):
+    """Compute the geodesic distances between cell centres, in metres.
+
+    Takes the same arguments as :py:func:`healpix_geo.nested.angular_distances`
+    plus a reference body, and returns lengths along that body instead of angles.
+
+    Parameters
+    ----------
+    from_ : numpy.ndarray
+        The source HEALPix cell indexes given as a ``np.uint64`` numpy array.
+    to_ : numpy.ndarray
+        The destination HEALPix cell indexes. Either the same shape as
+        ``from_``, or with one more trailing dimension holding several
+        destination cells per source cell. Entries equal to ``-1`` are
+        treated as padding.
+    depth : int
+        The depth of the HEALPix cells.
+    ellipsoid : ellipsoid-like, default: "sphere"
+        Reference body the cell centres and distances are evaluated on.
+    num_threads : int, default: 0
+        Specifies the number of threads to use for the computation. Default to 0 means
+        it will choose the number of threads based on the RAYON_NUM_THREADS environment variable (if set),
+        or the number of logical CPUs (otherwise)
+
+    Returns
+    -------
+    distances : numpy.ndarray
+        The distances in metres, with the shape of ``to_``. Padding entries
+        are ``NaN``.
+
+    Raises
+    ------
+    ValueError
+        When the HEALPix cell indexes given have values out of :math:`[0, 12 \\cdot 4^{depth}[`.
+    ValueError
+        When the shape of ``from_`` is not compatible with the shape of ``to_``.
+    ValueError
+        When the name of the ellipsoid is unknown.
+
+    See Also
+    --------
+    healpix_geo.nested.angular_distances
+    healpix_geo.nested.healpix_to_lonlat
+
+    Notes
+    -----
+    The cell centres are converted to longitude and geographic (geodetic)
+    latitude on ``ellipsoid``, as in ``healpix_to_lonlat``. On an ellipsoid,
+    the distance is the length of the geodesic between the two centres,
+    computed with Karney's algorithm [1]_ (the algorithm behind
+    GeographicLib and PROJ's ``geod_inverse``). On a sphere it is the
+    great-circle distance.
+
+    References
+    ----------
+    .. [1] C. F. F. Karney, "Algorithms for geodesics", J. Geodesy 87, 43–55 (2013),
+       https://doi.org/10.1007/s00190-012-0578-z
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from healpix_geo.nested import geodesic_distances
+    >>> from_ = np.array([0, 16, 25])
+    >>> to_ = np.array([[2, 3], [15, -1], [27, 26]])
+    >>> distances = geodesic_distances(from_, to_, depth=1, ellipsoid="WGS84")
+    >>> distances.round()
+    array([[ 3265491.,  5219988.],
+           [10250304.,       nan],
+           [ 3271797.,  5009377.]])
+    """
+    _check_depth(depth)
+
+    from_, to_, mask, shape = _prepare_distances(from_, to_)
+    _check_ipixels(data=from_, depth=depth)
+    _check_ipixels(data=to_, depth=depth)
+
+    num_threads = np.uint16(num_threads)
+
+    distances = _healpix_geo_python.nested.geodesic_distances(
+        depth, from_, to_, ellipsoid, num_threads
+    )
+
+    return np.where(mask, np.reshape(distances, shape), np.nan)
 
 
 def zone_coverage(bbox, depth, *, ellipsoid="sphere", flat=True):
