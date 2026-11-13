@@ -1,6 +1,6 @@
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyFunction, PyModule, PyString, PyTuple};
+use pyo3::types::{PyDict, PyFunction, PyModule, PySlice, PyString, PyTuple};
 
 use numpy::{
     PyArray1, PyArray2, PyArrayDescrMethods, PyArrayMethods, PyUntypedArray, PyUntypedArrayMethods,
@@ -83,7 +83,7 @@ fn copy_into_rectangular<T: Copy>(
 
         let row_elements = in_stop - in_start;
 
-        let out_start = row * shape[0];
+        let out_start = row * shape[1];
         let out_stop = out_start + row_elements;
 
         let row_stop = out_start + shape[1];
@@ -111,6 +111,30 @@ fn create_masked_array<'py>(
     kwargs.set_item("mask", mask)?;
 
     xp.getattr("asarray")?.call((array,), Some(&kwargs))
+}
+
+impl RaggedArray {
+    pub(crate) fn new<'py>(
+        offsets: &Bound<'py, PyArray1<u64>>,
+        data: &Bound<'py, PyUntypedArray>,
+    ) -> PyResult<Self> {
+        let readonly_offsets = offsets.readonly();
+        let shape = [
+            readonly_offsets.len() - 1,
+            readonly_offsets
+                .as_slice()?
+                .windows(2)
+                .map(|window| window[1] - window[0])
+                .max()
+                .unwrap_or(0) as usize,
+        ];
+
+        Ok(Self {
+            offsets: offsets.clone().unbind(),
+            data: data.clone().unbind(),
+            shape,
+        })
+    }
 }
 
 #[pymethods]
@@ -224,11 +248,14 @@ impl RaggedArray {
         let offsets = self.offsets.bind(py);
         if offsets.len() == 2 {
             let numpy = PyModule::import(py, "numpy")?;
+            let bounds = offsets.readonly();
+            let bounds = bounds.as_slice()?;
+            let row = data.get_item(PySlice::new(py, bounds[0] as isize, bounds[1] as isize, 1))?;
 
             create_masked_array(
                 numpy
                     .getattr("reshape")?
-                    .call1((data, self.shape))?
+                    .call1((row, self.shape))?
                     .cast::<PyUntypedArray>()?,
                 &PyArray2::<bool>::zeros(py, self.shape, false),
             )
@@ -280,5 +307,40 @@ impl RaggedArray {
         let awkward_array = self.as_awkward(py)?;
 
         array_cls.call1((awkward_array,))
+    }
+
+    /// convert to a rectangular numpy array
+    ///
+    /// Returns
+    /// -------
+    /// array : numpy.ndarray
+    ///     A view on ``data`` with shape ``(rows, columns)``, for example
+    ///     ``(1, n)`` for a single row.
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the rows have different lengths. Use ``as_masked_array`` instead.
+    fn as_numpy<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let offsets = self.offsets.bind(py).readonly();
+        let offsets = offsets.as_slice()?;
+        let [rows, columns] = self.shape;
+
+        if !offsets
+            .windows(2)
+            .all(|window| window[1].checked_sub(window[0]) == Some(columns as u64))
+        {
+            return Err(PyValueError::new_err(
+                "rows have different lengths, use `as_masked_array` instead",
+            ));
+        }
+
+        let start = offsets.first().copied().unwrap_or(0) as isize;
+        let stop = start + (rows * columns) as isize;
+
+        self.data
+            .bind(py)
+            .get_item(PySlice::new(py, start, stop, 1))?
+            .call_method1("reshape", (self.shape,))
     }
 }

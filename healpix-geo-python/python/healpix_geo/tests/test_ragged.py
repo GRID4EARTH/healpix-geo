@@ -101,19 +101,42 @@ def test_as_ragged():
     assert ragged.all(actual == expected)
 
 
-def test_as_masked_array():
-    offsets = np.array([0, 3, 4, 6], dtype="uint64")
+@pytest.mark.parametrize(
+    ["offsets", "expected_data", "expected_mask"],
+    (
+        pytest.param(
+            [0, 3, 4, 6],
+            [[0, 1, 2], [3, 0, 0], [4, 5, 0]],
+            [[False, False, False], [False, True, True], [False, False, True]],
+            id="square",
+        ),
+        pytest.param(
+            [0, 1, 2, 3, 4],
+            [[0], [1], [2], [3]],
+            [[False], [False], [False], [False]],
+            id="more rows than columns",
+        ),
+        pytest.param(
+            [0, 3, 4],
+            [[0, 1, 2], [3, 0, 0]],
+            [[False, False, False], [False, True, True]],
+            id="more columns than rows",
+        ),
+        pytest.param([0, 3], [[0, 1, 2]], [[False, False, False]], id="single row"),
+        pytest.param(
+            [2, 4], [[2, 3]], [[False, False]], id="single row with offset start"
+        ),
+    ),
+)
+def test_as_masked_array(offsets, expected_data, expected_mask):
+    offsets = np.array(offsets, dtype="uint64")
     data = np.arange(7, dtype="int64")
     obj = RaggedArray(offsets, data)
 
     actual = obj.as_masked_array()
-    expected_data = np.array([[0, 1, 2], [3, 0, 0], [4, 5, 0]], dtype="int64")
-    expected_mask = np.array(
-        [[False, False, False], [False, True, True], [False, False, True]], dtype="bool"
-    )
 
-    np.testing.assert_equal(actual.data, expected_data)
-    np.testing.assert_equal(actual.mask, expected_mask)
+    np.testing.assert_equal(actual.data, np.array(expected_data, dtype="int64"))
+    np.testing.assert_equal(actual.mask, np.array(expected_mask, dtype="bool"))
 
 
 @pytest.mark.parametrize(
@@ -129,3 +152,29 @@ def test_as_masked_array_errors(data):
     obj = RaggedArray(offsets, data)
     with pytest.raises(TypeError, match="Unsupported data dtype"):
         obj.as_masked_array()
+
+
+@pytest.mark.parametrize(
+    ["offsets", "expected"],
+    (
+        pytest.param([0, 4], [[0, 1, 2, 3]], id="single row"),
+        pytest.param([0, 2, 4, 6], [[0, 1], [2, 3], [4, 5]], id="equal rows"),
+        pytest.param([2, 4], [[2, 3]], id="offset start"),
+        pytest.param([0], np.empty((0, 0)), id="no rows"),
+    ),
+)
+def test_as_numpy(offsets, expected):
+    data = np.arange(7, dtype="int64")
+    obj = RaggedArray(np.array(offsets, dtype="uint64"), data)
+
+    actual = obj.as_numpy()
+
+    np.testing.assert_equal(actual, np.array(expected, dtype="int64"))
+    assert actual.size == 0 or np.shares_memory(actual, data)
+
+
+def test_as_numpy_errors():
+    obj = RaggedArray(np.array([0, 3, 4, 6], dtype="uint64"), np.arange(7))
+
+    with pytest.raises(ValueError, match="rows have different lengths"):
+        obj.as_numpy()
