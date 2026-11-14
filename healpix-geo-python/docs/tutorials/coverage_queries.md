@@ -33,17 +33,17 @@ cell_ids, depths, covered = cone_coverage(
     (lon_center, lat_center), radius_deg, depth, ellipsoid="WGS84"
 )
 
-print(f"Number of cells in the radius: {cell_ids.data.size}")
+print(f"Number of cells in the radius: {cell_ids.size}")
 ```
 
-The three results are `RaggedArray` objects with one row per center. They
-share a single offsets array, and a single center gives a single row, so
-`data` holds its cells.
+For a single center, the three results are numpy arrays.
 
 #### Query many centers together
 
 Pass an `(N, 2)` array to the same function to evaluate cones in parallel.
-The radius is shared by all centers, and rows may have different lengths.
+The radius is shared by all centers. The three results are then `RaggedArray`
+objects with one row per center; they share a single offsets array, and rows
+may have different lengths.
 
 ```{code-cell} python
 centers = np.array([[2.3522, 48.8566], [179.999, 0.0], [12.0, 89.9]])

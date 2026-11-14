@@ -797,7 +797,8 @@ def cone_coverage(
     Returns
     -------
     cell_ids : numpy.ndarray or healpix_geo.RaggedArray
-        The rasterized cell ids. ``nested`` returns a
+        The rasterized cell ids. A single center gives numpy arrays. For
+        ``(N, 2)`` centers, ``nested`` returns a
         :class:`healpix_geo.RaggedArray` with one row per center.
     levels : numpy.ndarray or healpix_geo.RaggedArray
         The refinement levels of the cell ids. If ``flat is True``, these will all have the

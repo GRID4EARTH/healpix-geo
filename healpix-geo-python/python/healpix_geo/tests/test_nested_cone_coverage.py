@@ -40,24 +40,21 @@ class TestConeCoverage:
 
         assert cell_ids.offsets is depths.offsets is fully_covered.offsets
         start, stop = cell_ids.offsets[row : row + 2]
-        np.testing.assert_array_equal(cell_ids.data[start:stop], expected_cell_ids.data)
-        np.testing.assert_array_equal(depths.data[start:stop], expected_depths.data)
+        np.testing.assert_array_equal(cell_ids.data[start:stop], expected_cell_ids)
+        np.testing.assert_array_equal(depths.data[start:stop], expected_depths)
         np.testing.assert_array_equal(
-            fully_covered.data[start:stop], expected_fully_covered.data
+            fully_covered.data[start:stop], expected_fully_covered
         )
 
     @pytest.mark.parametrize(
         ["center", "rows"],
         (
-            pytest.param((45, 45), 1, id="tuple"),
-            pytest.param([45, 45], 1, id="list"),
-            pytest.param(np.array([45, 45]), 1, id="1d-array"),
             pytest.param(np.zeros((1, 2)), 1, id="one-row"),
             pytest.param(np.zeros((0, 2)), 0, id="empty"),
             pytest.param(CENTERS, 5, id="many"),
         ),
     )
-    def test_return_type(self, center, rows):
+    def test_return_type_ragged(self, center, rows):
         cell_ids, depths, fully_covered = nested.cone_coverage(center, 0.5, 8)
 
         assert isinstance(cell_ids, RaggedArray)
@@ -70,9 +67,32 @@ class TestConeCoverage:
         assert fully_covered.data.size == cell_ids.data.size
 
     @pytest.mark.parametrize(
+        "center",
+        (
+            pytest.param((45, 45), id="tuple"),
+            pytest.param([45, 45], id="list"),
+            pytest.param(np.array([45, 45]), id="1d-array"),
+        ),
+    )
+    def test_return_type_single_center(self, center):
+        cell_ids, depths, fully_covered = nested.cone_coverage(center, 0.5, 8)
+        expected_cell_ids, expected_depths, expected_fully_covered = (
+            nested.cone_coverage(np.array([center]), 0.5, 8)
+        )
+
+        assert isinstance(cell_ids, np.ndarray)
+        assert isinstance(depths, np.ndarray)
+        assert isinstance(fully_covered, np.ndarray)
+        assert cell_ids.dtype == np.uint64
+        assert depths.dtype == np.uint8
+        assert fully_covered.dtype == np.bool_
+        np.testing.assert_array_equal(cell_ids, expected_cell_ids.data)
+        np.testing.assert_array_equal(depths, expected_depths.data)
+        np.testing.assert_array_equal(fully_covered, expected_fully_covered.data)
+
+    @pytest.mark.parametrize(
         ["center", "expected"],
         (
-            pytest.param((45.0, 45.0), [[45.0, 45.0]], id="single-center"),
             pytest.param(
                 np.array([[45.0, 0.0, 12.0, 0.0], [12.0, 0.0, 89.0, 0.0]])[:, ::2],
                 [[45.0, 12.0], [12.0, 89.0]],
