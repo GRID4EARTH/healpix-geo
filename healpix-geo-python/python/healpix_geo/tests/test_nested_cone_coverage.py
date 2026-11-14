@@ -84,15 +84,23 @@ class TestConeCoverage:
         assert isinstance(depths, np.ndarray)
         assert isinstance(fully_covered, np.ndarray)
         assert cell_ids.dtype == np.uint64
+        assert depths.dtype == np.uint8
         assert fully_covered.dtype == np.bool_
         np.testing.assert_array_equal(cell_ids, expected_cell_ids.data)
         np.testing.assert_array_equal(depths, expected_depths.data)
         np.testing.assert_array_equal(fully_covered, expected_fully_covered.data)
 
-    def test_equivalent_inputs(self):
-        center = np.array([[45.0, 0.0, 12.0, 0.0], [12.0, 0.0, 89.0, 0.0]])[:, ::2]
-        expected = [[45.0, 12.0], [12.0, 89.0]]
-
+    @pytest.mark.parametrize(
+        ["center", "expected"],
+        (
+            pytest.param(
+                np.array([[45.0, 0.0, 12.0, 0.0], [12.0, 0.0, 89.0, 0.0]])[:, ::2],
+                [[45.0, 12.0], [12.0, 89.0]],
+                id="non-contiguous",
+            ),
+        ),
+    )
+    def test_equivalent_inputs(self, center, expected):
         actual_cell_ids, actual_depths, _ = nested.cone_coverage(center, 0.5, 8)
         expected_cell_ids, expected_depths, _ = nested.cone_coverage(
             np.array(expected), 0.5, 8

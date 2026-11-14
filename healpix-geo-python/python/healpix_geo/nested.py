@@ -1237,8 +1237,8 @@ def cone_coverage(
 
     A single ``(2,)`` center returns plain numpy arrays, as in earlier
     releases. Whether it should return a :class:`healpix_geo.RaggedArray`
-    with one row instead is still under discussion, so this may change in a
-    future release.
+    with one row instead is still under discussion (healpix-geo#321), so this
+    may change in a future release.
 
     Examples
     --------
