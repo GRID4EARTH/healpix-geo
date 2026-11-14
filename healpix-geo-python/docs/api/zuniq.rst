@@ -71,3 +71,13 @@ Find all cells which intersect a region.
 
 .. seealso::
    Complete tutorial : :doc:`../tutorials/coverage_queries`
+
+Distance Calculations
+~~~~~~~~~~~~~~~~~~~~~
+
+Calculate distances between HEALPix cells.
+
+.. autosummary::
+   :toctree: ../generated/
+
+   geodesic_distances

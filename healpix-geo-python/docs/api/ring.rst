@@ -79,3 +79,4 @@ Distance Calculations
    :toctree: ../generated/
 
    angular_distances
+   geodesic_distances

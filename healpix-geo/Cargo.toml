@@ -12,6 +12,7 @@ categories.workspace = true
 [dependencies]
 cdshealpix = { workspace = true }
 geodesy = { workspace = true }
+geographiclib-rs = { workspace = true }
 itertools = { workspace = true }
 moc = { workspace = true }
 num-traits = "0.2.19"

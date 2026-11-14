@@ -18,5 +18,6 @@ cdshealpix = { git = "https://github.com/cds-astro/cds-healpix-rust.git", rev = 
 moc = "0.19.2"
 rayon = "1.12.0"
 geodesy = "0.15.0"
+geographiclib-rs = { version = "0.2.7", default-features = false }
 itertools = "0.15.0"
 healpix-geo = { path = "healpix-geo" }
