@@ -25,6 +25,9 @@ requirements:
   host:
     - python
     - numpy
+    # conda-forge's pip no longer vendors cacert.pem and looks it up in
+    # `sys.base_prefix`, which for cross-python is the host prefix
+    - ca-certificates
   run:
     - python
     - numpy
