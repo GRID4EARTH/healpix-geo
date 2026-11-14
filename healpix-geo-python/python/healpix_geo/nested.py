@@ -1220,18 +1220,25 @@ def cone_coverage(
 
     Returns
     -------
-    cell_ids : healpix_geo.RaggedArray
-        The rasterized cell ids, one row per center.
-    depths : healpix_geo.RaggedArray
+    cell_ids : numpy.ndarray or healpix_geo.RaggedArray
+        The rasterized cell ids. A numpy array for a single ``(2,)`` center,
+        a :class:`healpix_geo.RaggedArray` with one row per center for
+        ``(N, 2)`` centers.
+    depths : numpy.ndarray or healpix_geo.RaggedArray
         The depths of the cell ids. If ``flat is True``, these will all have the same value.
-    fully_covered : healpix_geo.RaggedArray
+    fully_covered : numpy.ndarray or healpix_geo.RaggedArray
         Boolean array marking whether the cells are fully covered by the circle.
 
     Notes
     -----
-    The three results share one offsets array, and a single ``(2,)`` center
-    gives a single row. Row ``i`` is
-    ``result.data[result.offsets[i]:result.offsets[i + 1]]``.
+    For ``(N, 2)`` centers, the three results share one offsets array. Row
+    ``i`` is ``result.data[result.offsets[i]:result.offsets[i + 1]]``, and a
+    ``(1, 2)`` input gives a single row.
+
+    A single ``(2,)`` center returns plain numpy arrays, as in earlier
+    releases. Whether it should return a :class:`healpix_geo.RaggedArray`
+    with one row instead is still under discussion, so this may change in a
+    future release.
 
     Examples
     --------
@@ -1240,9 +1247,7 @@ def cone_coverage(
     >>> cell_ids, depths, fully_covered = healpix_geo.nested.cone_coverage(
     ...     (45.0, 45.0), 5.0, 2
     ... )
-    >>> cell_ids.offsets
-    array([0, 4], dtype=uint64)
-    >>> cell_ids.data
+    >>> cell_ids
     array([ 3,  6,  9, 12], dtype=uint64)
 
     >>> centers = np.array([[45.0, 45.0], [0.0, 0.0]])
@@ -1257,13 +1262,14 @@ def cone_coverage(
     _check_depth(depth)
 
     center = np.asarray(center, dtype="float64")
-    if center.shape == (2,):
+    single = center.shape == (2,)
+    if single:
         center = center[None, :]
     elif center.ndim != 2 or center.shape[1] != 2:
         raise ValueError(f"center must have shape (2,) or (N, 2), got {center.shape}")
     num_threads = np.uint16(num_threads)
 
-    return _healpix_geo_python.nested.cone_coverage(
+    result = _healpix_geo_python.nested.cone_coverage(
         depth,
         np.ascontiguousarray(center),
         float(radius),
@@ -1272,6 +1278,11 @@ def cone_coverage(
         flat=flat,
         nthreads=num_threads,
     )
+    if single:
+        # one row: its data is the whole result, as returned by earlier releases
+        return tuple(array.data for array in result)
+
+    return result
 
 
 def elliptical_cone_coverage(
