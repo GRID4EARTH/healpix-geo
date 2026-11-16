@@ -6,7 +6,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-docstring-first
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.10
+    rev: v3.10.1
     hooks:
       - id: prettier
         args: ["--cache-location=.prettier_cache/cache"]
@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.4
+    rev: v0.17.5
     hooks:
       - id: ruff-check
         args: ["--fix", "--show-fixes"]
@@ -43,7 +43,7 @@ repos:
         args:
           - "--extra-keys='metadata.kernelspec metadata.language_info.version'"
   - repo: https://github.com/adhtruong/mirrors-typos
-    rev: v1.52.0
+    rev: v1.52.2
     hooks:
       - id: typos
         exclude: ".*\\.ipynb$"
