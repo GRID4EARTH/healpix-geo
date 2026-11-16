@@ -15,7 +15,7 @@ import init, { Grid } from "healpix-geo";
 await init(); // or use a bundler
 
 const grid = new Grid({
-  scheme: "nested", // or "ring" or "zuniq"
+  scheme: "nested", // or "ring", "zuniq" or "morton"
   level: 4, // 0-indexed; level 0 is the 12 base cells
   ellipsoid: { semi_major_axis: 6378137.0, inverse_flattening: 298.257223563 },
 }); // `ellipsoid` is optional; omit it for the default sphere
@@ -32,14 +32,14 @@ catchable JS `Error` rather than trapping the wasm instance.
 
 Three things worth knowing:
 
-- For the `zuniq` scheme, methods that read a cell id use the level **embedded
-  in the id**, not the grid's level; methods that produce one encode the
-  grid's level. So `zuniq` → `zuniq` is the identity, and a coarse id survives
-  a read unchanged.
+- For the `zuniq` and `morton` schemes, methods that read a cell id use the
+  level **embedded in the id**, not the grid's level; methods that produce one
+  encode the grid's level. So `zuniq` → `zuniq` (and `morton` → `morton`) is
+  the identity, and a coarse id survives a read unchanged.
 - `toScheme` takes an optional `level` that overrides the level the cell is
   read and encoded at. It is only valid when converting to a scheme that
-  encodes the level in its cell ids (`"zuniq"` today) and from one that does
-  not; anything else throws.
+  encodes the level in its cell ids (`"zuniq"` or `"morton"`) and from one
+  that does not; anything else throws.
 - `grid.ellipsoid` allocates a **new** handle on every read (wasm allocation +
   JS wrapper + finalizer). Hoist it out of hot paths and `free()` it, or use
   the `semiMajorAxis` / `flattening` / `isSphere` getters, which return plain
@@ -74,9 +74,9 @@ A batch is rejected as a whole, naming the offending index
 (`cells[2]: ...`, `lonlats[2]: ...`), rather than trapping on one bad element.
 
 Note that `healpixToLonLat` and `lonLatToHealpix` are only exact inverses
-within one level: on a `zuniq` grid `healpixToLonLat` reads each id at its
-embedded level while `lonLatToHealpix` encodes at the grid's level, so a
-coarse id in a mixed-level batch comes back refined.
+within one level: on a `zuniq` or `morton` grid `healpixToLonLat` reads each
+id at its embedded level while `lonLatToHealpix` encodes at the grid's level,
+so a coarse id in a mixed-level batch comes back refined.
 
 ## Low-level scheme functions
 
@@ -84,6 +84,21 @@ The `nested` / `ring` / `zuniq` namespaces expose the per-scheme functions
 `Grid` is built on (their `depth` parameter is the same 0-indexed quantity as
 the grid's `level`). Reach for them when a single call is all you need;
 otherwise prefer `Grid`, which parses the ellipsoid once instead of per call.
+
+The `morton` namespace is codec-only: `level`, `ancestor`, `contains` and
+`isPoint` read the level packed into the id itself, so there are no
+coordinate methods — coordinate math on morton ids goes through `Grid`. These
+statics take any canonical word, including a max-encoded **point** word (a
+coordinate cast to level 29 with no area claim, which coarsens to the cell
+containing it), while a `morton` `Grid` takes area words only, since a point
+has no area to draw.
+
+```typescript
+const level: number = healpixGeo.morton.level(word); // 0-29
+const parent: bigint = healpixGeo.morton.ancestor(word, 4);
+const inside: boolean = healpixGeo.morton.contains(parent, word);
+const point: boolean = healpixGeo.morton.isPoint(word);
+```
 
 ```typescript
 import init, * as healpixGeo from "healpix-geo";
