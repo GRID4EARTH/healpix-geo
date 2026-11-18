@@ -194,3 +194,80 @@ jobs:
       - name: Run tests
         run: |
           pixi run -e $ENV --frozen doctests
+
+  build-docs:
+    name: build-docs | ubuntu-latest | docs
+    needs: cache-pixi-lock
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    env:
+      FORCE_COLOR: 3
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: Parcels-code/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
+        with:
+          cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
+
+      - name: Create rust cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          prefix-key: "py3.13"
+
+      - name: setup environment
+        uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
+        with:
+          environments: docs jupyterlite templates
+          pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
+          cache-key: "pixi-build-docs-"
+          cache: true
+          frozen: true
+
+      - name: Build emscripten
+        run: |
+          pixi run build-emscripten
+
+      - name: Create environment
+        run: |
+          pixi run create-environment
+
+      - name: Build docs
+        run: |
+          pixi run build-docs
+
+      - name: Upload pages artifacts
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: healpix-geo-python/docs/_build/html
+
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    # only deploy on pushes to main, not on pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-docs
+    runs-on: ubuntu-latest
+
+    # allow only one concurrent deployment, and don't cancel it
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    permissions:
+      pages: write # deploy the site to GitHub Pages
+      id-token: write # verify that the deployment comes from this workflow
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

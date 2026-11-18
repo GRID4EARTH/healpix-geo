@@ -21,6 +21,10 @@ build:
       - pixi install -e jupyterlite
       - pixi install -e templates
       - pixi install -e docs
+    pre_build:
+      - (echo "\n<br>\n"; \
+        cat healpix-geo-python/docs/_static/rtd_deprecation_banner.html \
+        ) >> healpix-geo-python/docs/_static/announcement_banner.html
     build:
       html:
         - pixi run build-emscripten
