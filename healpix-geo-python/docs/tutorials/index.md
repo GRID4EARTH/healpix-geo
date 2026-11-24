@@ -5,23 +5,20 @@
 ::::{grid} 1 1 2 2
 :gutter: 3
 
-:::{grid-item-card} Quick Start
+:::{grid-item-card} Quickstart
 :link: quickstart
 :link-type: doc
 
 **Recommended for beginners**
 
-Learn bases of `healpix-geo` in 15 minutes : conversions of coordinates, understand depth, and visualised your first HEALPix cells.
+Learn bases of `healpix-geo` in 15 minutes : conversions of coordinates, understand depth, and visualize your first HEALPix cells.
 :::
 
-:::{grid-item-card} Ellipsoids
-:link: ellipsoid_basics
+:::{grid-item-card} HEALPix fundamentals and indexing
+:link: fundamentals
 :link-type: doc
 
-Understand why and how to use ellipsoid of reference such as WGS84 for precise geodesic calculations.
-
-:::
-
+Learn about the fundamentals of HEALPix: refinement level, the different types of indexing.
 ::::
 
 ## Basic Tutorials
@@ -29,12 +26,25 @@ Understand why and how to use ellipsoid of reference such as WGS84 for precise g
 ::::{grid} 1 1 2 2
 :gutter: 3
 
-:::{grid-item-card} Coordinates Conversion
-:link: coordinate_conversion
+:::{grid-item-card} Coordinates and cell geometry
+:link: coordinates
 :link-type: doc
 
-Master the conversions between geographic coordinates (lon/lat) and HEALPix indices, with the different indexing schemes.
+Master the conversions between geographic coordinates (lon/lat) and HEALPix indices.
+:::
 
+:::{grid-item-card} Ellipsoids
+:link: ellipsoid_basics
+:link-type: doc
+
+Understand why and how to use ellipsoid of reference such as WGS84 for precise geodesic calculations.
+:::
+
+:::{grid-item-card} Hierarchical indexing
+:link: hierarchical_indexing
+:link-type: doc
+
+Learn how to navigate the hierarchical indexing (siblings, zoom) and how to find the neighbours of a cell.
 :::
 
 :::{grid-item-card} Cover requests
@@ -55,8 +65,7 @@ Learn to find all HEALPix cells that intersect a region.
 :link: working_with_moc
 :link-type: doc
 
-Use les Multi-Order Coverage maps to represent complex regions in a compact way.
-
+Use Multi-Order Coverage maps to represent complex regions in a compact way.
 :::
 
 :::{grid-item-card} Performance optimisation
@@ -64,7 +73,6 @@ Use les Multi-Order Coverage maps to represent complex regions in a compact way.
 :link-type: doc
 
 Techniques for optimizing performance: vectorization, multi-threading, and best practices.
-
 :::
 
 ::::
@@ -74,8 +82,10 @@ Techniques for optimizing performance: vectorization, multi-threading, and best 
 hidden: true
 ---
 quickstart
+fundamentals
+coordinates
 ellipsoid_basics
-coordinate_conversion
+hierarchical_indexing
 coverage_queries
 working_with_moc
 performance_optimization
