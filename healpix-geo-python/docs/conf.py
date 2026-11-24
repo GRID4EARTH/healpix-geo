@@ -20,9 +20,13 @@ def run_script(name, outpath):
 script_root = pathlib.Path("scripts").absolute()
 docs_root = pathlib.Path.cwd()
 scripts = [
-    ("generate_healpix_levels_table.py", "healpix/healpix_levels_table.md"),
-    ("generate_latitude_diff_table.py", "latitude_diff_table.md"),
-    ("generate_latitude_graphic.py", "ellipsoidal_latitudes.png"),
+    ("generate_healpix_levels_table.py", "user-guide/healpix_levels_table.md"),
+    ("generate_latitude_diff_table.py", "user-guide/latitude_diff_table.md"),
+    ("generate_latitude_graphic.py", "user-guide/ellipsoidal_latitudes.png"),
+    ("generate_neighbours_corner_graphic.py", "user-guide/neighbours_corner.png"),
+    ("generate_neighbours_direction_graphic.py", "user-guide/neighbours_direction.png"),
+    ("generate_zorder_graphic.py", "user-guide/zorder.png"),
+    ("generate_coverage_graphics.py", "user-guide"),
 ]
 for name, outpath in scripts:
     run_script(script_root.joinpath(name), docs_root.joinpath(outpath))
