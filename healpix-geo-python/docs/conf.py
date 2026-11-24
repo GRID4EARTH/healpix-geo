@@ -80,6 +80,7 @@ intersphinx_mapping = {
 
 autosummary_generate = True
 autodoc_typehints = "none"
+toc_object_entries_show_parents = "hide"
 
 # -- napoleon ----------------------------------------------------------------
 
@@ -139,4 +140,5 @@ html_css_files = ["css/custom.css"]
 html_theme_options = {
     "github_url": "https://github.com/GRID4EARTH/healpix-geo",
     "icon_links_label": "Quick Links",
+    "show_toc_level": 2,
 }

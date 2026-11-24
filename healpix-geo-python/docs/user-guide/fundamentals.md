@@ -93,6 +93,7 @@ Each module provides functions to convert indices **from** the module indexing s
 
 ```python
 import healpix_geo.ring
+
 cell_ids_nested = healpix_geo.ring.to_nested(cell_ids_ring, depth=8)
 ```
 
