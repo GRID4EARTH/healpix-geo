@@ -1,3 +1,6 @@
+
+.. module:: healpix_geo.nested
+
 Module nested
 ==============
 
@@ -21,7 +24,7 @@ Conversions between geographic coordinates and HEALPix indices.
    base_cell_coordinates_to_healpix
 
 .. seealso::
-   Tutorial complete : :doc:`../tutorials/coordinate_conversion`
+   :doc:`tutorial </tutorials/coordinates>` and :doc:`user-guide </user-guide/coordinates>`
 
 Cell geometry
 ~~~~~~~~~~~~~
@@ -31,6 +34,8 @@ Cell geometry
    vertices
    vertex_indices
 
+.. seealso::
+   :doc:`tutorial </tutorials/coordinates>` and :doc:`user-guide </user-guide/coordinates>`
 
 Indexing Scheme Conversions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,7 +71,7 @@ Navigation in the hierarchical structure of HEALPix.
    siblings
 
 .. seealso::
-   Complete tutorial : :doc:`../user-guide/hierarchical_indexing`
+   :doc:`tutorial </tutorials/hierarchical_indexing>` and :doc:`user-guide </user-guide/hierarchical_indexing>`
 
 Cover Requests
 ~~~~~~~~~~~~~~~
@@ -83,9 +88,8 @@ Find all the cells which intersect a region.
    elliptical_cone_coverage
    internal_boundary
 
-
 .. seealso::
-   Complete tutorial : :doc:`../tutorials/coverage_queries`
+   :doc:`tutorial </tutorials/coverage_queries>` and :doc:`user-guide </user-guide/coverage_queries>`
 
 Distance Calculations
 ~~~~~~~~~~~~~~~~~~~~~
