@@ -121,6 +121,7 @@ sphinx-design = ">=0.7.0,<0.8"
 jupyterlite-xeus = ">=4.5.0,<5"
 jupyterlite-sphinx = ">=0.23.0"
 jupyterlite-core = ">=0.7.3,<0.8"
+cartopy = ">=0.26.0,<0.27"
 
 [feature.docs.tasks]
 clean-docs = { cmd = "rm -rf generated/ jupyter_execute/ _build/", cwd = "healpix-geo-python/docs" }
