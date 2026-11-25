@@ -4,24 +4,62 @@ jupytext:
   text_representation:
     extension: .md
     format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.19.7
 kernelspec:
   name: python3
-  display_name: Python 3
+  display_name: Python 3 (ipykernel)
+  language: python
 ---
+
+```{code-cell} ipython3
+---
+editable: true
+deletable: true
+slideshow:
+  slide_type: ''
+tags: [remove-cell]
+---
+%matplotlib inline
+```
+
++++ {"editable": true, "deletable": true, "slideshow": {"slide_type": ""}}
 
 # Ellipsoids basics
 
-This tutorial explain why and how to use ellipsoids of reference in `healpix-geo`.
+`healpix-geo` extends standard HEALPix, defined only on the sphere, to any ellipsoidal model. See the dedicated [user-guide](/user-guide/ellipsoids) for details on how it does it.
 
-## Supported Ellipsoids
+## Specifying the ellipsoid
 
-```{code-cell} python
-import numpy as np
-from healpix_geo.nested import lonlat_to_healpix
+The ellipsoidal model to use can be specified via the `ellipsoid` keyword argument to the {py:class}`.Grid` object if you are using the {py:mod}`.auto` module, or directly in the function otherwise.
 
-# Test Point
-lon, lat = np.array([0.0]), np.array([45.0])
-depth = 10
+The ellipsoidal model can be specified either by name or by parameters. Available names are those built-in in the [geodesy rust crate](https://github.com/busstoptaktik/geodesy/blob/f9090b8c91f401892a93979f100fa4d987eb0836/src/ellipsoid/constants.rs#L6-L54).
+Here are some of the available names:
+
+| name   |                                        |
+| ------ | -------------------------------------- |
+| sphere | Normal sphere (r=6370997), **default** |
+| WGS84  | WGS 84 (current standard)              |
+| WGS72  | WGS 72 (old standard)                  |
+| GRS80  | GRS 80                                 |
+| intl   | International 1909 (Hayford)           |
+
+:::{tip}
+For most real-world geospatial applications, use **WGS84**, as it is the current global geodetic standard.
+Use a spherical model (**sphere**) only when high accuracy is not required.
+:::
+
+```{code-cell} ipython3
+---
+editable: true
+deletable: true
+slideshow:
+  slide_type: ''
+---
+from healpix_geo.auto import Grid, healpix_to_lonlat
+
+ipix = 42
+level = 10
 
 ellipsoids = {
     "sphere": "Unit sphere",
@@ -30,96 +68,39 @@ ellipsoids = {
     "WGS72": "World Geodetic System 1972",
 }
 
-
-print(f"HEALPix cell at point (0°, 45°) at depth={depth}:\n")
+print(f"Center of cell #{ipix} (level {level}):\n")
 for ellipsoid, description in ellipsoids.items():
-    ipix = lonlat_to_healpix(lon, lat, depth, ellipsoid=ellipsoid)
-    print(f"{ellipsoid:10s}: {ipix[0]:10d}  # {description}")
+    lon, lat = healpix_to_lonlat(ipix, grid=Grid(level=level, indexing_scheme="nested", ellipsoid=ellipsoid))
+    print(f"{ellipsoid:}:\t{lon[0]:.8f}° ; {lat[0]:.8f}°  # {description}")
 ```
 
-:::{seealso}
-For a list of supported named ellipsoids, see [here](https://github.com/busstoptaktik/geodesy/blob/f9090b8c91f401892a93979f100fa4d987eb0836/src/ellipsoid/constants.rs#L6-L54).
-:::
++++ {"editable": true, "deletable": true, "slideshow": {"slide_type": ""}}
 
-Instead of using a predefined ellipsoid name, you can define a custom ellipsoid by explicitly providing its geometric parameters:
+The ellipsoidal model can also be specified by a dictionary of parameters:
 
-```python
-ipix = lonlat_to_healpix(lon, lat, depth, ellipsoid={"radius": 6371000.0})
-ipix = lonlat_to_healpix(
-    lon,
-    lat,
-    depth,
+- `"radius"` (in meters) for a spherical model,
+- `"semimajor_axis"` (in meters) and `"inverse_flattening"` for an ellipsoidal model.
+
+```{code-cell} ipython3
+---
+editable: true
+deletable: true
+slideshow:
+  slide_type: ''
+---
+import numpy as np
+from healpix_geo.auto import Grid, lonlat_to_healpix
+
+ipix = 42
+grid=Grid(
+    level=10,
+    indexing_scheme="nested",
     ellipsoid={"semimajor_axis": 6378132.0, "inverse_flattening": 300.0},
 )
+
+lon, lat = healpix_to_lonlat(ipix, grid)
+print(f"Cell index: {ipix} (level {grid.level})")
+print("Cell center")
+print(f"  Longitude: {lon[0]:.4f}°")
+print(f"  Latitude: {lat[0]:.4f}°")
 ```
-
-The dictionary must contain either:
-
-- `"radius"` for a spherical model, or
-- `"semimajor_axis"` and `"inverse_flattening"` for an ellipsoidal model.
-
-### Which ellipsoid choose ?
-
-:::{tip}
-For most real-world geospatial applications, use **WGS84**, as it is the current global geodetic standard.
-Use a spherical model (**sphere**) only when high accuracy is not required.
-:::
-
-## Typical use case
-
-### GPS data
-
-```{code-cell} python
-import numpy as np
-from healpix_geo.nested import lonlat_to_healpix
-
-# GPS trajectory data
-gps_points = np.array(
-    [
-        [2.3522, 48.8566],  # Paris
-        [2.3532, 48.8576],  # 100m further
-        [2.3542, 48.8586],  # 100m further
-    ]
-)
-
-lon_gps = gps_points[:, 0]
-lat_gps = gps_points[:, 1]
-depth = 29  # Highest resolution
-
-# Always use WGS84 for GPS
-ipix = lonlat_to_healpix(lon_gps, lat_gps, depth, ellipsoid="WGS84")
-print(f"HEALPix cells of GPS trajectory:")
-print(ipix)
-```
-
-:::{tip}
-For more information see {doc}`../healpix/ellipsoidal-extension`
-:::
-
-## Next steps
-
-::::{grid} 1 1 2 2
-:gutter: 2
-
-:::{grid-item-card} Reference systems
-:link: ../reference-system
-:link-type: doc
-
-:::
-
-:::{grid-item-card} Advanced conversion
-:link: coordinate_conversion
-:link-type: doc
-:::
-
-:::{grid-item-card} Cover Requests
-:link: coverage_queries
-:link-type: doc
-:::
-
-:::{grid-item-card} Performance
-:link: performance_optimization
-:link-type: doc
-:::
-
-::::

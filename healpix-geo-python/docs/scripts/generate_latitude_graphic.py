@@ -36,7 +36,7 @@ def normal_at(angle_p, a, b):
 
 
 def generate_figure():
-    fig, ax = plt.subplots(figsize=(12, 12))
+    fig, ax = plt.subplots(figsize=(7, 7))
     # ellipse
     ellipse = Ellipse(
         (0, 0),
@@ -65,9 +65,30 @@ def generate_figure():
     ax.scatter(x_p0, y_p0, zorder=4)
     ax.scatter(x_p, y_p, zorder=4)
 
-    ax.annotate("$P$", xy=(x_p, y_p), xytext=(x_p + 0.015 * a, y_p - 0.05 * b))
-    ax.annotate("$P_0$", xy=(x_p0, y_p0), xytext=(x_p0 + 0.015 * a, y_p0))
-    ax.annotate("$h$", xy=(x_p0, y_p0), xytext=(x_p0 + 0.05 * a, y_p0 + 0.05 * a))
+    ax.annotate(
+        "$P$",
+        xy=(x_p, y_p),
+        xytext=(5, 0),
+        textcoords="offset points",
+        ha="left",
+        va="center_baseline",
+    )
+    ax.annotate(
+        "$P_0$",
+        xy=(x_p0, y_p0),
+        xytext=(5, -2),
+        textcoords="offset points",
+        ha="left",
+        va="bottom",
+    )
+    ax.annotate(
+        "$h$",
+        xy=((x_p0 + x_p) / 2, (y_p0 + y_p) / 2),
+        xytext=(5, -2),
+        textcoords="offset points",
+        ha="left",
+        va="bottom",
+    )
 
     # tangent at P_0
     t = np.linspace(-0.05, 0.05, 100)
@@ -76,11 +97,8 @@ def generate_figure():
     ax.plot(x_t, y_t, linewidth=1, color="black")
 
     # geographic latitude
-    t_y = -x_p / m_x
-    n = np.linspace(t_y, 0, 200)
-    x_geographic = x_p + m_x * n
-    y_geographic = y_p + m_y * n
-    ax.plot(x_geographic, y_geographic, linewidth=1, color="black")
+    x_on_axis = x_p - y_p * m_x / m_y
+    ax.plot([x_on_axis, x_p], [0, y_p], lw=1, color="k")
 
     t_x = -y_p / m_y
     x_g0 = x_p + m_x * t_x
@@ -205,7 +223,9 @@ def generate_figure():
     ax.add_patch(authalic_circle)
     ax.annotate(r"$\xi$", xy=(0, 0), xytext=(0 + 0.29 * a, 0 + 0.02 * a))
 
-    ax.axis("equal")
+    ax.set_aspect("equal")
+    ax.set_xlim(-0.2, 1.01)
+    ax.set_ylim(-0.1, 1.01)
     ax.axis("off")
 
     return fig
@@ -218,7 +238,7 @@ def main():
         raise ValueError("invalid number of arguments")
 
     buffer = io.BytesIO()
-    fig.savefig(buffer, dpi=600, bbox_inches="tight")
+    fig.savefig(buffer, dpi=600, bbox_inches="tight", pad_inches=0)
     contents = buffer.getvalue()
 
     path = pathlib.Path(sys.argv[1])

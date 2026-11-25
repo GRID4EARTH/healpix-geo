@@ -35,7 +35,9 @@ t_vec = time.perf_counter() - t0
 t0 = time.perf_counter()
 ipix_list = []
 for i in range(N):
-    ipix_list.append(lonlat_to_healpix(lon[i : i + 1], lat[i : i + 1], 10, "WGS84")[0])
+    ipix_list.append(
+        lonlat_to_healpix(lon[i : i + 1], lat[i : i + 1], 10, ellipsoid="WGS84")[0]
+    )
 t_loop = time.perf_counter() - t0
 
 print(f"Vectorised : {t_vec * 1000:.1f} ms  ({N:,} points)")
