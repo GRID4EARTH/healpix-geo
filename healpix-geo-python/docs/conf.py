@@ -1,5 +1,6 @@
-# -- Library configuration ---------------------------------------------------
+import os
 
+# -- Library configuration ---------------------------------------------------
 import matplotlib
 
 # ignore matplotlib warnings
@@ -27,6 +28,18 @@ scripts = [
 for name, outpath in scripts:
     run_script(script_root.joinpath(name), docs_root.joinpath(outpath))
 
+
+# -- Setup RTD deprecation announcement banner -------------------------------
+
+banner_file = docs_root / "_static" / "announcement_banner.html"
+rtd_banner_file = docs_root / "_static" / "rtd_deprecation_banner.html"
+
+announcement = banner_file.read_text() if banner_file.is_file() else ""
+
+if "READTHEDOCS_OUTPUT" in os.environ:
+    if rtd_banner_file.is_file():
+        announcement += "\n<br>\n" + rtd_banner_file.read_text()
+
 # -- Project information -----------------------------------------------------
 
 project = "healpix-geo"
@@ -47,7 +60,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx_design",
-    "jupyterlite_sphinx",
+    # "jupyterlite_sphinx",
     "myst_nb",
 ]
 
@@ -135,4 +148,6 @@ html_css_files = ["css/custom.css"]
 html_theme_options = {
     "github_url": "https://github.com/GRID4EARTH/healpix-geo",
     "icon_links_label": "Quick Links",
+    "announcement": announcement,
+    "sticky_banners": True,
 }
