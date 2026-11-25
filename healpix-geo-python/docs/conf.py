@@ -1,5 +1,6 @@
-# -- Library configuration ---------------------------------------------------
+import os
 
+# -- Library configuration ---------------------------------------------------
 import matplotlib
 
 # ignore matplotlib warnings
@@ -27,6 +28,18 @@ scripts = [
 for name, outpath in scripts:
     run_script(script_root.joinpath(name), docs_root.joinpath(outpath))
 
+
+# -- Setup RTD deprecation announcement banner -------------------------------
+
+banner_file = docs_root / "_static" / "announcement_banner.html"
+rtd_banner_file = docs_root / "_static" / "rtd_deprecation_banner.html"
+
+announcement = banner_file.read_text() if banner_file.is_file() else ""
+
+if "READTHEDOCS_OUTPUT" in os.environ:
+    if rtd_banner_file.is_file():
+        announcement += "\n<br>\n" + rtd_banner_file.read_text()
+
 # -- Project information -----------------------------------------------------
 
 project = "healpix-geo"
@@ -47,7 +60,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx_design",
-    "jupyterlite_sphinx",
+    # "jupyterlite_sphinx",
     "myst_nb",
 ]
 
@@ -128,13 +141,6 @@ nb_execution_raise_on_error = True
 nb_execution_timeout = 120
 
 # -- Options for HTML output -------------------------------------------------
-
-announcement_banner_file = docs_root / "_static" / "announcement_banner.html"
-if announcement_banner_file.is_file():
-    with announcement_banner_file.open() as f:
-        announcement = f.read()
-else:
-    announcement = ""
 
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
